@@ -1,0 +1,537 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
+		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
+		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
+		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
+		4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */; };
+		4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */; };
+		5108275C9415E69F6D8708FF /* ScreeningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */; };
+		555EA5EDEA5A17AB2EFE72D3 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
+		5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
+		6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */; };
+		857568F4B503E22D9B628C11 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
+		906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
+		A8F1BE46F1E94207CAC11427 /* TaskViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */; };
+		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
+		F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B2F1096488EAE1C4259DBC /* ResultView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		85E671BD7CBD5A48C945F273 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF1DAC78A062177D07F16AD4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F1848F7C2B81A7E5AF4CAD9A;
+			remoteInfo = Sober;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberApp.swift; sourceTree = "<group>"; };
+		12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanView.swift; sourceTree = "<group>"; };
+		1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningModels.swift; sourceTree = "<group>"; };
+		1CC25F72A27335610F808FA8 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		23942604D2736802062223EA /* SignalHalo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalHalo.swift; sourceTree = "<group>"; };
+		25B2F1096488EAE1C4259DBC /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
+		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
+		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
+		6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskViews.swift; sourceTree = "<group>"; };
+		A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningFlowView.swift; sourceTree = "<group>"; };
+		A283843C5F8155F2ABF81000 /* SoberTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SoberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceTrackingService.swift; sourceTree = "<group>"; };
+		E5D0277C1F1057B474837F2C /* Sober.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sober.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		F69FF16FB9F7B0082399E074 /* SoberComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberComponents.swift; sourceTree = "<group>"; };
+		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0264280DC0D78C25EF0D94FB /* SoberTests */ = {
+			isa = PBXGroup;
+			children = (
+				6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */,
+			);
+			path = SoberTests;
+			sourceTree = "<group>";
+		};
+		0D931F194DF9B61C0FE41CFF /* Screening */ = {
+			isa = PBXGroup;
+			children = (
+				A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */,
+				6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */,
+			);
+			path = Screening;
+			sourceTree = "<group>";
+		};
+		1FABC51C5F600CB258190FC0 /* Results */ = {
+			isa = PBXGroup;
+			children = (
+				25B2F1096488EAE1C4259DBC /* ResultView.swift */,
+			);
+			path = Results;
+			sourceTree = "<group>";
+		};
+		26FAADC19274E05E861374DF /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				FA3ABA407F78E17298DEA2FD /* Palette.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		2AD38A1F6F0E620AB0798AD7 = {
+			isa = PBXGroup;
+			children = (
+				3302830DB36CA04243C83802 /* Sober */,
+				0264280DC0D78C25EF0D94FB /* SoberTests */,
+				8D71CAD5044A7688E9ABFDCA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3302830DB36CA04243C83802 /* Sober */ = {
+			isa = PBXGroup;
+			children = (
+				B5546AEA9AF05100D39C8E97 /* App */,
+				6979467F7B883BBAC8250E17 /* Components */,
+				26FAADC19274E05E861374DF /* Design */,
+				44992AC65B20E716710B920F /* Features */,
+				FCE724912A8F91BCD131718A /* Models */,
+				E3A38A79683D8E6226C0B9D2 /* Services */,
+			);
+			path = Sober;
+			sourceTree = "<group>";
+		};
+		44992AC65B20E716710B920F /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				CE3468B3451787117E4877BE /* Home */,
+				98960DCB1EE83BC3C464228A /* Onboarding */,
+				CD2CD37750A1FFEE5BC32AEF /* Plan */,
+				1FABC51C5F600CB258190FC0 /* Results */,
+				0D931F194DF9B61C0FE41CFF /* Screening */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		6979467F7B883BBAC8250E17 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				23942604D2736802062223EA /* SignalHalo.swift */,
+				F69FF16FB9F7B0082399E074 /* SoberComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		8D71CAD5044A7688E9ABFDCA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E5D0277C1F1057B474837F2C /* Sober.app */,
+				A283843C5F8155F2ABF81000 /* SoberTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		98960DCB1EE83BC3C464228A /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		B5546AEA9AF05100D39C8E97 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */,
+				0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		CD2CD37750A1FFEE5BC32AEF /* Plan */ = {
+			isa = PBXGroup;
+			children = (
+				12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */,
+			);
+			path = Plan;
+			sourceTree = "<group>";
+		};
+		CE3468B3451787117E4877BE /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				1CC25F72A27335610F808FA8 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		E3A38A79683D8E6226C0B9D2 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */,
+				544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		FCE724912A8F91BCD131718A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		28D796906C95F4478FEED7B3 /* SoberTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9B56F81CF330DFA724B51E6E /* Build configuration list for PBXNativeTarget "SoberTests" */;
+			buildPhases = (
+				AB4AD64EDF509BD6CA2DDFD8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A42F817B9EC810E181BF2490 /* PBXTargetDependency */,
+			);
+			name = SoberTests;
+			packageProductDependencies = (
+			);
+			productName = SoberTests;
+			productReference = A283843C5F8155F2ABF81000 /* SoberTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F1848F7C2B81A7E5AF4CAD9A /* Sober */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 893B8341BFCD744CE5C81135 /* Build configuration list for PBXNativeTarget "Sober" */;
+			buildPhases = (
+				AF3A0054D273C9A624B9BFCB /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Sober;
+			packageProductDependencies = (
+			);
+			productName = Sober;
+			productReference = E5D0277C1F1057B474837F2C /* Sober.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CF1DAC78A062177D07F16AD4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 34EAAE8361AA3275755B4E5D /* Build configuration list for PBXProject "Sober" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2AD38A1F6F0E620AB0798AD7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8D71CAD5044A7688E9ABFDCA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F1848F7C2B81A7E5AF4CAD9A /* Sober */,
+				28D796906C95F4478FEED7B3 /* SoberTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AB4AD64EDF509BD6CA2DDFD8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF3A0054D273C9A624B9BFCB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				857568F4B503E22D9B628C11 /* AppModel.swift in Sources */,
+				2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */,
+				906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */,
+				6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */,
+				3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */,
+				F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */,
+				3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */,
+				C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */,
+				4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */,
+				5108275C9415E69F6D8708FF /* ScreeningModels.swift in Sources */,
+				555EA5EDEA5A17AB2EFE72D3 /* SignalHalo.swift in Sources */,
+				0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */,
+				5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */,
+				A8F1BE46F1E94207CAC11427 /* TaskViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A42F817B9EC810E181BF2490 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F1848F7C2B81A7E5AF4CAD9A /* Sober */;
+			targetProxy = 85E671BD7CBD5A48C945F273 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1239CA1C563D6F7E12DF525A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sober.app/Sober";
+			};
+			name = Release;
+		};
+		585D79BB5DCA16BA0D031A45 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sober.app/Sober";
+			};
+			name = Debug;
+		};
+		9EC6530C7FBF5B0D4FD69A88 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Sober;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.app;
+				PRODUCT_NAME = Sober;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A0E8C32166D771755CFC72C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		B6782AFC92B2B6441C0CD2C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		CA0A1ACB0F84D660013162EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Sober;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.app;
+				PRODUCT_NAME = Sober;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		34EAAE8361AA3275755B4E5D /* Build configuration list for PBXProject "Sober" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B6782AFC92B2B6441C0CD2C9 /* Debug */,
+				A0E8C32166D771755CFC72C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		893B8341BFCD744CE5C81135 /* Build configuration list for PBXNativeTarget "Sober" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9EC6530C7FBF5B0D4FD69A88 /* Debug */,
+				CA0A1ACB0F84D660013162EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9B56F81CF330DFA724B51E6E /* Build configuration list for PBXNativeTarget "SoberTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				585D79BB5DCA16BA0D031A45 /* Debug */,
+				1239CA1C563D6F7E12DF525A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CF1DAC78A062177D07F16AD4 /* Project object */;
+}

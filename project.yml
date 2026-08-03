@@ -1,0 +1,43 @@
+name: Sober
+options:
+  bundleIdPrefix: com.soberprototype
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+targets:
+  Sober:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sober
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app
+        PRODUCT_NAME: Sober
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Sober
+        INFOPLIST_KEY_NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.healthcare-fitness
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    scheme:
+      testTargets:
+        - SoberTests
+  SoberTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SoberTests
+    dependencies:
+      - target: Sober
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.tests
+        GENERATE_INFOPLIST_FILE: YES
