@@ -1,11 +1,17 @@
 import SwiftUI
+import UIKit
 
 // There is intentionally no green, checkmark, "pass", "clear", or dismiss X.
 // The screen's primary content is the safety message plus a route home.
+// 0.5s: the result halo and a protected-parent alert card dominate the screen.
+// User: someone who just received a concerning result and needs proof that help was contacted.
+// Emotional intent: protected and accountable, never punished or surveilled.
 struct ResultView: View {
   let outcome: ScreeningOutcome
   let safetyPlan: SafetyPlan
   let isSample: Bool
+  let parentAlertState: ParentAlertDeliveryState
+  let onRetryParentAlert: () -> Void
   let onDone: () -> Void
 
   @Environment(\.openURL) private var openURL
@@ -40,14 +46,18 @@ struct ResultView: View {
             .fixedSize(horizontal: false, vertical: true)
         }
 
+        if outcome.state == .signalsDetected {
+          parentAlertCard
+        }
         signalBreakdown
-        interventionCard
+        InterventionCard(safetyPlan: safetyPlan)
         acknowledgementCard
 
         Button("Return home", action: onDone)
           .buttonStyle(SecondaryActionButtonStyle(tint: Palette.textSecondary))
           .disabled(!canLeave)
           .opacity(canLeave ? 1 : 0.4)
+          .accessibilityValue(returnHomeAccessibilityValue)
           .accessibilityHint(
             canLeave ? "Closes this result" : "Read and acknowledge the safety message first")
       }
@@ -61,10 +71,21 @@ struct ResultView: View {
         try? await Task.sleep(for: .seconds(1))
         secondsRemaining -= 1
       }
+      UIAccessibility.post(
+        notification: .announcement,
+        argument: "Safety hold complete. Acknowledge the message to enable Return home."
+      )
     }
   }
 
   private var canLeave: Bool { acknowledged && secondsRemaining == 0 }
+
+  private var returnHomeAccessibilityValue: String {
+    if secondsRemaining > 0 {
+      return "Available in \(secondsRemaining) second\(secondsRemaining == 1 ? "" : "s")"
+    }
+    return acknowledged ? "Available" : "Waiting for safety acknowledgement"
+  }
 
   private var stateColor: Color {
     switch outcome.state {
@@ -109,13 +130,129 @@ struct ResultView: View {
     }
   }
 
-  private var interventionCard: some View {
+  private var parentAlertCard: some View {
+    SoberCard {
+      HStack(alignment: .top, spacing: 14) {
+        ZStack {
+          Circle()
+            .fill(parentAlertTint.opacity(0.14))
+          parentAlertIcon
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(parentAlertTint)
+        }
+        .frame(width: 48, height: 48)
+
+        VStack(alignment: .leading, spacing: 5) {
+          Text(parentAlertTitle)
+            .font(.headline)
+          Text(parentAlertMessage)
+            .font(.subheadline)
+            .foregroundStyle(Palette.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+          if parentAlertState == .failed || parentAlertState == .notConfigured {
+            Button("Try automatic alert again", action: onRetryParentAlert)
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(Palette.primary)
+              .padding(.top, 3)
+          }
+        }
+
+        Spacer(minLength: 0)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var parentAlertIcon: some View {
+    if parentAlertState == .sending {
+      ProgressView()
+        .tint(parentAlertTint)
+    } else {
+      Image(systemName: parentAlertSystemImage)
+    }
+  }
+
+  private var parentAlertTint: Color {
+    switch parentAlertState {
+    case .failed, .notConfigured: Palette.warning
+    default: Palette.primary
+    }
+  }
+
+  private var parentAlertSystemImage: String {
+    switch parentAlertState {
+    case .sent: "paperplane.fill"
+    case .failed, .notConfigured: "exclamationmark.message.fill"
+    case .preview: "eye.fill"
+    case .sending: "paperplane"
+    case .notRequired: "message"
+    }
+  }
+
+  private var parentAlertTitle: String {
+    switch parentAlertState {
+    case .sending: "Alerting \(safetyPlan.contactName)…"
+    case .sent: "Alert accepted for sending"
+    case .failed: "Automatic alert didn’t go through"
+    case .notConfigured: "Automatic parent alert needs setup"
+    case .preview: "Parent alert preview"
+    case .notRequired: "Parent alert"
+    }
+  }
+
+  private var parentAlertMessage: String {
+    switch parentAlertState {
+    case .sending:
+      "Sober is sending the concerning result now. You don’t need to compose the message."
+    case .sent:
+      "The messaging service accepted the alert for \(safetyPlan.contactName). Carrier delivery is not yet confirmed. No camera data or scores were shared."
+    case .failed:
+      "Call or message them below now. Sober will not hide a delivery failure."
+    case .notConfigured:
+      "Add consent, a valid parent number, and the alert-service configuration. Call or message them below now."
+    case .preview:
+      "Sample only. A live concerning result would alert \(safetyPlan.contactName) immediately."
+    case .notRequired:
+      "No automatic alert was required for this result."
+    }
+  }
+
+  private var acknowledgementCard: some View {
+    SoberCard {
+      VStack(alignment: .leading, spacing: 12) {
+        Toggle(isOn: $acknowledged) {
+          Text("I understand this result does not mean I’m sober or safe to drive.")
+            .font(.subheadline.weight(.medium))
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .tint(Palette.primary)
+
+        if secondsRemaining > 0 {
+          Text(
+            "Safety message remains on screen for \(secondsRemaining) more second\(secondsRemaining == 1 ? "" : "s")."
+          )
+          .font(.caption.monospacedDigit())
+          .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+  }
+
+}
+
+struct InterventionCard: View {
+  let safetyPlan: SafetyPlan
+
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
     SoberCard {
       VStack(alignment: .leading, spacing: 13) {
         VStack(alignment: .leading, spacing: 4) {
           Text("Get home without driving")
             .font(.title3.weight(.semibold))
-          Text("Your Night Out plan is ready. Taking action does not share this result.")
+          Text("Your ride and direct contact options stay available while the alert is sent.")
             .font(.caption)
             .foregroundStyle(Palette.textSecondary)
         }
@@ -141,27 +278,6 @@ struct ResultView: View {
             Label("Message", systemImage: "message.fill")
           }
           .buttonStyle(CompactActionButtonStyle())
-        }
-      }
-    }
-  }
-
-  private var acknowledgementCard: some View {
-    SoberCard {
-      VStack(alignment: .leading, spacing: 12) {
-        Toggle(isOn: $acknowledged) {
-          Text("I understand this result does not mean I’m sober or safe to drive.")
-            .font(.subheadline.weight(.medium))
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .tint(Palette.primary)
-
-        if secondsRemaining > 0 {
-          Text(
-            "Safety message remains on screen for \(secondsRemaining) more second\(secondsRemaining == 1 ? "" : "s")."
-          )
-          .font(.caption.monospacedDigit())
-          .foregroundStyle(Palette.textSecondary)
         }
       }
     }

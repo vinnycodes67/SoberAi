@@ -9,17 +9,17 @@ struct SafetyPlanView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 18) {
           ScreenHeader(
-            eyebrow: "Pre-commitment",
-            title: "Make the easy choice now.",
+            eyebrow: "Safety Circle",
+            title: "Put a parent in your corner.",
             detail:
-              "Choose a ride and a person before the night starts. Both stay one tap away from every result."
+              "Set this up while clear-headed. A concerning result can alert them immediately without waiting for you to compose a message."
           )
 
           SoberCard {
             Toggle(isOn: $plan.isActive) {
               VStack(alignment: .leading, spacing: 3) {
-                Text("Night Out Mode").font(.headline)
-                Text(plan.isActive ? "Your plan is ready" : "Plan is paused")
+                Text("Safety Circle").font(.headline)
+                Text(plan.isActive ? "Ride and parent plan active" : "Safety Circle paused")
                   .font(.caption)
                   .foregroundStyle(Palette.textSecondary)
               }
@@ -29,14 +29,54 @@ struct SafetyPlanView: View {
 
           SoberCard {
             VStack(alignment: .leading, spacing: 16) {
-              fieldLabel("Designated contact")
-              TextField("Name", text: $plan.contactName)
+              fieldLabel("Who is taking the check?")
+              TextField("Your first name", text: $plan.userName)
+                .textContentType(.name)
+                .textFieldStyle(SoberTextFieldStyle())
+
+              fieldLabel("Parent or guardian")
+              TextField("Parent name", text: $plan.contactName)
                 .textContentType(.name)
                 .textFieldStyle(SoberTextFieldStyle())
               TextField("Phone number", text: $plan.contactPhone)
                 .textContentType(.telephoneNumber)
                 .keyboardType(.phonePad)
                 .textFieldStyle(SoberTextFieldStyle())
+            }
+          }
+
+          SoberCard {
+            VStack(alignment: .leading, spacing: 16) {
+              Toggle(isOn: $plan.automaticParentAlerts) {
+                VStack(alignment: .leading, spacing: 4) {
+                  Text("Automatic parent alert")
+                    .font(.headline)
+                  Text("Send immediately when Sober detects concerning signals")
+                    .font(.caption)
+                    .foregroundStyle(Palette.textSecondary)
+                }
+              }
+              .tint(Palette.primary)
+
+              Divider().overlay(Palette.secondary.opacity(0.2))
+
+              Toggle(isOn: $plan.parentAlertConsent) {
+                Text(
+                  "I authorize Sober to send this safety result to the parent or guardian above."
+                )
+                .font(.subheadline.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+              }
+              .tint(Palette.primary)
+              .disabled(!plan.automaticParentAlerts)
+              .opacity(plan.automaticParentAlerts ? 1 : 0.45)
+
+              Label(
+                "Only the safety message is shared—never camera footage, face landmarks, task scores, or an estimated substance level.",
+                systemImage: "hand.raised.fill"
+              )
+              .font(.caption)
+              .foregroundStyle(Palette.textSecondary)
             }
           }
 
@@ -56,7 +96,7 @@ struct SafetyPlanView: View {
           }
 
           Text(
-            "The MVP opens your chosen ride app and Messages. It never sends a message or books a ride without your tap."
+            "Automatic delivery requires the parent-alert service configured for this build. Ride booking still requires your tap."
           )
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
@@ -65,11 +105,16 @@ struct SafetyPlanView: View {
         .padding(22)
       }
       .soberBackground()
-      .navigationTitle("Night Out Mode")
+      .navigationTitle("Safety Circle")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
           Button("Done") { dismiss() }
+        }
+      }
+      .onChange(of: plan.automaticParentAlerts) { _, isEnabled in
+        if !isEnabled {
+          plan.parentAlertConsent = false
         }
       }
     }

@@ -1,4 +1,5 @@
 @preconcurrency import ARKit
+import AVFoundation
 import Combine
 import Foundation
 import simd
@@ -6,154 +7,340 @@ import simd
 enum FaceTrackingStatus: Equatable {
   case idle
   case unsupported
+  case permissionDenied
+  case searching
   case tracking
   case limited(String)
 
   var label: String {
     switch self {
     case .idle: "Camera ready"
-    case .unsupported: "Guided demo trace"
-    case .tracking: "Face tracking steady"
+    case .unsupported: "Live face tracking unavailable"
+    case .permissionDenied: "Camera permission required"
+    case .searching: "Finding your face…"
+    case .tracking: "Capture quality ready"
     case .limited(let reason): reason
     }
   }
 }
 
-struct GazeCaptureSummary: Sendable {
-  let smoothnessRisk: Double
-  let qualityScore: Double
-  let sampleCount: Int
-}
-
-private struct GazeSample: Sendable {
-  let timestamp: TimeInterval
-  let gazeX: Float
-  let gazeY: Float
-  let headX: Float
-  let headY: Float
-  let headZ: Float
-}
-
-/// Minimal Phase-1 ARKit harness for the MVP. It retains only a bounded,
-/// in-memory ring of numeric samples and never writes camera frames to disk.
+/// ARKit face and eye capture for the research prototype. The service keeps a
+/// bounded in-memory buffer of numeric landmarks. Camera frames are displayed
+/// by ARSCNView but are never persisted or uploaded by this code.
 @MainActor
 final class FaceTrackingService: NSObject, ObservableObject {
   @Published private(set) var status: FaceTrackingStatus = .idle
   @Published private(set) var sampleCount = 0
+  @Published private(set) var quality: CaptureQualitySnapshot = .idle
 
-  private let session = ARSession()
-  private var samples: [GazeSample] = []
-  private let maximumSamples = 900
-  private var trackingStartedAt: TimeInterval?
+  private(set) var session = ARSession()
+
+  private let analyzer = OcularSignalAnalyzer()
+  private var samples: [OcularSample] = []
+  private let maximumSamples = 1_800
+  private var observedFrameCount = 0
+  private var protocolStartedAt: TimeInterval?
+  private var captureStartedAt: TimeInterval?
+  private var recentHeadPositions: [SIMD3<Float>] = []
+  private var wantsSessionRunning = false
+  private var currentMode: OcularPhase = .calibration
+  private var lastFaceSeenAt: TimeInterval?
+  private var activeProtocolVariant: OcularProtocolVariant = .full
 
   override init() {
     super.init()
     session.delegate = self
+    if !isSupported {
+      quality = .unsupported
+      status = .unsupported
+    }
   }
 
   var isSupported: Bool { ARFaceTrackingConfiguration.isSupported }
 
-  func start() {
+  func attach(to newSession: ARSession) {
+    guard session !== newSession else { return }
+    session.pause()
+    session.delegate = nil
+    session = newSession
+    session.delegate = self
+    if wantsSessionRunning {
+      runSessionIfAuthorized()
+    }
+  }
+
+  func startCalibration() {
+    beginCapture(mode: .calibration)
+  }
+
+  func startOcularProtocol(variant: OcularProtocolVariant = .full) {
+    activeProtocolVariant = variant
+    protocolStartedAt = ProcessInfo.processInfo.systemUptime
+    beginCapture(mode: .fixation, preserveProtocolStart: true)
+  }
+
+  func pause() {
+    wantsSessionRunning = false
+    session.pause()
+    if status == .tracking { status = .idle }
+  }
+
+  func stopOcularProtocol() -> GazeCaptureSummary {
+    wantsSessionRunning = false
+    session.pause()
+
+    var finalQuality = quality
+    if let lastFaceSeenAt,
+      ProcessInfo.processInfo.systemUptime - lastFaceSeenAt > 0.75
+    {
+      finalQuality.facePresent = false
+      finalQuality.issues = mergeIssues(finalQuality.issues, [.noFace, .interrupted])
+    }
+
+    let summary = analyzer.summarize(
+      samples: samples,
+      observedFrameCount: observedFrameCount,
+      liveQuality: finalQuality,
+      variant: activeProtocolVariant
+    )
+    quality = summary.quality
+    status = summary.quality.isUsable
+      ? .tracking
+      : .limited(summary.quality.primaryGuidance)
+    return summary
+  }
+
+  /// Builds a summary for an ocular protocol that never produced measurements
+  /// (unsupported device, denied permission, or a skipped task).
+  ///
+  /// The snapshot must not inherit measurement fields from the earlier
+  /// calibration capture: a skipped task would otherwise be recorded as a
+  /// high-quality eye-tracking capture in the research archive.
+  func unusableSummary(issue: CaptureQualityIssue) -> GazeCaptureSummary {
+    var snapshot = issue == .unsupported ? .unsupported : quality
+    if issue == .permissionDenied {
+      snapshot.hasCameraPermission = false
+    }
+    snapshot.facePresent = false
+    snapshot.centered = false
+    snapshot.distanceAcceptable = false
+    snapshot.lightingAcceptable = false
+    snapshot.headStable = false
+    snapshot.frameRate = 0
+    snapshot.sampleCount = 0
+    snapshot.dropoutRatio = 1
+    snapshot.issues = mergeIssues(snapshot.issues, [issue, .insufficientSamples])
+
+    return GazeCaptureSummary(
+      smoothnessRisk: 1,
+      qualityScore: 0,
+      sampleCount: 0,
+      capturedDurationMilliseconds: 0,
+      quality: snapshot,
+      features: .unavailable,
+      protocolVariant: activeProtocolVariant
+    )
+  }
+
+  private func beginCapture(mode: OcularPhase, preserveProtocolStart: Bool = false) {
     samples.removeAll(keepingCapacity: true)
     sampleCount = 0
-    trackingStartedAt = nil
+    observedFrameCount = 0
+    captureStartedAt = nil
+    recentHeadPositions.removeAll(keepingCapacity: true)
+    lastFaceSeenAt = nil
+    currentMode = mode
+    wantsSessionRunning = true
+    if !preserveProtocolStart { protocolStartedAt = nil }
 
     guard isSupported else {
+      quality = .unsupported
       status = .unsupported
       return
     }
 
+    runSessionIfAuthorized()
+  }
+
+  private func runSessionIfAuthorized() {
+    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    case .authorized:
+      startAuthorizedSession()
+    case .notDetermined:
+      status = .searching
+      Task { [weak self] in
+        let granted = await AVCaptureDevice.requestAccess(for: .video)
+        guard let self else { return }
+        if granted {
+          self.startAuthorizedSession()
+        } else {
+          self.markPermissionDenied()
+        }
+      }
+    case .denied, .restricted:
+      markPermissionDenied()
+    @unknown default:
+      markPermissionDenied()
+    }
+  }
+
+  private func startAuthorizedSession() {
+    guard wantsSessionRunning else { return }
     let configuration = ARFaceTrackingConfiguration()
     configuration.isLightEstimationEnabled = true
     session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-    status = .tracking
-  }
-
-  func stop() -> GazeCaptureSummary {
-    session.pause()
-
-    guard isSupported, samples.count > 8 else {
-      status = isSupported ? .limited("Not enough camera samples") : .unsupported
-      return GazeCaptureSummary(
-        smoothnessRisk: isSupported ? 0.52 : 0.18,
-        qualityScore: isSupported ? 0.42 : 0.93,
-        sampleCount: samples.count
-      )
-    }
-
-    let duration = max((samples.last?.timestamp ?? 0) - (samples.first?.timestamp ?? 0), 0.1)
-    let frameRate = Double(samples.count - 1) / duration
-
-    var gazeDelta = 0.0
-    var headDelta = 0.0
-    for index in 1..<samples.count {
-      let current = samples[index]
-      let previous = samples[index - 1]
-      gazeDelta += hypot(
-        Double(current.gazeX - previous.gazeX),
-        Double(current.gazeY - previous.gazeY)
-      )
-      headDelta += sqrt(
-        pow(Double(current.headX - previous.headX), 2)
-          + pow(Double(current.headY - previous.headY), 2)
-          + pow(Double(current.headZ - previous.headZ), 2)
-      )
-    }
-
-    let averageGazeDelta = gazeDelta / Double(samples.count - 1)
-    let averageHeadDelta = headDelta / Double(samples.count - 1)
-
-    // Regress a conservative portion of head-pose leakage out of gaze
-    // residuals. This is a prototype feature, not a validated HGN measure.
-    let compensatedJitter = max(averageGazeDelta - (averageHeadDelta * 0.35), 0)
-    let smoothnessRisk = min(max(compensatedJitter / 0.045, 0), 1)
-
-    let frameQuality = min(frameRate / 45.0, 1)
-    let stabilityQuality = max(1 - (averageHeadDelta / 0.035), 0)
-    let quality = min(max((frameQuality * 0.72) + (stabilityQuality * 0.28), 0), 1)
-
-    status = quality >= 0.72 ? .tracking : .limited("Hold the phone and your head steadier")
-    return GazeCaptureSummary(
-      smoothnessRisk: smoothnessRisk,
-      qualityScore: quality,
-      sampleCount: samples.count
+    quality = CaptureQualitySnapshot(
+      isSupported: true,
+      hasCameraPermission: true,
+      facePresent: false,
+      centered: false,
+      distanceAcceptable: false,
+      lightingAcceptable: false,
+      headStable: false,
+      frameRate: 0,
+      sampleCount: 0,
+      dropoutRatio: 1,
+      issues: [.noFace, .insufficientSamples]
     )
+    status = .searching
   }
 
-  private func ingest(_ sample: GazeSample) {
-    if trackingStartedAt == nil {
-      trackingStartedAt = sample.timestamp
+  private func markPermissionDenied() {
+    wantsSessionRunning = false
+    quality = CaptureQualitySnapshot(
+      isSupported: true,
+      hasCameraPermission: false,
+      facePresent: false,
+      centered: false,
+      distanceAcceptable: false,
+      lightingAcceptable: false,
+      headStable: false,
+      frameRate: 0,
+      sampleCount: 0,
+      dropoutRatio: 1,
+      issues: [.permissionDenied]
+    )
+    status = .permissionDenied
+  }
+
+  private func ingest(
+    face: ARFaceAnchor,
+    timestamp: TimeInterval,
+    ambientIntensity: CGFloat?
+  ) {
+    guard wantsSessionRunning else { return }
+    if captureStartedAt == nil { captureStartedAt = timestamp }
+    lastFaceSeenAt = ProcessInfo.processInfo.systemUptime
+
+    let leftForward = face.leftEyeTransform.columns.2
+    let rightForward = face.rightEyeTransform.columns.2
+    let head = face.transform
+    let headPosition = SIMD3<Float>(head.columns.3.x, head.columns.3.y, head.columns.3.z)
+    recentHeadPositions.append(headPosition)
+    if recentHeadPositions.count > 30 {
+      recentHeadPositions.removeFirst(recentHeadPositions.count - 30)
     }
-    samples.append(sample)
+
+    let target: OcularTarget
+    if let protocolStartedAt {
+      target = OcularProtocolSchedule.target(at: timestamp - protocolStartedAt, variant: activeProtocolVariant)
+      currentMode = target.phase
+    } else {
+      target = OcularTarget(phase: .calibration, x: 0.5, y: 0.5)
+    }
+
+    let blinkLeft = face.blendShapes[.eyeBlinkLeft]?.doubleValue ?? 0
+    let blinkRight = face.blendShapes[.eyeBlinkRight]?.doubleValue ?? 0
+    samples.append(OcularSample(
+      timestamp: timestamp,
+      phase: target.phase,
+      targetX: target.x,
+      targetY: target.y,
+      leftGazeX: Double(leftForward.x),
+      leftGazeY: Double(leftForward.y),
+      rightGazeX: Double(rightForward.x),
+      rightGazeY: Double(rightForward.y),
+      headX: Double(head.columns.2.x),
+      headY: Double(head.columns.2.y),
+      headZ: Double(head.columns.2.z),
+      blinkLeft: blinkLeft,
+      blinkRight: blinkRight
+    ))
     if samples.count > maximumSamples {
       samples.removeFirst(samples.count - maximumSamples)
     }
     sampleCount = samples.count
+
+    let duration = max(timestamp - (captureStartedAt ?? timestamp), 0.1)
+    let frameRate = samples.count > 1 ? Double(samples.count - 1) / duration : 0
+    let dropoutRatio = observedFrameCount > 0
+      ? max(1 - (Double(samples.count) / Double(observedFrameCount)), 0)
+      : 1
+    let centered = abs(Double(headPosition.x)) <= 0.13 && abs(Double(headPosition.y)) <= 0.18
+    let distance = abs(Double(headPosition.z))
+    let distanceAcceptable = (0.25...0.75).contains(distance)
+    let lightingAcceptable = (ambientIntensity ?? 0) >= 180
+    let headStable = recentHeadMovement() <= 0.025
+
+    var issues: [CaptureQualityIssue] = []
+    if !face.isTracked { issues.append(.noFace) }
+    if !centered { issues.append(.offCenter) }
+    if !distanceAcceptable { issues.append(.distance) }
+    if !lightingAcceptable { issues.append(.lowLight) }
+    if !headStable { issues.append(.unstable) }
+    if samples.count >= 20, frameRate < 20 { issues.append(.lowFrameRate) }
+    if samples.count < 20 { issues.append(.insufficientSamples) }
+
+    quality = CaptureQualitySnapshot(
+      isSupported: true,
+      hasCameraPermission: true,
+      facePresent: face.isTracked,
+      centered: centered,
+      distanceAcceptable: distanceAcceptable,
+      lightingAcceptable: lightingAcceptable,
+      headStable: headStable,
+      frameRate: frameRate,
+      sampleCount: samples.count,
+      dropoutRatio: dropoutRatio,
+      issues: issues
+    )
+    status = quality.isUsable ? .tracking : .limited(quality.primaryGuidance)
+  }
+
+  private func recentHeadMovement() -> Double {
+    guard recentHeadPositions.count > 2 else { return 1 }
+    var total = 0.0
+    for index in 1..<recentHeadPositions.count {
+      total += Double(simd_distance(recentHeadPositions[index], recentHeadPositions[index - 1]))
+    }
+    return total / Double(recentHeadPositions.count - 1)
+  }
+
+  private func mergeIssues(
+    _ existing: [CaptureQualityIssue],
+    _ additions: [CaptureQualityIssue]
+  ) -> [CaptureQualityIssue] {
+    var result = existing
+    for issue in additions where !result.contains(issue) { result.append(issue) }
+    return result
   }
 }
 
 extension FaceTrackingService: ARSessionDelegate {
+  nonisolated func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    Task { @MainActor [weak self] in
+      guard let self, self.wantsSessionRunning else { return }
+      self.observedFrameCount += 1
+    }
+  }
+
   nonisolated func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
     guard let face = anchors.compactMap({ $0 as? ARFaceAnchor }).first else { return }
-
-    // Eye transforms are face-local. Averaging their forward vectors gives
-    // a head-relative gaze proxy and cancels gross head rotation.
-    let leftForward = face.leftEyeTransform.columns.2
-    let rightForward = face.rightEyeTransform.columns.2
-    let head = face.transform
     let timestamp = session.currentFrame?.timestamp ?? ProcessInfo.processInfo.systemUptime
-
-    let sample = GazeSample(
-      timestamp: timestamp,
-      gazeX: (leftForward.x + rightForward.x) / 2,
-      gazeY: (leftForward.y + rightForward.y) / 2,
-      headX: head.columns.2.x,
-      headY: head.columns.2.y,
-      headZ: head.columns.2.z
-    )
+    let ambientIntensity = session.currentFrame?.lightEstimate?.ambientIntensity
 
     Task { @MainActor [weak self] in
-      self?.ingest(sample)
+      self?.ingest(face: face, timestamp: timestamp, ambientIntensity: ambientIntensity)
     }
   }
 
@@ -161,21 +348,22 @@ extension FaceTrackingService: ARSessionDelegate {
     let nextStatus: FaceTrackingStatus
     switch camera.trackingState {
     case .normal:
-      nextStatus = .tracking
+      nextStatus = .searching
     case .notAvailable:
       nextStatus = .limited("Face tracking unavailable")
     case .limited(let reason):
       switch reason {
       case .excessiveMotion: nextStatus = .limited("Hold the phone steadier")
       case .insufficientFeatures: nextStatus = .limited("Move into more even light")
-      case .initializing: nextStatus = .limited("Finding your face…")
+      case .initializing: nextStatus = .searching
       case .relocalizing: nextStatus = .limited("Re-centering…")
       @unknown default: nextStatus = .limited("Tracking quality is limited")
       }
     }
 
     Task { @MainActor [weak self] in
-      self?.status = nextStatus
+      guard let self, self.status != .permissionDenied, self.status != .unsupported else { return }
+      if !self.quality.isUsable { self.status = nextStatus }
     }
   }
 }

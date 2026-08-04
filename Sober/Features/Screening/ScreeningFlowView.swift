@@ -22,12 +22,19 @@ struct ScreeningFlowView: View {
   @State private var selfReport: SelfReport = .no
   @State private var reactionTime = 0.0
   @State private var reactionMisses = 0
+  @State private var reactionSummary: ChoiceReactionSummary?
   @State private var trackingError = 0.0
+  @State private var trackingWasMeasured = true
   @State private var timingError = 0.0
   @State private var gazeSmoothness = 0.0
   @State private var qualityScore = 1.0
+  @State private var ocularSummary: GazeCaptureSummary?
   @State private var outcome: ScreeningOutcome?
+  @StateObject private var parentAlert: ParentAlertCoordinator
   @State private var showingExitAlert = false
+  @State private var sessionStartedAt = Date()
+  @State private var baselineAccepted = false
+  @State private var baselineCompletionState = BaselineCompletionState(reason: .ready)
 
   private let engine = ScreeningEngine()
 
@@ -35,8 +42,14 @@ struct ScreeningFlowView: View {
     self.configuration = configuration
     if configuration.scenario == .live {
       _step = State(initialValue: .attestation)
+      _parentAlert = StateObject(wrappedValue: ParentAlertCoordinator())
     } else {
       _step = State(initialValue: .result)
+      _parentAlert = StateObject(
+        wrappedValue: ParentAlertCoordinator(
+          state: configuration.scenario == .signals ? .preview : .notRequired
+        )
+      )
       _outcome = State(
         initialValue: ScreeningEngine().evaluate(
           selfReport: .no,
@@ -45,6 +58,8 @@ struct ScreeningFlowView: View {
         ))
     }
   }
+
+  private var parentAlertState: ParentAlertDeliveryState { parentAlert.state }
 
   var body: some View {
     ZStack(alignment: .top) {
@@ -56,21 +71,25 @@ struct ScreeningFlowView: View {
           } else {
             SelfReportView { answer in
               handleSelfReport(answer)
+            } onAccessibilityRoute: { answer in
+              handleAccessibilityUnavailableRoute(answer)
             }
           }
         case .environment:
-          EnvironmentCheckView(faceTrackingSupported: faceTracking.isSupported) {
+          CameraCalibrationView(service: faceTracking) {
             step = .reaction
           }
         case .reaction:
-          ReactionTaskView { average, misses in
-            reactionTime = average
-            reactionMisses = misses
+          ReactionTaskView { summary in
+            reactionSummary = summary
+            reactionTime = summary.averageMilliseconds
+            reactionMisses = summary.totalErrors
             step = .tracking
           }
         case .tracking:
-          MotorTrackingTaskView { error in
-            trackingError = error
+          MotorTrackingTaskView { result in
+            trackingError = result.error
+            trackingWasMeasured = result.wasMeasured
             step = .timing
           }
         case .timing:
@@ -79,7 +98,8 @@ struct ScreeningFlowView: View {
             step = .gaze
           }
         case .gaze:
-          GuidedGazeTaskView(service: faceTracking) { summary in
+          OcularTaskView(service: faceTracking) { summary in
+            ocularSummary = summary
             gazeSmoothness = summary.smoothnessRisk
             qualityScore = summary.qualityScore
             step = .analyzing
@@ -93,7 +113,9 @@ struct ScreeningFlowView: View {
             ResultView(
               outcome: outcome,
               safetyPlan: model.safetyPlan,
-              isSample: configuration.scenario != .live
+              isSample: configuration.scenario != .live,
+              parentAlertState: parentAlertState,
+              onRetryParentAlert: { beginParentAlert(for: outcome) }
             ) {
               dismiss()
             }
@@ -101,6 +123,8 @@ struct ScreeningFlowView: View {
         case .baselineComplete:
           BaselineCompleteView(
             sessions: model.baselineSessions,
+            accepted: baselineAccepted,
+            completionState: baselineCompletionState,
             onDone: { dismiss() }
           )
         }
@@ -141,31 +165,56 @@ struct ScreeningFlowView: View {
   private func handleSelfReport(_ answer: SelfReport) {
     selfReport = answer
     guard answer == .no else {
-      outcome = engine.evaluate(
-        selfReport: answer,
-        metrics: ScreeningMetrics(
-          reactionTimeMilliseconds: 0,
-          reactionMisses: 0,
-          trackingError: 0,
-          timeEstimateError: 0,
-          gazeSmoothness: 0,
-          qualityScore: 1,
-          completedAllTasks: false
-        )
+      let metrics = ScreeningMetrics(
+        reactionTimeMilliseconds: 0,
+        reactionMisses: 0,
+        trackingError: 0,
+        timeEstimateError: 0,
+        gazeSmoothness: 0,
+        qualityScore: 0,
+        completedAllTasks: false
       )
-      step = .result
+      presentOutcome(engine.evaluate(selfReport: answer, metrics: metrics))
+      Task {
+        await model.recordCompletedSession(
+          mode: .check,
+          selfReport: answer,
+          metrics: metrics,
+          reactionSummary: nil,
+          ocularSummary: nil,
+          startedAt: sessionStartedAt
+        )
+      }
       return
     }
     step = .environment
   }
 
-  private func finishScoring() {
-    if configuration.mode == .baseline {
-      model.recordBaseline()
-      step = .baselineComplete
-      return
+  private func handleAccessibilityUnavailableRoute(_ answer: SelfReport) {
+    selfReport = answer
+    let metrics = ScreeningMetrics(
+      reactionTimeMilliseconds: 0,
+      reactionMisses: 0,
+      trackingError: MotorTrackingOutcome.notMeasured.error,
+      timeEstimateError: 0,
+      gazeSmoothness: 0,
+      qualityScore: 0,
+      completedAllTasks: false
+    )
+    presentOutcome(engine.evaluate(selfReport: answer, metrics: metrics))
+    Task {
+      await model.recordCompletedSession(
+        mode: .check,
+        selfReport: answer,
+        metrics: metrics,
+        reactionSummary: nil,
+        ocularSummary: nil,
+        startedAt: sessionStartedAt
+      )
     }
+  }
 
+  private func finishScoring() {
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: reactionTime,
       reactionMisses: reactionMisses,
@@ -173,10 +222,54 @@ struct ScreeningFlowView: View {
       timeEstimateError: timingError,
       gazeSmoothness: gazeSmoothness,
       qualityScore: qualityScore,
-      completedAllTasks: true
+      // A task the participant could not perform is not a completed task.
+      completedAllTasks: trackingWasMeasured
     )
-    outcome = engine.evaluate(selfReport: selfReport, metrics: metrics)
+
+    if configuration.mode == .baseline {
+      baselineAccepted = metrics.completedAllTasks && metrics.qualityScore >= 0.72
+      baselineCompletionState = BaselineCompletionState(
+        reason: baselineAccepted ? .ready : (trackingWasMeasured ? .captureQualityTooLow : .taskUnavailable)
+      )
+      Task {
+        await model.recordCompletedSession(
+          mode: .baseline,
+          selfReport: .no,
+          metrics: metrics,
+          reactionSummary: reactionSummary,
+          ocularSummary: ocularSummary,
+          startedAt: sessionStartedAt
+        )
+        step = .baselineComplete
+      }
+      return
+    }
+
+    presentOutcome(engine.evaluate(selfReport: selfReport, metrics: metrics))
+    Task {
+      await model.recordCompletedSession(
+        mode: .check,
+        selfReport: selfReport,
+        metrics: metrics,
+        reactionSummary: reactionSummary,
+        ocularSummary: ocularSummary,
+        startedAt: sessionStartedAt
+      )
+    }
+  }
+
+  private func presentOutcome(_ newOutcome: ScreeningOutcome) {
+    outcome = newOutcome
     step = .result
+    beginParentAlert(for: newOutcome)
+  }
+
+  private func beginParentAlert(for outcome: ScreeningOutcome) {
+    guard configuration.scenario == .live else {
+      parentAlert.presentSample(for: outcome)
+      return
+    }
+    parentAlert.send(outcome: outcome, safetyPlan: model.safetyPlan)
   }
 }
 
@@ -241,6 +334,8 @@ private struct BaselineAttestationView: View {
 
 private struct SelfReportView: View {
   let onContinue: (SelfReport) -> Void
+  let onAccessibilityRoute: (SelfReport) -> Void
+  @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
   @State private var selection: SelfReport?
 
   var body: some View {
@@ -270,6 +365,23 @@ private struct SelfReportView: View {
             .fixedSize(horizontal: false, vertical: true)
           }
         }
+      }
+
+      if isVoiceOverEnabled {
+        SoberCard {
+          VStack(alignment: .leading, spacing: 8) {
+            Text("I can’t do the visual tasks")
+              .font(.headline)
+            Text("The visual tasks need sight and a steady drag. You can skip them and still get to the safer next step.")
+              .font(.subheadline)
+              .foregroundStyle(Palette.textSecondary)
+          }
+        }
+
+        Button("Skip the visual battery") {
+          onAccessibilityRoute(selection ?? .no)
+        }
+        .buttonStyle(SecondaryActionButtonStyle(tint: Palette.warning))
       }
 
       Button(selection == .no ? "Continue to setup" : "See safer options") {
@@ -314,62 +426,6 @@ private struct SelfReportView: View {
   }
 }
 
-private struct EnvironmentCheckView: View {
-  let faceTrackingSupported: Bool
-  let onContinue: () -> Void
-  @State private var phoneStable = false
-  @State private var evenLight = false
-  @State private var glassesClear = false
-
-  private var isReady: Bool { phoneStable && evenLight && glassesClear }
-
-  var body: some View {
-    FlowContainer(progress: 0) {
-      ScreenHeader(
-        eyebrow: "Set up",
-        title: "Give the check a fair shot.",
-        detail:
-          "Bad capture quality returns inconclusive. It never guesses through motion, darkness, or glare."
-      )
-
-      SoberCard {
-        VStack(spacing: 18) {
-          setupToggle("Phone is propped or held still", icon: "iphone", isOn: $phoneStable)
-          Divider().overlay(Palette.secondary.opacity(0.2))
-          setupToggle("My face is evenly lit", icon: "sun.max", isOn: $evenLight)
-          Divider().overlay(Palette.secondary.opacity(0.2))
-          setupToggle("No glare covers my eyes", icon: "eyeglasses", isOn: $glassesClear)
-        }
-      }
-
-      HStack(spacing: 10) {
-        Image(systemName: faceTrackingSupported ? "faceid" : "desktopcomputer")
-          .foregroundStyle(Palette.primary)
-        Text(
-          faceTrackingSupported
-            ? "TrueDepth is available for the guided gaze step."
-            : "Simulator mode will use a labeled demo trace for guided gaze."
-        )
-        .font(.caption)
-        .foregroundStyle(Palette.textSecondary)
-      }
-
-      Button("I’m ready", action: onContinue)
-        .buttonStyle(PrimaryActionButtonStyle())
-        .disabled(!isReady)
-        .opacity(isReady ? 1 : 0.42)
-    }
-  }
-
-  private func setupToggle(_ title: String, icon: String, isOn: Binding<Bool>) -> some View {
-    Toggle(isOn: isOn) {
-      Label(title, systemImage: icon)
-        .font(.subheadline.weight(.medium))
-    }
-    .tint(Palette.primary)
-  }
-}
-
 private struct AnalyzingView: View {
   let onComplete: () -> Void
 
@@ -395,6 +451,8 @@ private struct AnalyzingView: View {
 
 private struct BaselineCompleteView: View {
   let sessions: Int
+  let accepted: Bool
+  let completionState: BaselineCompletionState
   let onDone: () -> Void
 
   var body: some View {
@@ -402,12 +460,14 @@ private struct BaselineCompleteView: View {
       Spacer()
       SignalHalo(tone: Palette.item0, size: 210, isActive: false)
       VStack(spacing: 9) {
-        Text("Baseline recorded")
+        Text(accepted ? "Baseline recorded" : completionState.title)
           .font(.system(.largeTitle, design: .serif, weight: .semibold))
         Text(
-          sessions >= 3
-            ? "Your three-session starter baseline is ready."
-            : "\(3 - sessions) sober session\(3 - sessions == 1 ? "" : "s") still needed."
+          accepted
+            ? (sessions >= 5
+              ? "Your five-session research baseline is ready."
+              : "\(5 - sessions) sober session\(5 - sessions == 1 ? "" : "s") still needed.")
+            : completionState.message
         )
         .foregroundStyle(Palette.textSecondary)
         .multilineTextAlignment(.center)

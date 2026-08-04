@@ -92,4 +92,94 @@ final class ScreeningEngineTests: XCTestCase {
       .noSignalsDetected
     )
   }
+
+  func testConcerningLiveResultAlertsConfiguredParent() {
+    let outcome = engine.evaluate(
+      selfReport: .no,
+      metrics: .demoClear,
+      founderScenario: .signals
+    )
+    let plan = SafetyPlan(
+      userName: "Alex",
+      contactName: "Casey",
+      contactPhone: "(512) 555-0147",
+      automaticParentAlerts: true,
+      parentAlertConsent: true
+    )
+
+    XCTAssertTrue(
+      ParentAlertPolicy.shouldSend(outcome: outcome, safetyPlan: plan, isSample: false)
+    )
+  }
+
+  func testParentAlertRequiresConsentAndIsNeverSentForSamples() {
+    let outcome = engine.evaluate(
+      selfReport: .no,
+      metrics: .demoClear,
+      founderScenario: .signals
+    )
+    let planWithoutConsent = SafetyPlan(
+      automaticParentAlerts: true,
+      parentAlertConsent: false
+    )
+    let configuredPlan = SafetyPlan(
+      automaticParentAlerts: true,
+      parentAlertConsent: true
+    )
+
+    XCTAssertFalse(
+      ParentAlertPolicy.shouldSend(
+        outcome: outcome,
+        safetyPlan: planWithoutConsent,
+        isSample: false
+      )
+    )
+    XCTAssertFalse(
+      ParentAlertPolicy.shouldSend(
+        outcome: outcome,
+        safetyPlan: configuredPlan,
+        isSample: true
+      )
+    )
+  }
+
+  func testNoSignalsResultNeverAlertsParent() {
+    let outcome = engine.evaluate(
+      selfReport: .no,
+      metrics: .demoClear,
+      founderScenario: .noSignals
+    )
+    let plan = SafetyPlan(
+      automaticParentAlerts: true,
+      parentAlertConsent: true
+    )
+
+    XCTAssertFalse(
+      ParentAlertPolicy.shouldSend(outcome: outcome, safetyPlan: plan, isSample: false)
+    )
+  }
+
+  func testParentAlertPayloadSharesOnlySafetyMessage() {
+    let outcome = engine.evaluate(
+      selfReport: .no,
+      metrics: .demoClear,
+      founderScenario: .signals
+    )
+    let plan = SafetyPlan(
+      userName: "Alex",
+      contactName: "Casey",
+      contactPhone: "(512) 555-0147",
+      automaticParentAlerts: true,
+      parentAlertConsent: true
+    )
+
+    let payload = ParentAlertRequest(outcome: outcome, safetyPlan: plan)
+
+    XCTAssertEqual(payload.parentPhone, "5125550147")
+    XCTAssertEqual(payload.result, ScreeningResultState.signalsDetected.rawValue)
+    XCTAssertTrue(payload.message.contains("help arrange a safe ride"))
+    XCTAssertFalse(payload.message.localizedCaseInsensitiveContains("quality"))
+    XCTAssertFalse(payload.message.localizedCaseInsensitiveContains("camera"))
+    XCTAssertFalse(payload.message.localizedCaseInsensitiveContains("BAC"))
+  }
 }

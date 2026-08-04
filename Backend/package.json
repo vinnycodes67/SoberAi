@@ -1,0 +1,8 @@
+{
+  "name": "sober-parent-alert-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

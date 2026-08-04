@@ -106,8 +106,9 @@ struct OnboardingView: View {
             icon: "hand.raised.fill", title: "No pass state",
             detail: "Every result keeps the safest choice visible.")
           boundaryRow(
-            icon: "person.crop.circle.badge.checkmark", title: "Only for you",
-            detail: "No employer, parent, or law-enforcement mode.")
+            icon: "person.2.badge.gearshape", title: "A Safety Circle you control",
+            detail:
+              "You can pre-authorize a parent alert for concerning results. No employer or law-enforcement mode.")
           boundaryRow(
             icon: "iphone.and.arrow.forward", title: "Action built in",
             detail: "Call a ride or your person from every result.")
@@ -124,7 +125,7 @@ struct OnboardingView: View {
           eyebrow: "Your biometric data",
           title: "Processed here. Gone right after.",
           detail:
-            "Eye and face landmarks are sensitive. Sober’s measurement path is designed to stay on this iPhone with no cloud calls."
+            "Eye and face landmarks are sensitive. They stay on this iPhone. If you enable Safety Circle, only a short safety alert leaves the device."
         )
 
         SoberCard {
@@ -138,7 +139,7 @@ struct OnboardingView: View {
             consentToggle(
               title: "Retention and deletion",
               detail:
-                "I understand raw frames are discarded after feature extraction and are never uploaded.",
+                "I understand raw frames are discarded after feature extraction and are never uploaded. Safety alerts never contain biometric data.",
               isOn: $retentionConsent
             )
           }
@@ -216,11 +217,12 @@ struct RetentionPolicyView: View {
           )
           policySection(
             "Sharing",
-            "The MVP contains no advertising, analytics, biometric export, employer portal, or third-party result sharing."
+            "The MVP contains no advertising, analytics, biometric export, employer portal, or law-enforcement mode. If you explicitly enable Safety Circle, a concerning-result message is sent to the parent or guardian you provide."
           )
           policySection(
             "Your control",
-            "Resetting the prototype removes onboarding and baseline state stored by this build.")
+            "Research Mode can export or delete the local session archive at any time. Resetting the prototype clears onboarding, Safety Circle, and consent state, and permanently deletes every stored research session, your measured baseline, and any export file this build wrote."
+          )
         }
         .padding(22)
       }

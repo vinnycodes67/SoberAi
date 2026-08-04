@@ -19,11 +19,13 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app
         PRODUCT_NAME: Sober
         TARGETED_DEVICE_FAMILY: "1"
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "2"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Sober
         INFOPLIST_KEY_NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
+        INFOPLIST_KEY_SoberParentAlertAPIURL: "$(SOBER_PARENT_ALERT_API_URL)"
+        INFOPLIST_KEY_SoberParentAlertToken: "$(SOBER_PARENT_ALERT_TOKEN)"
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.healthcare-fitness
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES

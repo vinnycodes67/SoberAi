@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ReactionTaskView: View {
-  let onComplete: (Double, Int) -> Void
+  let onComplete: (ChoiceReactionSummary) -> Void
 
   private enum Phase {
     case intro
@@ -11,23 +11,24 @@ struct ReactionTaskView: View {
   }
 
   @State private var phase: Phase = .intro
-  @State private var reactions: [Double] = []
-  @State private var falseStarts = 0
-  @State private var targetX = 0.5
-  @State private var targetY = 0.5
+  @State private var trials: [ChoiceReactionTrial] = []
+  @State private var target: ChoiceReactionSymbol = .blueCircle
   @State private var targetAppearedAt = Date()
   @State private var waitTask: Task<Void, Never>?
+  @State private var timeoutTask: Task<Void, Never>?
   @State private var finished = false
+
+  private let roundCount = 6
 
   var body: some View {
     FlowContainer(progress: 1) {
       ScreenHeader(
-        eyebrow: "Reaction",
-        title: "Tap when the signal appears.",
-        detail: "Wait for the blue target. Tapping early counts as a miss."
+        eyebrow: "Divided attention",
+        title: "Match the color and shape.",
+        detail: "Wait for the cue, then choose its exact match. Early, incorrect, and missed responses are recorded."
       )
 
-      GeometryReader { proxy in
+      VStack(spacing: 14) {
         ZStack {
           RoundedRectangle(cornerRadius: 24, style: .continuous)
             .fill(Palette.cardBackground)
@@ -37,29 +38,15 @@ struct ReactionTaskView: View {
             }
 
           if phase == .target {
-            Button {
-              targetTapped()
-            } label: {
-              Circle()
-                .fill(Palette.primary)
-                .frame(width: 76, height: 76)
-                .overlay {
-                  Circle().stroke(Palette.textPrimary.opacity(0.52), lineWidth: 2)
-                }
-                .shadow(color: Palette.primary.opacity(0.34), radius: 18)
-            }
-            .buttonStyle(.plain)
-            .position(
-              x: proxy.size.width * targetX,
-              y: proxy.size.height * targetY
-            )
-            .accessibilityLabel("Reaction target")
+            reactionSymbol(target, size: 94)
+              .shadow(color: symbolColor(target).opacity(0.42), radius: 22)
+              .accessibilityLabel("Target: \(target.accessibilityLabel)")
           } else {
             VStack(spacing: 12) {
               if phase == .intro {
-                Text("4 rounds")
+                Text("6 choices")
                   .font(.system(.title, design: .rounded, weight: .semibold))
-                Text("Keep your thumb ready")
+                Text("Color + shape + timing")
                   .font(.subheadline)
                   .foregroundStyle(Palette.textSecondary)
               } else if phase == .waiting {
@@ -77,22 +64,40 @@ struct ReactionTaskView: View {
             }
           }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-          if phase == .waiting {
-            falseStarts += 1
-            waitTask?.cancel()
-            beginRound(afterFeedback: true)
+        .frame(height: 200)
+
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+          ForEach(ChoiceReactionSymbol.allCases, id: \.rawValue) { choice in
+            Button {
+              choiceTapped(choice)
+            } label: {
+              HStack(spacing: 10) {
+                reactionSymbol(choice, size: 28)
+                Text(choice.accessibilityLabel)
+                  .font(.caption.weight(.semibold))
+                  .foregroundStyle(Palette.textPrimary)
+                Spacer(minLength: 0)
+              }
+              .padding(.horizontal, 12)
+              .frame(minHeight: 54)
+              .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+              .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                  .stroke(symbolColor(choice).opacity(0.4), lineWidth: 1)
+              }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(choice.accessibilityLabel)
           }
         }
       }
-      .frame(height: 330)
 
       HStack {
-        Label("\(reactions.count) of 4", systemImage: "scope")
+        Label("\(trials.count) of \(roundCount)", systemImage: "scope")
         Spacer()
-        if falseStarts > 0 {
-          Text("\(falseStarts) early")
+        let errors = trials.filter { !$0.isCorrect }.count
+        if errors > 0 {
+          Text("\(errors) error\(errors == 1 ? "" : "s")")
             .foregroundStyle(Palette.warning)
         }
       }
@@ -106,7 +111,10 @@ struct ReactionTaskView: View {
         .buttonStyle(PrimaryActionButtonStyle())
       }
     }
-    .onDisappear { waitTask?.cancel() }
+    .onDisappear {
+      waitTask?.cancel()
+      timeoutTask?.cancel()
+    }
   }
 
   private func beginRound(afterFeedback: Bool = false) {
@@ -119,33 +127,86 @@ struct ReactionTaskView: View {
       phase = .waiting
       try? await Task.sleep(for: .milliseconds(Int.random(in: 650...1350)))
       guard !Task.isCancelled else { return }
-      targetX = Double.random(in: 0.23...0.77)
-      targetY = Double.random(in: 0.24...0.76)
+      target = ChoiceReactionSymbol.allCases.randomElement() ?? .blueCircle
       targetAppearedAt = Date()
       phase = .target
+      timeoutTask?.cancel()
+      timeoutTask = Task {
+        try? await Task.sleep(for: .milliseconds(1_500))
+        guard !Task.isCancelled, phase == .target else { return }
+        record(ChoiceReactionTrial(
+          expected: target,
+          selected: nil,
+          latencyMilliseconds: nil,
+          wasAnticipation: false,
+          wasMiss: true
+        ))
+      }
     }
   }
 
-  private func targetTapped() {
+  private func choiceTapped(_ choice: ChoiceReactionSymbol) {
     guard !finished else { return }
-    reactions.append(Date().timeIntervalSince(targetAppearedAt) * 1_000)
+    if phase == .waiting {
+      waitTask?.cancel()
+      record(ChoiceReactionTrial(
+        expected: nil,
+        selected: choice,
+        latencyMilliseconds: nil,
+        wasAnticipation: true,
+        wasMiss: false
+      ))
+      return
+    }
+    guard phase == .target else { return }
+    timeoutTask?.cancel()
+    record(ChoiceReactionTrial(
+      expected: target,
+      selected: choice,
+      latencyMilliseconds: Date().timeIntervalSince(targetAppearedAt) * 1_000,
+      wasAnticipation: false,
+      wasMiss: false
+    ))
+  }
+
+  private func record(_ trial: ChoiceReactionTrial) {
+    trials.append(trial)
     phase = .feedback
 
-    if reactions.count == 4 {
+    if trials.count == roundCount {
       finished = true
-      let average = reactions.reduce(0, +) / Double(reactions.count)
       Task {
         try? await Task.sleep(for: .milliseconds(320))
-        onComplete(average, falseStarts)
+        onComplete(ChoiceReactionSummary(trials: trials))
       }
     } else {
       beginRound(afterFeedback: true)
     }
   }
+
+  @ViewBuilder
+  private func reactionSymbol(_ symbol: ChoiceReactionSymbol, size: CGFloat) -> some View {
+    let shape = symbol.shapeName
+    if shape == "circle" {
+      Circle()
+        .fill(symbolColor(symbol))
+        .frame(width: size, height: size)
+    } else {
+      RoundedRectangle(cornerRadius: size * 0.16, style: .continuous)
+        .fill(symbolColor(symbol))
+        .frame(width: size * 0.76, height: size * 0.76)
+        .rotationEffect(.degrees(45))
+        .frame(width: size, height: size)
+    }
+  }
+
+  private func symbolColor(_ symbol: ChoiceReactionSymbol) -> Color {
+    symbol.colorName == "Blue" ? Palette.primary : Palette.accent
+  }
 }
 
 struct MotorTrackingTaskView: View {
-  let onComplete: (Double) -> Void
+  let onComplete: (MotorTrackingOutcome) -> Void
 
   @State private var fingerPosition = CGPoint.zero
   @State private var cumulativeError = 0.0
@@ -215,7 +276,7 @@ struct MotorTrackingTaskView: View {
               if fingerPosition.x >= size.width * 0.78, sampleCount >= 10 {
                 finished = true
                 let error = min((cumulativeError / Double(sampleCount)) * 2.4, 1)
-                onComplete(error)
+                onComplete(MotorTrackingOutcome(error: error))
               } else {
                 fingerPosition = .zero
                 cumulativeError = 0
@@ -226,10 +287,12 @@ struct MotorTrackingTaskView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Motor tracking path")
         .accessibilityHint("Drag from the left edge to the right edge following the curved path")
-        .accessibilityAction(named: "Use prototype alternative") {
+        // This path cannot measure coordination, so it reports "not measured"
+        // rather than a stand-in score. The check then ends as inconclusive.
+        .accessibilityAction(named: "Skip tracing — result will be inconclusive") {
           guard !finished else { return }
           finished = true
-          onComplete(0.22)
+          onComplete(.notMeasured)
         }
       }
       .frame(height: 330)
@@ -309,126 +372,5 @@ struct TimeEstimateTaskView: View {
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }
-  }
-}
-
-struct GuidedGazeTaskView: View {
-  @ObservedObject var service: FaceTrackingService
-  let onComplete: (GazeCaptureSummary) -> Void
-
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var startedAt: Date?
-  @State private var guideTask: Task<Void, Never>?
-  @State private var finished = false
-
-  var body: some View {
-    FlowContainer(progress: 4) {
-      ScreenHeader(
-        eyebrow: "Guided gaze",
-        title: "Follow with your eyes, not your head.",
-        detail:
-          "Keep facing forward while the signal moves side to side. This prototype records a head-relative gaze trace on supported iPhones."
-      )
-
-      GeometryReader { proxy in
-        ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
-
-          Path { path in
-            path.move(to: CGPoint(x: 36, y: proxy.size.height / 2))
-            path.addLine(to: CGPoint(x: proxy.size.width - 36, y: proxy.size.height / 2))
-          }
-          .stroke(Palette.secondary.opacity(0.28), style: StrokeStyle(lineWidth: 1, dash: [4, 8]))
-
-          if let startedAt {
-            TimelineView(.animation) { timeline in
-              let elapsed = timeline.date.timeIntervalSince(startedAt)
-              let travel = (sin((elapsed / 4.0) * .pi * 2 - (.pi / 2)) + 1) / 2
-              Circle()
-                .fill(Palette.primary)
-                .frame(width: 26, height: 26)
-                .shadow(color: Palette.primary.opacity(0.5), radius: 18)
-                .position(
-                  x: 36 + (proxy.size.width - 72) * travel,
-                  y: proxy.size.height / 2
-                )
-            }
-          } else {
-            SignalHalo(size: 190, isActive: false)
-          }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
-        }
-      }
-      .frame(height: 300)
-
-      HStack(spacing: 8) {
-        Circle()
-          .fill(statusColor)
-          .frame(width: 8, height: 8)
-        Text(service.status.label)
-          .font(.caption.weight(.medium))
-          .foregroundStyle(Palette.textSecondary)
-        Spacer()
-        if service.sampleCount > 0 {
-          Text("\(service.sampleCount) samples")
-            .font(.caption.monospacedDigit())
-            .foregroundStyle(Palette.textSecondary)
-        }
-      }
-
-      if reduceMotion {
-        Button("Use reduced-motion prototype path") {
-          finish(with: GazeCaptureSummary(smoothnessRisk: 0.18, qualityScore: 0.93, sampleCount: 0))
-        }
-        .buttonStyle(PrimaryActionButtonStyle())
-        Text(
-          "This accommodation uses sample data in the MVP and is never presented as a live measurement."
-        )
-        .font(.caption)
-        .foregroundStyle(Palette.textSecondary)
-      } else {
-        Button(startedAt == nil ? "Begin 8-second trace" : "Keep following…") {
-          start()
-        }
-        .buttonStyle(PrimaryActionButtonStyle())
-        .disabled(startedAt != nil)
-        .opacity(startedAt == nil ? 1 : 0.55)
-      }
-    }
-    .onDisappear {
-      guideTask?.cancel()
-      if startedAt != nil, !finished { _ = service.stop() }
-    }
-  }
-
-  private var statusColor: Color {
-    switch service.status {
-    case .tracking: Palette.primary
-    case .limited: Palette.warning
-    case .unsupported: Palette.item2
-    case .idle: Palette.textSecondary
-    }
-  }
-
-  private func start() {
-    guard startedAt == nil else { return }
-    service.start()
-    startedAt = Date()
-    guideTask = Task {
-      try? await Task.sleep(for: .seconds(8))
-      guard !Task.isCancelled else { return }
-      finish(with: service.stop())
-    }
-  }
-
-  private func finish(with summary: GazeCaptureSummary) {
-    guard !finished else { return }
-    finished = true
-    onComplete(summary)
   }
 }

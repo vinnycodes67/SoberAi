@@ -8,6 +8,7 @@ struct HomeView: View {
   @State private var launch: ScreeningLaunch?
   @State private var showingPlan = false
   @State private var showingAbout = false
+  @State private var showingResearch = false
 
   var body: some View {
     NavigationStack {
@@ -19,6 +20,7 @@ struct HomeView: View {
 
           if model.isFounderPreview {
             founderPreviewCard
+            researchCenterCard
           }
 
           evidenceNote
@@ -54,6 +56,11 @@ struct HomeView: View {
         .environmentObject(model)
         .preferredColorScheme(.dark)
     }
+    .sheet(isPresented: $showingResearch) {
+      ResearchModeView()
+        .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
   }
 
   private var hero: some View {
@@ -67,29 +74,49 @@ struct HomeView: View {
         .padding(.top, model.isFounderPreview ? 0 : 22)
 
       VStack(spacing: 7) {
-        Text(model.baselineReady ? "Pause. Check in." : "Learn your steady.")
+        Text(heroTitle)
           .font(.system(.largeTitle, design: .serif, weight: .semibold))
           .tracking(-1.1)
           .multilineTextAlignment(.center)
-        Text(
-          model.baselineReady
-            ? "About two minutes. Private on this iPhone."
-            : "Three sober sessions create your starter baseline."
-        )
+        Text(heroDetail)
         .font(.subheadline)
         .foregroundStyle(Palette.textSecondary)
         .multilineTextAlignment(.center)
       }
 
-      Button(model.baselineReady ? "Start a check" : "Record sober baseline") {
-        launch = ScreeningLaunch(
-          mode: model.baselineReady ? .check : .baseline,
-          scenario: .live
-        )
+      Button(heroButtonTitle) {
+        if model.baselineReady && !model.safetyPlan.canAutomaticallyAlertParent {
+          showingPlan = true
+        } else {
+          launch = ScreeningLaunch(
+            mode: model.baselineReady ? .check : .baseline,
+            scenario: .live
+          )
+        }
       }
       .buttonStyle(PrimaryActionButtonStyle())
       .padding(.top, 6)
     }
+  }
+
+  private var heroTitle: String {
+    if !model.baselineReady { return "Learn your steady." }
+    if !model.safetyPlan.canAutomaticallyAlertParent { return "Connect your Safety Circle." }
+    return "Pause. Check in."
+  }
+
+  private var heroDetail: String {
+    if !model.baselineReady { return "Five high-quality sober sessions create your research baseline." }
+    if !model.safetyPlan.canAutomaticallyAlertParent {
+      return "A live check starts after a parent alert is authorized and ready."
+    }
+    return "About two minutes. Concerning results alert your parent immediately."
+  }
+
+  private var heroButtonTitle: String {
+    if !model.baselineReady { return "Record sober baseline" }
+    if !model.safetyPlan.canAutomaticallyAlertParent { return "Set up parent alerts" }
+    return "Start a check"
   }
 
   private var baselineCard: some View {
@@ -107,13 +134,13 @@ struct HomeView: View {
             .foregroundStyle(Palette.textSecondary)
           }
           Spacer()
-          Text("\(model.baselineSessions)/3")
+          Text("\(model.baselineSessions)/5")
             .font(.title2.monospacedDigit().weight(.semibold))
             .foregroundStyle(Palette.primary)
         }
 
         HStack(spacing: 8) {
-          ForEach(0..<3, id: \.self) { index in
+          ForEach(0..<5, id: \.self) { index in
             Capsule()
               .fill(
                 index < model.baselineSessions ? Palette.primary : Palette.secondary.opacity(0.22)
@@ -123,7 +150,7 @@ struct HomeView: View {
         }
 
         Text(
-          "A production model will require a larger validated baseline. Three sessions keep this MVP reviewable; the research handoff suggests 10–20."
+          "Five sessions unlock this research build. A defensible production baseline still needs a larger validated protocol, likely 10–20 sessions."
         )
         .font(.caption)
         .foregroundStyle(Palette.textSecondary)
@@ -147,13 +174,13 @@ struct HomeView: View {
           .frame(width: 50, height: 50)
 
           VStack(alignment: .leading, spacing: 4) {
-            Text("Night Out Mode")
+            Text("Safety Circle")
               .font(.headline)
               .foregroundStyle(Palette.textPrimary)
             Text(
               model.safetyPlan.isActive
-                ? "\(model.safetyPlan.preferredRide) + \(model.safetyPlan.contactName) are ready"
-                : "Choose your ride and person while clear-headed"
+                ? safetyCircleSummary
+                : "Choose your ride and parent while clear-headed"
             )
             .font(.subheadline)
             .foregroundStyle(Palette.textSecondary)
@@ -168,6 +195,13 @@ struct HomeView: View {
     }
     .buttonStyle(.plain)
     .accessibilityHint("Configure your ride and designated contact")
+  }
+
+  private var safetyCircleSummary: String {
+    if model.safetyPlan.canAutomaticallyAlertParent {
+      return "\(model.safetyPlan.contactName) will be alerted after concerning results"
+    }
+    return "\(model.safetyPlan.preferredRide) + \(model.safetyPlan.contactName) are ready"
   }
 
   private var founderPreviewCard: some View {
@@ -204,6 +238,39 @@ struct HomeView: View {
         }
       }
     }
+  }
+
+  private var researchCenterCard: some View {
+    Button {
+      showingResearch = true
+    } label: {
+      SoberCard {
+        HStack(spacing: 14) {
+          ZStack {
+            Circle().fill(Palette.item2.opacity(0.16))
+            Image(systemName: "waveform.path.ecg.rectangle.fill")
+              .foregroundStyle(Palette.item2)
+          }
+          .frame(width: 50, height: 50)
+
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Research Center")
+              .font(.headline)
+              .foregroundStyle(Palette.textPrimary)
+            Text("Consent, context, \(model.researchSessions.count) sessions, export, and deletion")
+              .font(.subheadline)
+              .foregroundStyle(Palette.textSecondary)
+              .multilineTextAlignment(.leading)
+          }
+          Spacer()
+          Image(systemName: "chevron.right")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityHint("Open local research data controls")
   }
 
   private var evidenceNote: some View {
@@ -255,7 +322,8 @@ struct AboutPrototypeView: View {
               aboutRow("Self-report hard gate", "hand.raised")
               aboutRow("Quality-gated results", "waveform.badge.magnifyingglass")
               aboutRow("Ride and contact on every result", "car.side")
-              aboutRow("No measurement-path networking", "network.slash")
+              aboutRow("Automatic parent alert after concerning results", "message.badge.fill")
+              aboutRow("No raw biometric uploads", "network.slash")
             }
           }
 
@@ -273,14 +341,16 @@ struct AboutPrototypeView: View {
           Button("Done") { dismiss() }
         }
       }
-      .alert("Reset onboarding and baseline?", isPresented: $showingReset) {
+      .alert("Reset the prototype and delete research data?", isPresented: $showingReset) {
         Button("Cancel", role: .cancel) {}
-        Button("Reset", role: .destructive) {
+        Button("Reset and delete", role: .destructive) {
           dismiss()
           model.resetPrototype()
         }
       } message: {
-        Text("This removes locally stored prototype setup state.")
+        Text(
+          "This clears onboarding, your Safety Circle, and consent, and permanently deletes all \(model.researchSessions.count) stored research session\(model.researchSessions.count == 1 ? "" : "s") and your measured baseline. Export first if you need the data. This cannot be undone."
+        )
       }
     }
   }
