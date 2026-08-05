@@ -17,6 +17,7 @@ struct ScreeningFlowView: View {
   let configuration: ScreeningLaunch
 
   @EnvironmentObject private var model: AppModel
+  @EnvironmentObject private var guardianCoordinator: GuardianCoordinator
   @Environment(\.dismiss) private var dismiss
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @StateObject private var faceTracking = FaceTrackingService()
@@ -300,6 +301,12 @@ struct ScreeningFlowView: View {
     outcome = newOutcome
     step = .result
     beginParentAlert(for: newOutcome)
+    if configuration.scenario == .live {
+      Task {
+        await guardianCoordinator.recordScreeningResult(
+          isValid: newOutcome.state != .inconclusive)
+      }
+    }
   }
 
   private func beginParentAlert(for outcome: ScreeningOutcome) {

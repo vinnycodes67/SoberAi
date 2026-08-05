@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Sober</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.healthcare-fitness</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Guardian Mode uses motion activity to notice when driving may have started, entirely on this iPhone. No motion data leaves the device.</string>
+	<key>SoberParentAlertAPIURL</key>
+	<string>$(SOBER_PARENT_ALERT_API_URL)</string>
+	<key>SoberParentAlertToken</key>
+	<string>$(SOBER_PARENT_ALERT_TOKEN)</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>processing</string>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.soberprototype.app.driving-catchup</string>
+	</array>
+</dict>
+</plist>

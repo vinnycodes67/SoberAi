@@ -10,6 +10,7 @@ struct HomeView: View {
   @State private var showingPlan = false
   @State private var showingAbout = false
   @State private var showingResearch = false
+  @State private var showingGuardian = false
 
   var body: some View {
     NavigationStack {
@@ -20,6 +21,8 @@ struct HomeView: View {
           baselineCard
             .soberEntrance(order: 1)
           nightOutCard
+            .soberEntrance(order: 2)
+          guardianCard
             .soberEntrance(order: 2)
 
           #if DEBUG
@@ -67,6 +70,11 @@ struct HomeView: View {
     }
     .sheet(isPresented: $showingResearch) {
       ResearchModeView()
+        .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
+    .sheet(isPresented: $showingGuardian) {
+      GuardianSetupView()
         .environmentObject(model)
         .preferredColorScheme(.dark)
     }
@@ -211,6 +219,48 @@ struct HomeView: View {
     }
     .buttonStyle(SoberCardButtonStyle())
     .accessibilityHint("Configure your ride and designated contact")
+  }
+
+  private var guardianCard: some View {
+    Button {
+      showingGuardian = true
+    } label: {
+      SoberCard {
+        HStack(spacing: 14) {
+          ZStack {
+            Circle()
+              .fill(Palette.item1.opacity(0.16))
+            Image(systemName: "person.2.wave.2.fill")
+              .foregroundStyle(Palette.item1)
+          }
+          .frame(width: 50, height: 50)
+
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Guardian Mode")
+              .font(.headline)
+              .foregroundStyle(Palette.textPrimary)
+            Text(guardianSummary)
+              .font(.subheadline)
+              .foregroundStyle(Palette.textSecondary)
+              .multilineTextAlignment(.leading)
+          }
+          Spacer()
+          Image(systemName: "chevron.right")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+    .buttonStyle(SoberCardButtonStyle())
+    .accessibilityHint("Set up a mutual driving check-in with a paired teen or parent")
+  }
+
+  private var guardianSummary: String {
+    switch model.guardianRole {
+    case .none: "Off — pair a teen and parent phone for driving check-ins"
+    case .teen: "Set up as a teen driver"
+    case .parent: "Set up as a parent"
+    }
   }
 
   private var safetyCircleSummary: String {

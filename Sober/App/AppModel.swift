@@ -39,6 +39,41 @@ final class AppModel: ObservableObject {
     }
   }
 
+  /// Guardian Mode is a separate system from Safety Circle above: a
+  /// passive driving-window check-in between a paired teen and parent,
+  /// rather than a self-initiated alert to one contact. `.none` (the
+  /// default) leaves the app's existing solo behavior untouched.
+  @Published var guardianRole: GuardianRole {
+    didSet { defaults.set(guardianRole.rawValue, forKey: Keys.guardianRole) }
+  }
+  @Published var drivingSchedule: DrivingSchedule {
+    didSet {
+      if let data = try? JSONEncoder().encode(drivingSchedule) {
+        defaults.set(data, forKey: Keys.drivingSchedule)
+      }
+    }
+  }
+  @Published var guardianPairingInfo: GuardianPairingInfo? {
+    didSet {
+      if let guardianPairingInfo, let data = try? JSONEncoder().encode(guardianPairingInfo) {
+        defaults.set(data, forKey: Keys.guardianPairingInfo)
+      } else {
+        defaults.removeObject(forKey: Keys.guardianPairingInfo)
+      }
+    }
+  }
+  private var storedGuardianCheckWindowState: GuardianCheckWindowState? {
+    didSet {
+      if let storedGuardianCheckWindowState,
+        let data = try? JSONEncoder().encode(storedGuardianCheckWindowState)
+      {
+        defaults.set(data, forKey: Keys.guardianCheckWindowState)
+      } else {
+        defaults.removeObject(forKey: Keys.guardianCheckWindowState)
+      }
+    }
+  }
+
   @Published private(set) var participantID: PseudonymousParticipantID
 
   private let defaults: UserDefaults
@@ -90,11 +125,57 @@ final class AppModel: ObservableObject {
       safetyPlan = SafetyPlan()
     }
 
+    if let rawRole = defaults.string(forKey: Keys.guardianRole),
+      let role = GuardianRole(rawValue: rawRole)
+    {
+      guardianRole = role
+    } else {
+      guardianRole = .none
+    }
+
+    if let data = defaults.data(forKey: Keys.drivingSchedule),
+      let storedSchedule = try? JSONDecoder().decode(DrivingSchedule.self, from: data)
+    {
+      drivingSchedule = storedSchedule
+    } else {
+      drivingSchedule = .default
+    }
+
+    if let data = defaults.data(forKey: Keys.guardianPairingInfo),
+      let storedInfo = try? JSONDecoder().decode(GuardianPairingInfo.self, from: data)
+    {
+      guardianPairingInfo = storedInfo
+    } else {
+      guardianPairingInfo = nil
+    }
+
+    if let data = defaults.data(forKey: Keys.guardianCheckWindowState),
+      let storedState = try? JSONDecoder().decode(GuardianCheckWindowState.self, from: data)
+    {
+      storedGuardianCheckWindowState = storedState
+    } else {
+      storedGuardianCheckWindowState = nil
+    }
+
     Task { await reloadResearchData() }
   }
 
   var baselineReady: Bool {
     isFounderPreview || (baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions) >= 5
+  }
+
+  /// The current per-window retry/cooldown state, or a fresh one if this
+  /// is the first check attempted in `windowID`. Never persisted across
+  /// different windows — each night starts clean.
+  func guardianCheckWindowState(for windowID: Date) -> GuardianCheckWindowState {
+    if let storedGuardianCheckWindowState, storedGuardianCheckWindowState.windowID == windowID {
+      return storedGuardianCheckWindowState
+    }
+    return GuardianCheckWindowState(windowID: windowID)
+  }
+
+  func setGuardianCheckWindowState(_ state: GuardianCheckWindowState) {
+    storedGuardianCheckWindowState = state
   }
 
   func completeOnboarding(founderPreview: Bool) {
@@ -278,6 +359,10 @@ final class AppModel: ObservableObject {
     researchConsent = false
     researchPreferences = ResearchPreferences()
     safetyPlan = SafetyPlan()
+    guardianRole = .none
+    drivingSchedule = .default
+    guardianPairingInfo = nil
+    storedGuardianCheckWindowState = nil
     defaults.removeObject(forKey: Keys.onboarding)
     defaults.removeObject(forKey: Keys.baselines)
     defaults.removeObject(forKey: Keys.baseline)
@@ -287,6 +372,10 @@ final class AppModel: ObservableObject {
     defaults.removeObject(forKey: Keys.consentDate)
     defaults.removeObject(forKey: Keys.researchConsent)
     defaults.removeObject(forKey: Keys.researchPreferences)
+    defaults.removeObject(forKey: Keys.guardianRole)
+    defaults.removeObject(forKey: Keys.drivingSchedule)
+    defaults.removeObject(forKey: Keys.guardianPairingInfo)
+    defaults.removeObject(forKey: Keys.guardianCheckWindowState)
     Task { await deleteAllResearchData() }
   }
 
@@ -307,5 +396,9 @@ final class AppModel: ObservableObject {
     static let participantID = "sober.research.participant-id"
     static let researchConsent = "sober.research.consent"
     static let researchPreferences = "sober.research.preferences"
+    static let guardianRole = "sober.guardian.role"
+    static let drivingSchedule = "sober.guardian.schedule"
+    static let guardianPairingInfo = "sober.guardian.pairing"
+    static let guardianCheckWindowState = "sober.guardian.window-state"
   }
 }

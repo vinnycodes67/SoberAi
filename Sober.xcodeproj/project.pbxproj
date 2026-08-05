@@ -39,6 +39,16 @@
 		EC8E5A96E6EB532342042E02 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B2F1096488EAE1C4259DBC /* ResultView.swift */; };
 		FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */; };
+		0037191371A8B3B1A738AAE4 /* GuardianModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F5ED9EBC510409586CF228 /* GuardianModelsTests.swift */; };
+		020EE7C0125E9E44DEB8D172 /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345D6D96D6EA040AC39AA80 /* PupilCaptureService.swift */; };
+		089DE84C36F7C1E2EA9F079D /* DrivingDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB71C271E03E56EF135F0B1 /* DrivingDetectionService.swift */; };
+		1A2CF60215F40F8096CA2617 /* GuardianSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCC6D45BD56591E22E73965 /* GuardianSetupView.swift */; };
+		64C42336795A151EBEDF835C /* GuardianModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFE3CFA0B762C45BCF63639 /* GuardianModels.swift */; };
+		6C5EF945B7E8D7AE62232519 /* GuardianScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943CA7A60B3CFBAA1CBD5924 /* GuardianScheduleView.swift */; };
+		8142FC615D0C6A914B1A1440 /* GuardianPairingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 237B325B8F8C7D2E1E4C6B8E /* GuardianPairingService.swift */; };
+		BA8C901B8261804FBD038C69 /* GuardianCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07FEDC7D99A27BA58E2C453 /* GuardianCoordinator.swift */; };
+		D17AB03DD45D68F8CBD75EE4 /* GuardianPairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4279AC8F415EE3CB2F04A6CB /* GuardianPairingView.swift */; };
+		ECC214B060CBF1019CDE3D49 /* PupillometryTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8970CEFEFC776B369EC3E28 /* PupillometryTaskView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,12 +96,25 @@
 		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F69FF16FB9F7B0082399E074 /* SoberComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberComponents.swift; sourceTree = "<group>"; };
 		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
+		21BEC03B68BE93F61D7D702A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		237B325B8F8C7D2E1E4C6B8E /* GuardianPairingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianPairingService.swift; sourceTree = "<group>"; };
+		2BB71C271E03E56EF135F0B1 /* DrivingDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingDetectionService.swift; sourceTree = "<group>"; };
+		35F5ED9EBC510409586CF228 /* GuardianModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModelsTests.swift; sourceTree = "<group>"; };
+		4279AC8F415EE3CB2F04A6CB /* GuardianPairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianPairingView.swift; sourceTree = "<group>"; };
+		5502374DAAE101713EDC1B55 /* Sober.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sober.entitlements; sourceTree = "<group>"; };
+		6345D6D96D6EA040AC39AA80 /* PupilCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupilCaptureService.swift; sourceTree = "<group>"; };
+		6EFE3CFA0B762C45BCF63639 /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
+		943CA7A60B3CFBAA1CBD5924 /* GuardianScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianScheduleView.swift; sourceTree = "<group>"; };
+		D8970CEFEFC776B369EC3E28 /* PupillometryTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupillometryTaskView.swift; sourceTree = "<group>"; };
+		E07FEDC7D99A27BA58E2C453 /* GuardianCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCoordinator.swift; sourceTree = "<group>"; };
+		FFCC6D45BD56591E22E73965 /* GuardianSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianSetupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		0264280DC0D78C25EF0D94FB /* SoberTests */ = {
 			isa = PBXGroup;
 			children = (
+				35F5ED9EBC510409586CF228 /* GuardianModelsTests.swift */,
 				3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */,
 				17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */,
 				9738631C50602FF9A20C4F02 /* ParentAlertReliabilityTests.swift */,
@@ -113,6 +136,7 @@
 		0D931F194DF9B61C0FE41CFF /* Screening */ = {
 			isa = PBXGroup;
 			children = (
+				D8970CEFEFC776B369EC3E28 /* PupillometryTaskView.swift */,
 				13A596808C5944580D9A323B /* CameraCalibrationView.swift */,
 				7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */,
 				A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */,
@@ -162,6 +186,7 @@
 		44992AC65B20E716710B920F /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				0611941F9057F5F78E777768 /* Guardian */,
 				CE3468B3451787117E4877BE /* Home */,
 				98960DCB1EE83BC3C464228A /* Onboarding */,
 				CD2CD37750A1FFEE5BC32AEF /* Plan */,
@@ -202,6 +227,8 @@
 		B5546AEA9AF05100D39C8E97 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				5502374DAAE101713EDC1B55 /* Sober.entitlements */,
+				21BEC03B68BE93F61D7D702A /* Info.plist */,
 				F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */,
 				0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */,
 			);
@@ -227,6 +254,10 @@
 		E3A38A79683D8E6226C0B9D2 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E07FEDC7D99A27BA58E2C453 /* GuardianCoordinator.swift */,
+				237B325B8F8C7D2E1E4C6B8E /* GuardianPairingService.swift */,
+				2BB71C271E03E56EF135F0B1 /* DrivingDetectionService.swift */,
+				6345D6D96D6EA040AC39AA80 /* PupilCaptureService.swift */,
 				DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */,
 				A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */,
 				E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */,
@@ -240,6 +271,7 @@
 		FCE724912A8F91BCD131718A /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				6EFE3CFA0B762C45BCF63639 /* GuardianModels.swift */,
 				C9001A9459892F746005CE25 /* OcularModels.swift */,
 				804D0A298DBB719A4493299F /* ResearchModels.swift */,
 				281945014B1C95CFDF4E271C /* ResearchPreferences.swift */,
@@ -247,6 +279,16 @@
 				64D21C92E2C87F13E3587EA3 /* TaskModels.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		0611941F9057F5F78E777768 /* Guardian */ = {
+			isa = PBXGroup;
+			children = (
+				4279AC8F415EE3CB2F04A6CB /* GuardianPairingView.swift */,
+				943CA7A60B3CFBAA1CBD5924 /* GuardianScheduleView.swift */,
+				FFCC6D45BD56591E22E73965 /* GuardianSetupView.swift */,
+			);
+			path = Guardian;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -323,6 +365,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0037191371A8B3B1A738AAE4 /* GuardianModelsTests.swift in Sources */,
 				E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */,
 				FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */,
 				1E85633838F097DBFD854051 /* ParentAlertReliabilityTests.swift in Sources */,
@@ -336,6 +379,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A2CF60215F40F8096CA2617 /* GuardianSetupView.swift in Sources */,
+				6C5EF945B7E8D7AE62232519 /* GuardianScheduleView.swift in Sources */,
+				D17AB03DD45D68F8CBD75EE4 /* GuardianPairingView.swift in Sources */,
+				BA8C901B8261804FBD038C69 /* GuardianCoordinator.swift in Sources */,
+				8142FC615D0C6A914B1A1440 /* GuardianPairingService.swift in Sources */,
+				089DE84C36F7C1E2EA9F079D /* DrivingDetectionService.swift in Sources */,
+				64C42336795A151EBEDF835C /* GuardianModels.swift in Sources */,
+				ECC214B060CBF1019CDE3D49 /* PupillometryTaskView.swift in Sources */,
+				020EE7C0125E9E44DEB8D172 /* PupilCaptureService.swift in Sources */,
 				857568F4B503E22D9B628C11 /* AppModel.swift in Sources */,
 				439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
@@ -414,16 +466,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sober/Sober.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 2;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Sober;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.";
-				INFOPLIST_KEY_SoberParentAlertAPIURL = "$(SOBER_PARENT_ALERT_API_URL)";
-				INFOPLIST_KEY_SoberParentAlertToken = "$(SOBER_PARENT_ALERT_TOKEN)";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -559,16 +606,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sober/Sober.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 2;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Sober;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.";
-				INFOPLIST_KEY_SoberParentAlertAPIURL = "$(SOBER_PARENT_ALERT_API_URL)";
-				INFOPLIST_KEY_SoberParentAlertToken = "$(SOBER_PARENT_ALERT_TOKEN)";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
