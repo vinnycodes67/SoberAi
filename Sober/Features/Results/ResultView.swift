@@ -99,7 +99,7 @@ struct ResultView: View {
     switch outcome.state {
     case .signalsDetected: Palette.error
     case .inconclusive: Palette.warning
-    case .noSignalsDetected: Palette.primary
+    case .noSignalsDetected: Palette.textSecondary
     }
   }
 
@@ -275,21 +275,29 @@ struct InterventionCard: View {
           }
           .buttonStyle(PrimaryActionButtonStyle())
 
-          HStack(spacing: 10) {
-            Button {
-              callContact()
-            } label: {
-              Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
-            }
-            .buttonStyle(CompactActionButtonStyle())
+          if safetyPlan.hasContact {
+            HStack(spacing: 10) {
+              Button {
+                callContact()
+              } label: {
+                Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
+              }
+              .buttonStyle(CompactActionButtonStyle())
 
-            Button {
-              messageContact()
-            } label: {
-              Label("Message", systemImage: "message.fill")
+              Button {
+                messageContact()
+              } label: {
+                Label("Message", systemImage: "message.fill")
+              }
+              .buttonStyle(CompactActionButtonStyle())
             }
-            .buttonStyle(CompactActionButtonStyle())
           }
+        }
+
+        if !safetyPlan.hasContact {
+          Text("Add a contact in your Safety Circle to call or message them from here.")
+            .font(.caption)
+            .foregroundStyle(Palette.textSecondary)
         }
       }
     }
@@ -300,10 +308,10 @@ struct InterventionCard: View {
       safetyPlan.homeLabel.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Home"
     let rawURL: String
     if safetyPlan.preferredRide == "Lyft" {
-      rawURL = "https://www.lyft.com/rider"
+      rawURL = "https://www.lyft.com/rider?id=lyft&destination%5Bnickname%5D=\(destination)"
     } else {
       rawURL =
-        "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=\(destination)"
+        "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bformatted_address%5D=\(destination)"
     }
     if let url = URL(string: rawURL) { openURL(url) }
   }
@@ -315,9 +323,9 @@ struct InterventionCard: View {
 
   private func messageContact() {
     let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    let message = "Can you help me get home? I’m choosing not to drive."
+    let message = "Can you help me get to \(safetyPlan.homeLabel)? I’m choosing not to drive."
     let body = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? message
-    if let url = URL(string: "sms:\(digits)&body=\(body)") { openURL(url) }
+    if let url = URL(string: "sms:\(digits)?body=\(body)") { openURL(url) }
   }
 }
 

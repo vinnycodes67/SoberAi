@@ -42,19 +42,29 @@ struct OnboardingView: View {
           }
           .buttonStyle(PrimaryActionButtonStyle())
         } else {
+          #if DEBUG
           Button("Explore founder demo") {
             model.completeOnboarding(founderPreview: true)
           }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(!canConsent)
           .opacity(canConsent ? 1 : 0.42)
+          #endif
 
           Button("Start with a real baseline") {
             model.completeOnboarding(founderPreview: false)
           }
+          #if DEBUG
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(canConsent ? Palette.textSecondary : Palette.textSecondary.opacity(0.45))
           .disabled(!canConsent)
+          #else
+          // With the founder demo compiled out, this is the only CTA on the
+          // screen and needs to read as the primary action, not a footnote.
+          .buttonStyle(PrimaryActionButtonStyle())
+          .disabled(!canConsent)
+          .opacity(canConsent ? 1 : 0.42)
+          #endif
         }
       }
       .padding(.horizontal, 22)
@@ -118,6 +128,10 @@ struct OnboardingView: View {
           boundaryRow(
             icon: "iphone.and.arrow.forward", title: "Action built in",
             detail: "Call a ride or your person from every result.")
+          boundaryRow(
+            icon: "sun.max", title: "One step brightens the screen",
+            detail:
+              "A guided light check briefly flashes the screen three times. It's always skippable, and skipped for anyone with photosensitive epilepsy.")
         }
         .soberEntrance(order: 1)
       }

@@ -216,12 +216,15 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
   }
 
   init(_ metrics: ScreeningMetrics) {
+    // `nil` means the task wasn't measured, which already forces
+    // `completedAllTasks` false and excludes the session from baseline
+    // eligibility — the sentinel here is never read as a real value.
     self.init(
       reactionTimeMilliseconds: metrics.reactionTimeMilliseconds,
       reactionMisses: metrics.reactionMisses,
-      trackingError: metrics.trackingError,
+      trackingError: metrics.trackingError ?? 1,
       timeEstimateError: metrics.timeEstimateError,
-      gazeSmoothness: metrics.gazeSmoothness,
+      gazeSmoothness: metrics.gazeSmoothness ?? 1,
       qualityScore: metrics.qualityScore,
       completedAllTasks: metrics.completedAllTasks
     )

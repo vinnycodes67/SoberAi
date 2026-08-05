@@ -34,9 +34,15 @@ enum ScreeningResultState: String, Sendable {
 struct ScreeningMetrics: Equatable, Sendable {
   var reactionTimeMilliseconds: Double
   var reactionMisses: Int
-  var trackingError: Double
+  /// `nil` means the task was skipped or the capture failed. An unmeasured
+  /// metric is never substituted with a stand-in value.
+  var trackingError: Double?
   var timeEstimateError: Double
-  var gazeSmoothness: Double
+  var gazeSmoothness: Double?
+  /// `nil` when the pupillometry step was skipped or the model/capture
+  /// couldn't produce a reading. Unlike trackingError/gazeSmoothness this
+  /// does not force an INCONCLUSIVE result — see ScreeningEngine for why.
+  var pupillometry: PupillometrySample? = nil
   var qualityScore: Double
   var completedAllTasks: Bool
 
@@ -49,6 +55,25 @@ struct ScreeningMetrics: Equatable, Sendable {
     qualityScore: 0.94,
     completedAllTasks: true
   )
+}
+
+/// One flash trial's derived pupillary light reflex readings.
+struct PupilLightReflexTrial: Codable, Equatable, Sendable {
+  var baselineDiameterMm: Double
+  var minDiameterMm: Double
+  var latencySeconds: Double
+  var peakConstrictionVelocityMmPerSecond: Double
+  var amplitudePercent: Double
+  /// `nil` if the pupil hadn't recovered to 75% of baseline within the
+  /// capture window — never backfilled with an estimate.
+  var recoveryTo75PercentSeconds: Double?
+}
+
+/// One pupillometry session: up to three light-condition trials plus a
+/// capture-quality score for the session as a whole.
+struct PupillometrySample: Codable, Equatable, Sendable {
+  var trials: [PupilLightReflexTrial]
+  var qualityScore: Double
 }
 
 struct SignalDetail: Identifiable, Equatable, Sendable {
@@ -106,6 +131,38 @@ enum ScreeningMode: Sendable {
   case baseline
 }
 
+/// One completed sober baseline session's per-task readings. Optional
+/// fields mean that task was skipped or unmeasured during that session,
+/// same as ScreeningMetrics.
+struct BaselineSample: Codable, Equatable, Sendable {
+  var reactionTimeMilliseconds: Double
+  var reactionMisses: Int
+  var trackingError: Double?
+  var timeEstimateError: Double
+  var gazeSmoothness: Double?
+  var pupillometry: PupillometrySample? = nil
+}
+
+/// A rolling window of the person's own sober sessions. Once it reaches
+/// `requiredSessions`, scoring compares a check against this instead of a
+/// fixed population range. Recording a new sample past the window rolls
+/// the oldest one off, so a stale baseline can be refreshed over time.
+struct PersonalBaseline: Codable, Equatable, Sendable {
+  static let requiredSessions = 3
+
+  private(set) var samples: [BaselineSample] = []
+
+  var sessionCount: Int { samples.count }
+  var isReady: Bool { sessionCount >= Self.requiredSessions }
+
+  mutating func record(_ sample: BaselineSample) {
+    samples.append(sample)
+    if samples.count > Self.requiredSessions {
+      samples.removeFirst(samples.count - Self.requiredSessions)
+    }
+  }
+}
+
 struct ScreeningLaunch: Identifiable, Sendable {
   let id = UUID()
   let mode: ScreeningMode
@@ -143,6 +200,13 @@ struct SafetyPlan: Codable, Equatable, Sendable {
   }
 
   var normalizedContactPhone: String { contactPhone.filter(\.isNumber) }
+
+  /// A plan can only be offered as a ride/text intervention once the person
+  /// has actually named someone. There is no placeholder contact.
+  var hasContact: Bool {
+    !contactName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      && !normalizedContactPhone.isEmpty
+  }
 
   var canAutomaticallyAlertParent: Bool {
     isActive

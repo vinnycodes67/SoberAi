@@ -22,12 +22,14 @@ struct HomeView: View {
           nightOutCard
             .soberEntrance(order: 2)
 
+          #if DEBUG
           if model.isFounderPreview {
             founderPreviewCard
               .soberEntrance(order: 3)
             researchCenterCard
               .soberEntrance(order: 4)
           }
+          #endif
 
           evidenceNote
             .soberEntrance(order: model.isFounderPreview ? 5 : 3)

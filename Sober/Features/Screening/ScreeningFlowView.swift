@@ -7,6 +7,7 @@ private enum ScreeningStep: Int {
   case tracking
   case timing
   case gaze
+  case pupil
   case analyzing
   case result
   case baselineComplete
@@ -19,16 +20,19 @@ struct ScreeningFlowView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @StateObject private var faceTracking = FaceTrackingService()
+  @StateObject private var pupilCapture = PupilCaptureService()
   @State private var step: ScreeningStep
   @State private var selfReport: SelfReport = .no
   @State private var reactionTime = 0.0
   @State private var reactionMisses = 0
   @State private var reactionSummary: ChoiceReactionSummary?
-  @State private var trackingError = 0.0
+  @State private var trackingError: Double?
   @State private var trackingWasMeasured = true
   @State private var timingError = 0.0
-  @State private var gazeSmoothness = 0.0
-  @State private var qualityScore = 1.0
+  @State private var gazeSmoothness: Double?
+  @State private var pupilSample: PupillometrySample?
+  // Defaults to failing so an unset value can never pass the quality gate.
+  @State private var qualityScore = 0.0
   @State private var ocularSummary: GazeCaptureSummary?
   @State private var outcome: ScreeningOutcome?
   @StateObject private var parentAlert: ParentAlertCoordinator
@@ -89,7 +93,7 @@ struct ScreeningFlowView: View {
           }
         case .tracking:
           MotorTrackingTaskView { result in
-            trackingError = result.error
+            trackingError = result.wasMeasured ? result.error : nil
             trackingWasMeasured = result.wasMeasured
             step = .timing
           }
@@ -103,6 +107,11 @@ struct ScreeningFlowView: View {
             ocularSummary = summary
             gazeSmoothness = summary.smoothnessRisk
             qualityScore = summary.qualityScore
+            step = .pupil
+          }
+        case .pupil:
+          PupillometryTaskView(service: pupilCapture) { sample in
+            pupilSample = sample
             step = .analyzing
           }
         case .analyzing:
@@ -206,9 +215,9 @@ struct ScreeningFlowView: View {
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: 0,
       reactionMisses: 0,
-      trackingError: MotorTrackingOutcome.notMeasured.error,
+      trackingError: nil,
       timeEstimateError: 0,
-      gazeSmoothness: 0,
+      gazeSmoothness: nil,
       qualityScore: 0,
       completedAllTasks: false
     )
@@ -232,6 +241,7 @@ struct ScreeningFlowView: View {
       trackingError: trackingError,
       timeEstimateError: timingError,
       gazeSmoothness: gazeSmoothness,
+      pupillometry: pupilSample,
       qualityScore: qualityScore,
       // A task the participant could not perform is not a completed task.
       completedAllTasks: trackingWasMeasured
@@ -242,6 +252,22 @@ struct ScreeningFlowView: View {
       baselineCompletionState = BaselineCompletionState(
         reason: baselineAccepted ? .ready : (trackingWasMeasured ? .captureQualityTooLow : .taskUnavailable)
       )
+      // A low-quality capture would poison every future comparison against
+      // this baseline, so it's held to the same quality bar as a real check
+      // rather than being recorded unconditionally. Independent of the
+      // research baseline recorded below.
+      if baselineAccepted {
+        model.recordBaseline(
+          BaselineSample(
+            reactionTimeMilliseconds: reactionTime,
+            reactionMisses: reactionMisses,
+            trackingError: trackingError,
+            timeEstimateError: timingError,
+            gazeSmoothness: gazeSmoothness,
+            pupillometry: pupilSample
+          )
+        )
+      }
       Task {
         await model.recordCompletedSession(
           mode: .baseline,
@@ -256,7 +282,8 @@ struct ScreeningFlowView: View {
       return
     }
 
-    presentOutcome(engine.evaluate(selfReport: selfReport, metrics: metrics))
+    presentOutcome(
+      engine.evaluate(selfReport: selfReport, metrics: metrics, personalBaseline: model.baseline))
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -292,7 +319,7 @@ struct FlowContainer<Content: View>: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
         if let progress {
-          StepProgress(current: progress, total: 5)
+          StepProgress(current: progress, total: 6)
             .padding(.trailing, 54)
         }
         content
@@ -447,7 +474,7 @@ private struct AnalyzingView: View {
       VStack(spacing: 8) {
         Text("Comparing your signals")
           .font(.system(.title, design: .serif, weight: .semibold))
-        Text("Reaction · tracking · timing · guided gaze")
+        Text("Reaction · tracking · timing · guided gaze · light reflex")
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
       }

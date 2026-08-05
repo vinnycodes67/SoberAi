@@ -5,6 +5,16 @@ import Foundation
 final class AppModel: ObservableObject {
   @Published var hasCompletedOnboarding: Bool
   @Published var baselineSessions: Int
+  /// The person's own rolling sober-check baseline, used to z-score live
+  /// checks in `ScreeningEngine`. Independent of `baselineSessions`, which
+  /// tracks progress toward the separate research baseline.
+  @Published var baseline: PersonalBaseline {
+    didSet {
+      if let data = try? JSONEncoder().encode(baseline) {
+        defaults.set(data, forKey: Keys.baseline)
+      }
+    }
+  }
   @Published var isFounderPreview: Bool
   @Published var researchConsent: Bool {
     didSet { defaults.set(researchConsent, forKey: Keys.researchConsent) }
@@ -47,6 +57,14 @@ final class AppModel: ObservableObject {
     baselineSessions = storedFounderPreview ? max(storedBaselineSessions, 5) : storedBaselineSessions
     isFounderPreview = storedFounderPreview
     researchConsent = defaults.bool(forKey: Keys.researchConsent)
+
+    if let data = defaults.data(forKey: Keys.baseline),
+      let storedBaseline = try? JSONDecoder().decode(PersonalBaseline.self, from: data)
+    {
+      baseline = storedBaseline
+    } else {
+      baseline = PersonalBaseline()
+    }
 
     if let rawParticipantID = defaults.string(forKey: Keys.participantID) {
       participantID = PseudonymousParticipantID(rawValue: rawParticipantID)
@@ -95,6 +113,12 @@ final class AppModel: ObservableObject {
   func recordBaseline() {
     baselineSessions = min(baselineSessions + 1, 5)
     persist()
+  }
+
+  /// Records one sober session into the person's live-scoring baseline. This
+  /// is independent of the research-baseline counter above.
+  func recordBaseline(_ sample: BaselineSample) {
+    baseline.record(sample)
   }
 
   func recordCompletedSession(
@@ -249,12 +273,14 @@ final class AppModel: ObservableObject {
   func resetPrototype() {
     hasCompletedOnboarding = false
     baselineSessions = 0
+    baseline = PersonalBaseline()
     isFounderPreview = false
     researchConsent = false
     researchPreferences = ResearchPreferences()
     safetyPlan = SafetyPlan()
     defaults.removeObject(forKey: Keys.onboarding)
     defaults.removeObject(forKey: Keys.baselines)
+    defaults.removeObject(forKey: Keys.baseline)
     defaults.removeObject(forKey: Keys.founderPreview)
     defaults.removeObject(forKey: Keys.safetyPlan)
     defaults.removeObject(forKey: Keys.consentVersion)
@@ -273,6 +299,7 @@ final class AppModel: ObservableObject {
   private enum Keys {
     static let onboarding = "sober.onboarding.complete"
     static let baselines = "sober.baseline.sessions"
+    static let baseline = "sober.baseline.data"
     static let founderPreview = "sober.founder.preview"
     static let safetyPlan = "sober.safety.plan"
     static let consentVersion = "sober.consent.version"
