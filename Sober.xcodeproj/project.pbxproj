@@ -13,6 +13,7 @@
 		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
+		3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
 		3F6DC813101ECF9A30552ABC /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
 		40574DCC9B2EFDA9FB9D5434 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
 		439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */; };
@@ -41,6 +42,7 @@
 		B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
 		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
+		D5F0A9F59D2DEA6E1171097A /* GuardianLiveLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */; };
 		DB81A446A6CE180BAA7A76E6 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
 		E686B010896F7FF513912081 /* PupillometryTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A29C931E495C2E4717792E /* PupillometryTaskView.swift */; };
 		E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */; };
@@ -67,6 +69,7 @@
 		0B77BB710C5315F758F0D499 /* ResearchModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModeView.swift; sourceTree = "<group>"; };
 		0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceCameraPreview.swift; sourceTree = "<group>"; };
 		0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberApp.swift; sourceTree = "<group>"; };
+		12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleMapView.swift; sourceTree = "<group>"; };
 		12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanView.swift; sourceTree = "<group>"; };
 		13A596808C5944580D9A323B /* CameraCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCalibrationView.swift; sourceTree = "<group>"; };
 		1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningModels.swift; sourceTree = "<group>"; };
@@ -87,6 +90,7 @@
 		7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularTaskView.swift; sourceTree = "<group>"; };
 		804D0A298DBB719A4493299F /* ResearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModels.swift; sourceTree = "<group>"; };
 		85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingValidator.swift; sourceTree = "<group>"; };
+		900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianLiveLocationService.swift; sourceTree = "<group>"; };
 		A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningFlowView.swift; sourceTree = "<group>"; };
 		A283843C5F8155F2ABF81000 /* SoberTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SoberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceTrackingService.swift; sourceTree = "<group>"; };
@@ -198,6 +202,7 @@
 		50C581A359890CCA1B38A143 /* Guardian */ = {
 			isa = PBXGroup;
 			children = (
+				12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */,
 				EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */,
 				2D117214C47BD9D0F74EB077 /* GuardianModels.swift */,
 			);
@@ -263,6 +268,7 @@
 				A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */,
 				CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */,
 				FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */,
+				900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */,
 				37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */,
 				E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */,
 				85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */,
@@ -377,11 +383,13 @@
 				857568F4B503E22D9B628C11 /* AppModel.swift in Sources */,
 				439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
+				3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */,
 				75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */,
 				2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */,
 				6EE8A46000953B556D8BFE8F /* GuardianAPIClient.swift in Sources */,
 				7927D50C9628B61ED2BCC976 /* GuardianCenterView.swift in Sources */,
 				A80B3F23583ADB494E615179 /* GuardianCheckInServices.swift in Sources */,
+				D5F0A9F59D2DEA6E1171097A /* GuardianLiveLocationService.swift in Sources */,
 				4A4A228F87CD8ADA69E9632E /* GuardianModels.swift in Sources */,
 				40574DCC9B2EFDA9FB9D5434 /* GuardianSessionStore.swift in Sources */,
 				906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */,

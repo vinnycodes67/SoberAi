@@ -200,6 +200,47 @@ struct GuardianAPIClient: Sendable {
     )
   }
 
+  func setLocationSharing(
+    session: GuardianSession,
+    enabled: Bool
+  ) async throws -> GuardianLocationSharingEnvelope {
+    let decisionID = UUID().uuidString.lowercased()
+    return try await sendSigned(
+      session: session,
+      method: "PUT",
+      path: "/v1/guardian-relationships/\(session.relationshipID)/location-sharing",
+      body: LocationSharingDecisionRequest(
+        decisionId: decisionID,
+        enabled: enabled,
+        participantConsentVersion: "circle-location-participant-v1"
+      ),
+      idempotencyKey: decisionID
+    )
+  }
+
+  func publishLocation(
+    session: GuardianSession,
+    coordinate: GuardianCoordinate,
+    capturedAt: Date,
+    sampleID: UUID = UUID()
+  ) async throws -> GuardianLocationSharingEnvelope {
+    let id = sampleID.uuidString.lowercased()
+    return try await sendSigned(
+      session: session,
+      method: "PUT",
+      path: "/v1/guardian-relationships/\(session.relationshipID)/locations/\(id)",
+      body: LocationSampleRequest(
+        sampleId: id,
+        capturedAt: Self.timestamp(capturedAt),
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+        horizontalAccuracyMeters: coordinate.horizontalAccuracy,
+        source: "coreLocation"
+      ),
+      idempotencyKey: id
+    )
+  }
+
   func revoke(session: GuardianSession) async throws {
     let _: EmptyResponse = try await sendSigned(
       session: session,
@@ -363,6 +404,19 @@ private struct CheckInDecisionRequest: Encodable {
 private struct CheckInCompletionRequest: Encodable {
   let status: String
   let completedAt: String
+}
+private struct LocationSharingDecisionRequest: Encodable {
+  let decisionId: String
+  let enabled: Bool
+  let participantConsentVersion: String
+}
+private struct LocationSampleRequest: Encodable {
+  let sampleId: String
+  let capturedAt: String
+  let latitude: Double
+  let longitude: Double
+  let horizontalAccuracyMeters: Double
+  let source: String
 }
 private struct EmptyBody: Encodable {}
 private struct EmptyResponse: Decodable {}

@@ -85,6 +85,7 @@ struct GuardianRelationshipEnvelope: Decodable, Sendable {
   let relationship: GuardianRelationshipSnapshot
   let activeAlert: GuardianAlertSnapshot?
   let checkInPlan: GuardianCheckInPlanSnapshot?
+  let locationSharing: GuardianLocationSharingSnapshot?
 }
 
 struct GuardianAlertEnvelope: Decodable, Sendable {
@@ -154,6 +155,29 @@ struct GuardianCheckInPlanSnapshot: Codable, Equatable, Sendable {
 
 struct GuardianCheckInPlanEnvelope: Decodable, Sendable {
   let checkInPlan: GuardianCheckInPlanSnapshot
+}
+
+struct GuardianSharedLocationSnapshot: Codable, Equatable, Sendable {
+  let latitude: Double
+  let longitude: Double
+  let horizontalAccuracyMeters: Double
+  let capturedAt: String
+
+  var capturedDate: Date? {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter.date(from: capturedAt) ?? ISO8601DateFormatter().date(from: capturedAt)
+  }
+}
+
+struct GuardianLocationSharingSnapshot: Codable, Equatable, Sendable {
+  let enabled: Bool
+  let updatedAt: String?
+  let latestLocation: GuardianSharedLocationSnapshot?
+}
+
+struct GuardianLocationSharingEnvelope: Decodable, Sendable {
+  let locationSharing: GuardianLocationSharingSnapshot
 }
 
 struct GuardianCheckInOccurrence: Equatable, Sendable {

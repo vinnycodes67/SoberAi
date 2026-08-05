@@ -70,6 +70,9 @@ app-wide shared token or a client-authored notification/SMS body.
   storage and are evaluated with a one-time foreground location request.
 - Check-in completion contains only the occurrence ID and completion time. Missing, overdue, and
   completed status never disclose or imply a screening result.
+- Circle location sharing is a separate, screened-person-controlled consent. It exposes only the
+  newest coordinate, capture time, and horizontal accuracy to the linked relationship; it never
+  exposes Home, route history, speed, screening state, or camera/task data.
 
 ## Protocol conventions
 
@@ -149,6 +152,7 @@ are therefore signed. A bearer token cannot create an acknowledgment.
 | `guardian-sms-fallback-v1` | Guardian | Verify one fallback number and permit minimal fallback SMS messages |
 | `guardian-check-in-proposer-v1` | Guardian | Propose a daily time and optional away-from-Home condition |
 | `guardian-check-in-participant-v1` | Screened person | Accept, decline, or later withdraw from that plan |
+| `circle-location-participant-v1` | Screened person | Turn latest-location sharing on or off for the linked Guardian |
 
 Consent is an affirmative, timestamped action. It is never inferred from permission, invite use, or
 a preselected switch. A material consent update changes the relationship to
@@ -170,9 +174,46 @@ The founder Worker implements three relationship-scoped, signed mutations:
   screened person's capability and matching idempotency key. Its body is exactly
   `{ "status": "completed", "completedAt": "<RFC3339>" }`.
 
-Relationship reads return the caller-safe plan state and latest completion. They never return Home,
-current location, distance, result state, score, task output, camera data, or a missed-check
-impairment inference.
+Relationship reads return the caller-safe plan state and latest completion. The check-in extension
+never returns Home, distance, result state, score, task output, camera data, or a missed-check
+impairment inference. A current coordinate appears only inside the separately consented Circle
+location-sharing object described below.
+
+## Founder Circle Map extension
+
+The founder Worker implements two screened-person-signed mutations:
+
+- `PUT /v1/guardian-relationships/{relationshipId}/location-sharing` has the exact body
+  `{ decisionId, enabled, participantConsentVersion: "circle-location-participant-v1" }` and a
+  matching UUID `Idempotency-Key`. A Guardian capability cannot enable sharing. Disabling clears the
+  visible location immediately.
+- `PUT /v1/guardian-relationships/{relationshipId}/locations/{sampleId}` requires active sharing,
+  the screened-person capability, and an `Idempotency-Key` matching `sampleId`. Its exact body is
+  `{ sampleId, capturedAt, latitude, longitude, horizontalAccuracyMeters, source: "coreLocation" }`.
+  The Worker validates coordinate ranges, a 0–1,000 meter accuracy value, and a capture time inside
+  the 24-hour retention window.
+
+Relationship reads include:
+
+```json
+{
+  "locationSharing": {
+    "enabled": true,
+    "updatedAt": "2026-08-05T19:00:00.000Z",
+    "latestLocation": {
+      "latitude": 41.8781,
+      "longitude": -87.6298,
+      "horizontalAccuracyMeters": 12.5,
+      "capturedAt": "2026-08-05T19:02:00.000Z"
+    }
+  }
+}
+```
+
+Only the newest sample is stored. Reads prune samples older than 24 hours. There is no route
+history, geofence/place-alert event, speed, heading, battery status, or inferred activity in this
+contract. A missing or stale location must never be presented as evidence of danger, rule-breaking,
+or impairment.
 
 ## Relationship creation and person verification
 
@@ -638,6 +679,8 @@ event. `425`, provider `unknown`, and corrupt local receipt stop automatic sends
 - Twilio callback success, replay, regression, and signature forgery;
 - relationship-change notification plus foreground reconciliation;
 - proof that research export contains no Guardian identifiers.
+- Circle sharing enable/disable role enforcement, idempotent location publication, invalid and
+  extra location field rejection, 24-hour pruning, and proof that disable removes the visible point.
 
 Any field, signature input, retention period, state, or transition change requires a contract-version
 update and both-owner review before implementation.

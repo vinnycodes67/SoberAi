@@ -30,7 +30,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Sober uses your location once, after your tap, to check whether you are within 200 meters of the Home location saved privately on this iPhone.</string>
+	<string>Sober uses your location for private Home checks and, only when you turn on Circle sharing, to show your current location to your connected guardian.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>When you explicitly enable background Circle sharing, Sober keeps your connected guardian's map current after you leave the app. You can stop sharing at any time.</string>
 	<key>SoberGuardianAPIURL</key>
 	<string>$(SOBER_GUARDIAN_API_URL)</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
@@ -39,5 +41,9 @@
 	<dict/>
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>

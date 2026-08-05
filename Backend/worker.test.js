@@ -470,3 +470,212 @@ test("invalid timezone and location-bearing proposal fields are rejected", async
   }), env);
   assert.equal(response.status, 422);
 });
+
+test("only the person can enable Circle location sharing", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const decisionId = crypto.randomUUID();
+  const body = {
+    decisionId,
+    enabled: true,
+    participantConsentVersion: "circle-location-participant-v1",
+  };
+
+  const guardianAttempt = await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT", body,
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: decisionId,
+  }), env);
+  assert.equal(guardianAttempt.status, 404);
+
+  const enabled = await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT", body,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: decisionId,
+  }), env);
+  assert.equal(enabled.status, 200);
+  const sharing = (await enabled.json()).locationSharing;
+  assert.equal(sharing.enabled, true);
+  assert.equal(typeof sharing.updatedAt, "string");
+  assert.equal(sharing.latestLocation, null);
+});
+
+test("person publishes only a latest precise location and guardian can read it", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const decisionId = crypto.randomUUID();
+  const sharingBody = {
+    decisionId, enabled: true,
+    participantConsentVersion: "circle-location-participant-v1",
+  };
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT", body: sharingBody,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: decisionId,
+  }), env);
+
+  const sampleId = crypto.randomUUID();
+  const sample = {
+    sampleId,
+    capturedAt: new Date().toISOString(),
+    latitude: 41.8781,
+    longitude: -87.6298,
+    horizontalAccuracyMeters: 12.5,
+    source: "coreLocation",
+  };
+  const published = await handleGuardianRequest(await signedRequest({
+    path: `${base}/locations/${sampleId}`, method: "PUT", body: sample,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: sampleId,
+  }), env);
+  assert.equal(published.status, 202);
+
+  const olderSampleId = crypto.randomUUID();
+  const older = await handleGuardianRequest(await signedRequest({
+    path: `${base}/locations/${olderSampleId}`, method: "PUT",
+    body: {
+      sampleId: olderSampleId,
+      capturedAt: new Date(Date.now() - 60_000).toISOString(),
+      latitude: 39.7392,
+      longitude: -104.9903,
+      horizontalAccuracyMeters: 9,
+      source: "coreLocation",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: olderSampleId,
+  }), env);
+  assert.equal(older.status, 200);
+
+  const guardianRead = await handleGuardianRequest(await signedRequest({
+    path: base, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  const sharing = (await guardianRead.json()).locationSharing;
+  assert.equal(sharing.enabled, true);
+  assert.deepEqual(Object.keys(sharing.latestLocation).sort(), [
+    "capturedAt", "horizontalAccuracyMeters", "latitude", "longitude",
+  ]);
+  assert.equal(sharing.latestLocation.latitude, sample.latitude);
+  assert.equal(JSON.stringify(sharing).includes(sampleId), false);
+});
+
+test("stopping Circle sharing immediately removes the visible location", async () => {
+  const { env, created } = await activeRelationship();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const enableId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT",
+    body: {
+      decisionId: enableId, enabled: true,
+      participantConsentVersion: "circle-location-participant-v1",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: enableId,
+  }), env);
+  const sampleId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/locations/${sampleId}`, method: "PUT",
+    body: {
+      sampleId, capturedAt: new Date().toISOString(), latitude: 34.0522,
+      longitude: -118.2437, horizontalAccuracyMeters: 18, source: "coreLocation",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: sampleId,
+  }), env);
+
+  const disableId = crypto.randomUUID();
+  const stopped = await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT",
+    body: {
+      decisionId: disableId, enabled: false,
+      participantConsentVersion: "circle-location-participant-v1",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: disableId,
+  }), env);
+  const sharing = (await stopped.json()).locationSharing;
+  assert.equal(sharing.enabled, false);
+  assert.equal(sharing.latestLocation, null);
+});
+
+test("Circle location rejects extra fields and invalid coordinates", async () => {
+  const { env, created } = await activeRelationship();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const decisionId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT",
+    body: {
+      decisionId, enabled: true,
+      participantConsentVersion: "circle-location-participant-v1",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: decisionId,
+  }), env);
+
+  const sampleId = crypto.randomUUID();
+  const rejected = await handleGuardianRequest(await signedRequest({
+    path: `${base}/locations/${sampleId}`, method: "PUT",
+    body: {
+      sampleId, capturedAt: new Date().toISOString(), latitude: 120,
+      longitude: -87.6, horizontalAccuracyMeters: 8, source: "coreLocation",
+      speed: 72,
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: sampleId,
+  }), env);
+  assert.equal(rejected.status, 422);
+});
+
+test("Circle location is pruned after the 24-hour retention window", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const decisionId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/location-sharing`, method: "PUT",
+    body: {
+      decisionId, enabled: true,
+      participantConsentVersion: "circle-location-participant-v1",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: decisionId,
+  }), env);
+  const sampleId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/locations/${sampleId}`, method: "PUT",
+    body: {
+      sampleId, capturedAt: new Date().toISOString(), latitude: 40.7128,
+      longitude: -74.0060, horizontalAccuracyMeters: 22, source: "coreLocation",
+    },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: sampleId,
+  }), env);
+
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  state.locationSharing.latestLocation.capturedAt = new Date(
+    Date.now() - 25 * 60 * 60 * 1000
+  ).toISOString();
+  await storage.put("state", state);
+
+  const guardianRead = await handleGuardianRequest(await signedRequest({
+    path: base, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  assert.equal((await guardianRead.json()).locationSharing.latestLocation, null);
+  assert.equal((await storage.get("state")).locationSharing.latestLocation, null);
+});

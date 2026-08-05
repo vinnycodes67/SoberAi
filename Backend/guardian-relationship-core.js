@@ -8,6 +8,13 @@ const allowedCheckInProposalFields = new Set([
   "proposalId", "cadence", "localTime", "timeZoneIdentifier", "condition", "graceMinutes",
   "proposalConsentVersion",
 ]);
+const allowedLocationSharingFields = new Set([
+  "decisionId", "enabled", "participantConsentVersion",
+]);
+const allowedLocationSampleFields = new Set([
+  "sampleId", "capturedAt", "latitude", "longitude", "horizontalAccuracyMeters", "source",
+]);
+const locationRetentionMilliseconds = 24 * 60 * 60 * 1000;
 
 export async function handleRelationshipRequest(storage, request) {
   const url = new URL(request.url);
@@ -38,6 +45,7 @@ export async function handleRelationshipRequest(storage, request) {
       aliases: {},
       activeEventId: null,
       checkInPlan: null,
+      locationSharing: null,
     };
     await storage.put("state", state);
     return json({
@@ -83,6 +91,7 @@ export async function handleRelationshipRequest(storage, request) {
   const authentication = await verifyCapabilitySignature(request, current, expectedRole(path, request.method));
   if (!authentication.ok || current.relationshipState === "revoked") return error(404, "notFound");
   pruneNonces(current);
+  pruneStaleLocation(current);
   current.nonces[authentication.nonce] = authentication.signedAt;
   // Persist replay protection before any later shape/state rejection. A valid
   // signed mutation cannot be replayed just because its first body was bad.
@@ -90,6 +99,7 @@ export async function handleRelationshipRequest(storage, request) {
 
   const alertMatch = path.match(/\/alerts\/([0-9a-f-]{36})(?:\/(acknowledgment))?$/);
   const completionMatch = path.match(/\/check-ins\/(plan[0-9]+-[0-9]{8}-[0-9]{4})\/completion$/);
+  const locationMatch = path.match(/\/locations\/([0-9a-f-]{36})$/);
 
   if (request.method === "GET" && path.endsWith(`/${current.relationshipId}`)) {
     await storage.put("state", current);
@@ -100,6 +110,7 @@ export async function handleRelationshipRequest(storage, request) {
       relationship: relationshipView(current, authentication.role),
       activeAlert,
       checkInPlan: checkInPlanView(current.checkInPlan),
+      locationSharing: locationSharingView(current),
     });
   }
 
@@ -144,6 +155,69 @@ export async function handleRelationshipRequest(storage, request) {
     };
     await storage.put("state", current);
     return json({ checkInPlan: checkInPlanView(current.checkInPlan) }, 202);
+  }
+
+  if (request.method === "PUT" && path.endsWith("/location-sharing")) {
+    const input = await jsonBody(request);
+    if (!input.ok || !validLocationSharingBody(input.value)
+      || request.headers.get("idempotency-key") !== input.value.decisionId) {
+      return error(422, "invalidRequest");
+    }
+    if (current.relationshipState !== "active") return error(409, "relationshipNotActive");
+
+    const fingerprint = await sha256Base64URL(JSON.stringify(input.value));
+    if (current.locationSharing?.lastDecisionId === input.value.decisionId) {
+      if (current.locationSharing.lastDecisionFingerprint !== fingerprint) {
+        return error(409, "idempotencyConflict");
+      }
+      return json({ locationSharing: locationSharingView(current) });
+    }
+
+    const now = new Date().toISOString();
+    current.locationSharing = {
+      enabled: input.value.enabled,
+      participantConsentVersion: input.value.participantConsentVersion,
+      updatedAt: now,
+      latestLocation: input.value.enabled ? current.locationSharing?.latestLocation ?? null : null,
+      lastDecisionId: input.value.decisionId,
+      lastDecisionFingerprint: fingerprint,
+    };
+    await storage.put("state", current);
+    return json({ locationSharing: locationSharingView(current) });
+  }
+
+  if (locationMatch && request.method === "PUT") {
+    const sampleId = locationMatch[1];
+    const input = await jsonBody(request);
+    if (!input.ok || !validLocationSampleBody(input.value)
+      || input.value.sampleId !== sampleId
+      || request.headers.get("idempotency-key") !== sampleId) {
+      return error(422, "invalidRequest");
+    }
+    if (current.relationshipState !== "active" || !current.locationSharing?.enabled) {
+      return error(409, "locationSharingNotActive");
+    }
+
+    const fingerprint = await sha256Base64URL(JSON.stringify(input.value));
+    if (current.locationSharing.latestLocation?.sampleId === sampleId) {
+      if (current.locationSharing.latestLocation.fingerprint !== fingerprint) {
+        return error(409, "idempotencyConflict");
+      }
+      return json({ locationSharing: locationSharingView(current) });
+    }
+    if (current.locationSharing.latestLocation
+      && Date.parse(input.value.capturedAt)
+        <= Date.parse(current.locationSharing.latestLocation.capturedAt)) {
+      return json({ locationSharing: locationSharingView(current) });
+    }
+
+    current.locationSharing.latestLocation = {
+      ...input.value,
+      fingerprint,
+      receivedAt: new Date().toISOString(),
+    };
+    await storage.put("state", current);
+    return json({ locationSharing: locationSharingView(current) }, 202);
   }
 
   if (request.method === "PUT" && path.endsWith("/check-in-plan/decision")) {
@@ -256,12 +330,39 @@ export async function handleRelationshipRequest(storage, request) {
 function expectedRole(path, method) {
   if (method === "PUT" && path.endsWith("/check-in-plan/proposal")) return "guardian";
   if (method === "PUT" && path.endsWith("/check-in-plan/decision")) return "person";
+  if (method === "PUT" && path.endsWith("/location-sharing")) return "person";
+  if (method === "PUT" && /\/locations\/[0-9a-f-]{36}$/.test(path)) return "person";
   if (method === "PUT" && /\/check-ins\/plan[0-9]+-[0-9]{8}-[0-9]{4}\/completion$/.test(path)) {
     return "person";
   }
   if (method === "PUT" && /\/alerts\/[0-9a-f-]{36}$/.test(path)) return "person";
   if (method === "PUT" && path.endsWith("/acknowledgment")) return "guardian";
   return null;
+}
+
+function locationSharingView(state) {
+  const sharing = state.locationSharing;
+  if (!sharing) return { enabled: false, updatedAt: null, latestLocation: null };
+  return {
+    enabled: sharing.enabled,
+    updatedAt: sharing.updatedAt,
+    latestLocation: sharing.enabled && sharing.latestLocation
+      ? {
+        latitude: sharing.latestLocation.latitude,
+        longitude: sharing.latestLocation.longitude,
+        horizontalAccuracyMeters: sharing.latestLocation.horizontalAccuracyMeters,
+        capturedAt: sharing.latestLocation.capturedAt,
+      }
+      : null,
+  };
+}
+
+function pruneStaleLocation(state) {
+  if (state.locationSharing?.latestLocation
+    && Date.now() - Date.parse(state.locationSharing.latestLocation.capturedAt)
+      > locationRetentionMilliseconds) {
+    state.locationSharing.latestLocation = null;
+  }
 }
 
 function checkInPlanView(plan) {
@@ -389,6 +490,34 @@ function validCheckInCompletionBody(value) {
     && value.status === "completed"
     && typeof value.completedAt === "string"
     && Number.isFinite(Date.parse(value.completedAt));
+}
+
+function validLocationSharingBody(value) {
+  return value
+    && Object.keys(value).length === allowedLocationSharingFields.size
+    && Object.keys(value).every((key) => allowedLocationSharingFields.has(key))
+    && typeof value.decisionId === "string"
+    && /^[0-9a-f-]{36}$/.test(value.decisionId)
+    && typeof value.enabled === "boolean"
+    && value.participantConsentVersion === "circle-location-participant-v1";
+}
+
+function validLocationSampleBody(value) {
+  if (!value
+    || Object.keys(value).length !== allowedLocationSampleFields.size
+    || !Object.keys(value).every((key) => allowedLocationSampleFields.has(key))
+    || typeof value.sampleId !== "string"
+    || !/^[0-9a-f-]{36}$/.test(value.sampleId)
+    || value.source !== "coreLocation"
+    || !Number.isFinite(value.latitude) || value.latitude < -90 || value.latitude > 90
+    || !Number.isFinite(value.longitude) || value.longitude < -180 || value.longitude > 180
+    || !Number.isFinite(value.horizontalAccuracyMeters)
+    || value.horizontalAccuracyMeters < 0 || value.horizontalAccuracyMeters > 1000
+    || typeof value.capturedAt !== "string") return false;
+  const capturedAt = Date.parse(value.capturedAt);
+  return Number.isFinite(capturedAt)
+    && capturedAt <= Date.now() + 5 * 60 * 1000
+    && capturedAt >= Date.now() - locationRetentionMilliseconds;
 }
 
 async function jsonBody(request) {

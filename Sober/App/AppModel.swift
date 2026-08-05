@@ -27,6 +27,9 @@ final class AppModel: ObservableObject {
   @Published private(set) var guardianCheckInPlan: GuardianCheckInPlanSnapshot?
   @Published private(set) var guardianCheckInEvaluation: GuardianCheckInEvaluation = .inactive
   @Published private(set) var guardianHomeAnchor: GuardianHomeAnchor?
+  @Published private(set) var guardianLocationSharing: GuardianLocationSharingSnapshot?
+  @Published private(set) var guardianLocalLocation: GuardianLiveLocationUpdate?
+  @Published private(set) var guardianLocationAuthorization: GuardianLocationAuthorizationState = .notDetermined
   @Published private(set) var guardianAlertState: GuardianAlertPresentationState = .notRequired
   @Published private(set) var guardianError: String?
   @Published private(set) var guardianIsWorking = false
@@ -56,7 +59,10 @@ final class AppModel: ObservableObject {
   private let guardianHomeStore: any GuardianHomeStoring
   private let guardianLocation: any GuardianLocationProviding
   private let guardianCheckInScheduler: any GuardianCheckInScheduling
+  private let guardianLiveLocation: any GuardianLiveLocationProviding
   private let baselineEngine = BaselineProfileEngine()
+  private var guardianLocationPublishIsInFlight = false
+  private var lastGuardianLocationPublishedAt: Date?
 
   init(
     defaults: UserDefaults = .standard,
@@ -65,7 +71,8 @@ final class AppModel: ObservableObject {
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
     guardianLocation: any GuardianLocationProviding = GuardianLocationService(),
-    guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler()
+    guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler(),
+    guardianLiveLocation: any GuardianLiveLocationProviding = GuardianLiveLocationService()
   ) {
     self.defaults = defaults
     self.researchStore = researchStore
@@ -74,6 +81,7 @@ final class AppModel: ObservableObject {
     self.guardianHomeStore = guardianHomeStore
     self.guardianLocation = guardianLocation
     self.guardianCheckInScheduler = guardianCheckInScheduler
+    self.guardianLiveLocation = guardianLiveLocation
     hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarding)
     let storedBaselineSessions = defaults.integer(forKey: Keys.baselines)
     let storedFounderPreview = defaults.bool(forKey: Keys.founderPreview)
@@ -115,6 +123,20 @@ final class AppModel: ObservableObject {
 
     guardianSession = try? guardianStore.load()
     guardianHomeAnchor = try? guardianHomeStore.load()
+    guardianLocationAuthorization = guardianLiveLocation.authorizationState
+    guardianLiveLocation.onAuthorizationChange = { [weak self] state in
+      self?.guardianLocationAuthorization = state
+    }
+    guardianLiveLocation.onLocation = { [weak self] update in
+      guard let self else { return }
+      self.guardianLocalLocation = update
+      Task { await self.publishGuardianLocation(update) }
+    }
+    if guardianSession?.role == .person,
+      defaults.bool(forKey: Keys.guardianLocationSharingEnabled)
+    {
+      guardianLiveLocation.resumeIfAuthorized()
+    }
 
     Task {
       await reloadResearchData()
@@ -131,6 +153,12 @@ final class AppModel: ObservableObject {
   }
 
   var guardianInviteCode: String? { guardianSession?.inviteCode }
+
+  var guardianLocationSharingIsEnabled: Bool {
+    guardianLocationSharing?.enabled == true
+      && defaults.bool(forKey: Keys.guardianLocationSharingEnabled)
+      && !defaults.bool(forKey: Keys.pendingGuardianLocationDisable)
+  }
 
   func createGuardianRelationship() async {
     guard guardianSession == nil else { return }
@@ -172,6 +200,13 @@ final class AppModel: ObservableObject {
   func refreshGuardian() async {
     guard let session = guardianSession else { return }
     do {
+      if session.role == .person,
+        defaults.bool(forKey: Keys.pendingGuardianLocationDisable)
+      {
+        let disabled = try await guardianAPI.setLocationSharing(session: session, enabled: false)
+        guardianLocationSharing = disabled.locationSharing
+        defaults.set(false, forKey: Keys.pendingGuardianLocationDisable)
+      }
       let envelope = try await guardianAPI.relationship(for: session)
       guard guardianRelationship == nil
         || envelope.relationship.relationshipId == guardianRelationship?.relationshipId
@@ -179,6 +214,8 @@ final class AppModel: ObservableObject {
       guardianRelationship = envelope.relationship
       guardianActiveAlert = envelope.activeAlert
       guardianCheckInPlan = envelope.checkInPlan
+      guardianLocationSharing = envelope.locationSharing
+      syncGuardianLiveLocationService(for: session)
       refreshGuardianCheckInEvaluation()
       await retryPendingGuardianCheckInCompletion()
       if let alert = envelope.activeAlert {
@@ -186,12 +223,98 @@ final class AppModel: ObservableObject {
       }
       guardianError = nil
     } catch GuardianAPIError.relationshipUnavailable {
+      guardianLiveLocation.stopSharing()
+      defaults.set(false, forKey: Keys.guardianLocationSharingEnabled)
       guardianRelationship = nil
       guardianActiveAlert = nil
+      guardianLocationSharing = nil
+      guardianLocalLocation = nil
       guardianAlertState = .notRequired
       guardianError = GuardianAPIError.relationshipUnavailable.localizedDescription
     } catch {
       guardianError = error.localizedDescription
+    }
+  }
+
+  func enableGuardianLocationSharing() async {
+    guard let session = guardianSession,
+      session.role == .person,
+      guardianRelationshipIsActive
+    else { return }
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      let envelope = try await guardianAPI.setLocationSharing(session: session, enabled: true)
+      guardianLocationSharing = envelope.locationSharing
+      defaults.set(true, forKey: Keys.guardianLocationSharingEnabled)
+      defaults.set(false, forKey: Keys.pendingGuardianLocationDisable)
+      guardianLiveLocation.startForegroundSharing()
+    } catch {
+      guardianError = error.localizedDescription
+    }
+  }
+
+  func requestGuardianBackgroundLocationAccess() {
+    guard guardianSession?.role == .person, guardianLocationSharingIsEnabled else { return }
+    guardianLiveLocation.requestBackgroundAccess()
+  }
+
+  func stopGuardianLocationSharing() async {
+    guard let session = guardianSession, session.role == .person else { return }
+    guardianLiveLocation.stopSharing()
+    defaults.set(false, forKey: Keys.guardianLocationSharingEnabled)
+    defaults.set(true, forKey: Keys.pendingGuardianLocationDisable)
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      let envelope = try await guardianAPI.setLocationSharing(session: session, enabled: false)
+      guardianLocationSharing = envelope.locationSharing
+      guardianLocalLocation = nil
+      defaults.set(false, forKey: Keys.pendingGuardianLocationDisable)
+    } catch {
+      guardianError = "Sharing stopped on this iPhone. Sober will remove the last map location when it reconnects."
+    }
+  }
+
+  private func publishGuardianLocation(_ update: GuardianLiveLocationUpdate) async {
+    guard let session = guardianSession,
+      session.role == .person,
+      guardianLocationSharingIsEnabled,
+      update.coordinate.horizontalAccuracy >= 0,
+      update.coordinate.horizontalAccuracy <= 1_000,
+      !guardianLocationPublishIsInFlight
+    else { return }
+    if let lastGuardianLocationPublishedAt,
+      update.capturedAt.timeIntervalSince(lastGuardianLocationPublishedAt) < 10
+    { return }
+
+    guardianLocationPublishIsInFlight = true
+    defer { guardianLocationPublishIsInFlight = false }
+    do {
+      let envelope = try await guardianAPI.publishLocation(
+        session: session,
+        coordinate: update.coordinate,
+        capturedAt: update.capturedAt
+      )
+      guardianLocationSharing = envelope.locationSharing
+      lastGuardianLocationPublishedAt = update.capturedAt
+      guardianError = nil
+    } catch {
+      // A later Core Location update retries naturally; never invent freshness.
+    }
+  }
+
+  private func syncGuardianLiveLocationService(for session: GuardianSession) {
+    guard session.role == .person else { return }
+    let pendingDisable = defaults.bool(forKey: Keys.pendingGuardianLocationDisable)
+    if guardianLocationSharing?.enabled == true && !pendingDisable {
+      defaults.set(true, forKey: Keys.guardianLocationSharingEnabled)
+      guardianLiveLocation.resumeIfAuthorized()
+    } else {
+      defaults.set(false, forKey: Keys.guardianLocationSharingEnabled)
+      guardianLiveLocation.stopSharing()
     }
   }
 
@@ -463,7 +586,12 @@ final class AppModel: ObservableObject {
       guardianActiveAlert = nil
       guardianCheckInPlan = nil
       guardianCheckInEvaluation = .inactive
+      guardianLocationSharing = nil
+      guardianLocalLocation = nil
       guardianAlertState = .notRequired
+      guardianLiveLocation.stopSharing()
+      defaults.set(false, forKey: Keys.guardianLocationSharingEnabled)
+      defaults.set(false, forKey: Keys.pendingGuardianLocationDisable)
       await guardianCheckInScheduler.cancel()
       try? guardianHomeStore.delete()
       guardianHomeAnchor = nil
@@ -475,7 +603,12 @@ final class AppModel: ObservableObject {
       guardianActiveAlert = nil
       guardianCheckInPlan = nil
       guardianCheckInEvaluation = .inactive
+      guardianLocationSharing = nil
+      guardianLocalLocation = nil
       guardianAlertState = .notRequired
+      guardianLiveLocation.stopSharing()
+      defaults.set(false, forKey: Keys.guardianLocationSharingEnabled)
+      defaults.set(false, forKey: Keys.pendingGuardianLocationDisable)
       await guardianCheckInScheduler.cancel()
       try? guardianHomeStore.delete()
       guardianHomeAnchor = nil
@@ -709,8 +842,13 @@ final class AppModel: ObservableObject {
     guardianCheckInPlan = nil
     guardianCheckInEvaluation = .inactive
     guardianHomeAnchor = nil
+    guardianLocationSharing = nil
+    guardianLocalLocation = nil
     guardianAlertState = .notRequired
     guardianError = nil
+    guardianLiveLocation.stopSharing()
+    defaults.removeObject(forKey: Keys.guardianLocationSharingEnabled)
+    defaults.removeObject(forKey: Keys.pendingGuardianLocationDisable)
     Task { await guardianCheckInScheduler.cancel() }
     Task { await deleteAllResearchData() }
   }
@@ -734,5 +872,7 @@ final class AppModel: ObservableObject {
     static let userProfile = "sober.user.profile"
     static let pendingGuardianCheckInCompletionID = "sober.guardian.check-in.pending-id"
     static let pendingGuardianCheckInCompletionDate = "sober.guardian.check-in.pending-date"
+    static let guardianLocationSharingEnabled = "sober.guardian.location-sharing.enabled"
+    static let pendingGuardianLocationDisable = "sober.guardian.location-sharing.pending-disable"
   }
 }

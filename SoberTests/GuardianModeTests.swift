@@ -109,6 +109,72 @@ final class GuardianModeTests: XCTestCase {
     XCTAssertEqual(result.checkInPlan.state, .pendingPersonConsent)
   }
 
+  func testCircleSharingUsesPersonSignedMinimalPayloads() async throws {
+    let key = P256.Signing.PrivateKey()
+    let session = GuardianSession(
+      role: .person,
+      relationshipID: "rel_test123",
+      capabilityID: "rcap_person123",
+      privateKey: key.rawRepresentation,
+      inviteCode: nil,
+      activeEventID: nil
+    )
+    let requestCount = LockedCounter()
+    let client = GuardianAPIClient(
+      configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
+      transport: { request in
+        let count = requestCount.increment()
+        let object = try JSONSerialization.jsonObject(with: request.httpBody!) as! [String: Any]
+        if count == 1 {
+          XCTAssertTrue(request.url!.path.hasSuffix("/location-sharing"))
+          XCTAssertEqual(Set(object.keys), [
+            "decisionId", "enabled", "participantConsentVersion",
+          ])
+          XCTAssertEqual(object["enabled"] as? Bool, true)
+          XCTAssertEqual(
+            object["participantConsentVersion"] as? String,
+            "circle-location-participant-v1"
+          )
+          XCTAssertEqual(
+            request.value(forHTTPHeaderField: "Idempotency-Key"),
+            object["decisionId"] as? String
+          )
+          return (Self.locationSharingJSON(hasLocation: false), Self.httpResponse(status: 200))
+        }
+
+        XCTAssertTrue(request.url!.path.contains("/locations/"))
+        XCTAssertEqual(Set(object.keys), [
+          "sampleId", "capturedAt", "latitude", "longitude",
+          "horizontalAccuracyMeters", "source",
+        ])
+        XCTAssertEqual(object["source"] as? String, "coreLocation")
+        XCTAssertNil(object["speed"])
+        XCTAssertNil(object["result"])
+        XCTAssertEqual(
+          request.value(forHTTPHeaderField: "Idempotency-Key"),
+          object["sampleId"] as? String
+        )
+        return (Self.locationSharingJSON(hasLocation: true), Self.httpResponse(status: 202))
+      }
+    )
+
+    let enabled = try await client.setLocationSharing(session: session, enabled: true)
+    XCTAssertTrue(enabled.locationSharing.enabled)
+    XCTAssertNil(enabled.locationSharing.latestLocation)
+
+    let published = try await client.publishLocation(
+      session: session,
+      coordinate: GuardianCoordinate(
+        latitude: 41.8781,
+        longitude: -87.6298,
+        horizontalAccuracy: 12.5
+      ),
+      capturedAt: Date(timeIntervalSince1970: 1_786_000_000),
+      sampleID: UUID(uuidString: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")!
+    )
+    XCTAssertEqual(published.locationSharing.latestLocation?.horizontalAccuracyMeters, 12.5)
+  }
+
   func testAcceptedDailyCheckInBecomesDueAtConfiguredLocalTime() throws {
     let plan = Self.checkInPlan(condition: .always)
     let before = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-08-06T03:29:00Z"))
@@ -259,6 +325,15 @@ final class GuardianModeTests: XCTestCase {
       """.utf8)
   }
 
+  private static func locationSharingJSON(hasLocation: Bool) -> Data {
+    let location = hasLocation
+      ? "{\"latitude\":41.8781,\"longitude\":-87.6298,\"horizontalAccuracyMeters\":12.5,\"capturedAt\":\"2026-08-05T12:00:00.000Z\"}"
+      : "null"
+    return Data("""
+      {"locationSharing":{"enabled":true,"updatedAt":"2026-08-05T12:00:00.000Z","latestLocation":\(location)},"requestId":"req_test"}
+      """.utf8)
+  }
+
   private static func httpResponse(status: Int) -> HTTPURLResponse {
     HTTPURLResponse(
       url: URL(string: "https://guardian.example.test")!, statusCode: status,
@@ -295,4 +370,16 @@ private final class MemoryGuardianStore: GuardianSessionStoring, @unchecked Send
 private actor RequestRecorder {
   private(set) var requests: [URLRequest] = []
   func record(_ request: URLRequest) { requests.append(request) }
+}
+
+private final class LockedCounter: @unchecked Sendable {
+  private let lock = NSLock()
+  private var value = 0
+
+  func increment() -> Int {
+    lock.withLock {
+      value += 1
+      return value
+    }
+  }
 }

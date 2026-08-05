@@ -594,3 +594,9 @@ It does **not** mean the product is clinically validated or ready to tell anyone
   calendar notification and a one-time foreground location request rather than background tracking.
   The Guardian API stores only plan state and completion time, never location, result, or score.
   Verification passed with 82 iOS tests and 14 backend tests.
+- 2026-08-05: Codex added the consent-based Circle Map vertical slice after researching Life360's
+  public location-sharing patterns and Apple's Core Location/MapKit guidance. The person controls
+  foreground sharing and a separate Always Location upgrade; the Guardian sees one accuracy-aware,
+  freshness-labeled marker. The signed relay retains only the newest coordinate for up to 24 hours,
+  clears it on disable, and accepts no route, speed, result, or camera data. Verification passed with
+  83 iOS tests and 19 backend tests; physical-device background reliability remains required.

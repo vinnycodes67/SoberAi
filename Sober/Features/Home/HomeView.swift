@@ -9,6 +9,7 @@ struct HomeView: View {
   @State private var launch: ScreeningLaunch?
   @State private var showingPlan = false
   @State private var showingGuardian = false
+  @State private var showingCircleMap = false
   @State private var showingAbout = false
   @State private var showingResearch = false
 
@@ -28,16 +29,18 @@ struct HomeView: View {
             .soberEntrance(order: 2)
           guardianCard
             .soberEntrance(order: 3)
+          circleMapCard
+            .soberEntrance(order: 4)
 
           if model.isFounderPreview {
             founderPreviewCard
-              .soberEntrance(order: 4)
-            researchCenterCard
               .soberEntrance(order: 5)
+            researchCenterCard
+              .soberEntrance(order: 6)
           }
 
           evidenceNote
-            .soberEntrance(order: model.isFounderPreview ? 6 : 4)
+            .soberEntrance(order: model.isFounderPreview ? 7 : 5)
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 30)
@@ -67,6 +70,11 @@ struct HomeView: View {
     }
     .sheet(isPresented: $showingGuardian) {
       GuardianCenterView()
+        .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
+    .fullScreenCover(isPresented: $showingCircleMap) {
+      CircleMapView()
         .environmentObject(model)
         .preferredColorScheme(.dark)
     }
@@ -384,6 +392,55 @@ struct HomeView: View {
     }
     .buttonStyle(SoberCardButtonStyle())
     .accessibilityHint("Set up or review the trusted guardian relationship")
+  }
+
+  private var circleMapCard: some View {
+    Button {
+      showingCircleMap = true
+    } label: {
+      SoberCard {
+        HStack(spacing: 14) {
+          ZStack {
+            Circle().fill(Palette.item2.opacity(0.17))
+            Image(systemName: model.guardianLocationSharingIsEnabled
+              ? "location.fill" : "map.fill")
+              .foregroundStyle(Palette.item2)
+          }
+          .frame(width: 50, height: 50)
+
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Circle Map")
+              .font(.headline)
+              .foregroundStyle(Palette.textPrimary)
+            Text(circleMapSummary)
+              .font(.subheadline)
+              .foregroundStyle(Palette.textSecondary)
+              .multilineTextAlignment(.leading)
+          }
+          Spacer()
+          Image(systemName: "chevron.right")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+    .buttonStyle(SoberCardButtonStyle())
+    .accessibilityHint("Open the private family location map")
+  }
+
+  private var circleMapSummary: String {
+    guard model.guardianRelationshipIsActive else {
+      return "Connect your Guardian to start a private map"
+    }
+    if model.guardianLocationSharing?.enabled == true {
+      if let captured = model.guardianLocationSharing?.latestLocation?.capturedDate {
+        return "Latest location \(captured.formatted(.relative(presentation: .named)))"
+      }
+      return "Sharing is on · waiting for the first update"
+    }
+    return model.guardianSession?.role == .person
+      ? "Choose when your guardian can see your location"
+      : "Location sharing is currently off"
   }
 
   private var guardianSummary: String {

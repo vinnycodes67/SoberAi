@@ -28,6 +28,8 @@ deployment target.
 - Guardian-proposed daily check-in times with explicit screened-person acceptance or decline
 - Optional “away from Home” condition using a one-time, foreground-only location check; the Home coordinate stays in this-device-only Keychain storage
 - Local daily reminders and completion-only Guardian status; neither the location nor screening outcome is shared
+- A private Circle Map with a consented latest-location marker, accuracy radius, freshness state, and foreground/background permission controls
+- Circle sharing is person-controlled, signed per relationship, immediately pausable, and retains no route history in the founder MVP
 - Exactly three screened-person help states: requesting help, guardian confirmed, or contact someone now
 - Stable alert event IDs persisted before submission, Durable Object coordination, replay rejection, coalescing, and revocation
 - A founder-only Research Center with explicit consent, contextual confounders, local session count, JSON export, and delete-all controls
@@ -80,6 +82,10 @@ claiming that push or SMS is already configured.
    for approval. On the screened person's installation, review and accept or
    decline it. An away-from-Home plan also asks the person to save Home while
    physically there; that coordinate never leaves their phone.
+7. Open **Circle Map** on the screened person's installation and deliberately
+   turn on sharing. Grant foreground location first; use **Allow background
+   updates** only if that person wants the map to stay current after leaving
+   Sober. The Guardian installation can then refresh the same map.
 
 For two physical devices, deploy the Worker and change
 `SOBER_GUARDIAN_API_URL` in `project.yml` to its HTTPS origin before regenerating
@@ -126,7 +132,9 @@ xcodebuild \
 - Research context is self-reported. The app has no supervised labels, breath-reference hardware integration, controlled-study ground truth, or model-training pipeline yet.
 - Raw camera frames are not persisted by app code, but the prototype privacy copy still requires legal review before any external distribution.
 - Guardian Mode is founder-only. It currently uses signed in-app polling; APNs, notification deep links, phone verification, App Attest, and the 30-second SMS fallback remain blocked work.
-- Scheduled check-ins use ordinary local notifications, which can be delayed or hidden by system notification settings and Focus. The away-from-Home condition is evaluated only when the person opens Sober and taps to check location; there is no continuous or background location tracking.
+- Scheduled check-ins use ordinary local notifications, which can be delayed or hidden by system notification settings and Focus. Their away-from-Home condition still uses only the private, one-time Home comparison.
+- Circle Map is a separate, explicit location-sharing feature. Foreground sharing works only while Sober is active; background updates require the person's separate Always Location authorization and display the system location indicator. Force-quitting the app, disabling Location Services, Low Power behavior, poor GPS/Wi-Fi/cellular conditions, or iOS scheduling can delay updates, so the UI always shows age and accuracy instead of claiming continuous real-time tracking.
+- The founder relay stores only the latest Circle location and expires it after 24 hours. It has no route history, multi-member circles, place alerts, crash detection, identity recovery, or production security review yet.
 - A missed or overdue check-in means only that no completion was recorded. It must never be displayed or communicated as evidence of impairment.
 - A guardian confirmation is real only after the backend accepts the guardian device's signed acknowledgment. The UI makes no delivery/open claim from transport state.
 - The device signing key and minimal pending event receipt are stored in this-device-only Keychain storage. This founder build does not provide account recovery or multi-device continuity.
