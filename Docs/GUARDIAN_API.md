@@ -6,6 +6,16 @@ Contract version: `guardian-api-v1`
 
 Last updated: 2026-08-05
 
+Implementation note (2026-08-05): the repository now contains a runnable,
+founder-controlled vertical slice for relationship creation, single-use invite
+redemption, relationship-scoped ES256 signatures, nonce replay protection,
+minimal alert creation, polling, signed guardian acknowledgment, revocation,
+and relaunch-stable event IDs. The legacy shared-token Worker route is removed.
+This slice intentionally does not claim the complete contract: founder-mode
+creation bypasses person-phone verification/App Attest, transport is foreground
+polling rather than APNs, and verified SMS fallback/callback handling is not yet
+implemented. Those omissions block non-founder deployment.
+
 This document freezes the iOS/backend boundary before Guardian Mode implementation. It incorporates
 the P0/P1 findings in `Docs/CLAUDE_FINISH_REVIEW.md` and Claude's code-grounded required changes in
 `Docs/CODEX_CLAUDE_GATE0_SYNTHESIS.md`. Claude accepted it for founder-only Gate 1. That acceptance

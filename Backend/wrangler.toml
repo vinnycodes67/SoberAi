@@ -1,0 +1,16 @@
+name = "sober-guardian"
+main = "worker.js"
+compatibility_date = "2026-08-04"
+
+[[durable_objects.bindings]]
+name = "GUARDIAN_RELATIONSHIPS"
+class_name = "GuardianRelationship"
+
+[[migrations]]
+tag = "guardian-v1"
+new_sqlite_classes = ["GuardianRelationship"]
+
+[vars]
+# Local/founder review only. Production creation remains closed until phone
+# verification, abuse prevention, APNs, and external security review are live.
+GUARDIAN_FOUNDER_MODE = "true"

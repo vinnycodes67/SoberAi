@@ -579,3 +579,11 @@ It does **not** mean the product is clinically validated or ready to tell anyone
   pilot passes pre-registered thresholds, added the threat model, and kept App Attest wire details as
   a hard non-founder gate. Claude's final verdict was **CONTRACT READY FOR FOUNDER-ONLY GATE 1**.
   Production alert behavior has not changed.
+- 2026-08-05: Codex implemented the founder-only Guardian vertical slice: one app/two roles,
+  single-use invites, per-role P-256 signing keys in this-device-only Keychain storage, ES256 request
+  verification and nonce replay protection, relationship-scoped Durable Object state, minimal live
+  alert payloads, foreground polling, signed “I'm helping” acknowledgment, revocation, recent-alert
+  coalescing, three truthful person-facing states, and relaunch-stable event IDs. The shared-token
+  Worker route and legacy iOS relay client were removed. Verification passed with 67 iOS tests and
+  10 backend tests. APNs, phone/App Attest verification, and SMS fallback remain open Gate 1 work,
+  so the build remains founder-controlled and is not Gate 1 complete.

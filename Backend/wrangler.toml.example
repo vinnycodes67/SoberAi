@@ -1,0 +1,15 @@
+name = "sober-guardian"
+main = "worker.js"
+compatibility_date = "2026-08-04"
+
+[[durable_objects.bindings]]
+name = "GUARDIAN_RELATIONSHIPS"
+class_name = "GuardianRelationship"
+
+[[migrations]]
+tag = "guardian-v1"
+new_sqlite_classes = ["GuardianRelationship"]
+
+[vars]
+# Local founder review only. Keep false/absent for any non-founder deployment.
+GUARDIAN_FOUNDER_MODE = "true"

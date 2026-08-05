@@ -14,9 +14,9 @@ struct SafetyPlanView: View {
         VStack(alignment: .leading, spacing: 18) {
           ScreenHeader(
             eyebrow: "Safety Circle",
-            title: "Line up your way home.",
+            title: "Plan your way home.",
             detail:
-              "Set this up while clear-headed. A concerning result puts a ride and a direct call or message to this contact one tap away."
+              "Set the exact ride destination and a person you can call or message while clear-headed."
           )
 
           SoberCard {
@@ -33,49 +33,19 @@ struct SafetyPlanView: View {
 
           SoberCard {
             VStack(alignment: .leading, spacing: 16) {
-              fieldLabel("Contact")
-              TextField("Name", text: $plan.contactName)
+              fieldLabel("Who is taking the check?")
+              TextField("Your first name", text: $plan.userName)
+                .textContentType(.name)
+                .textFieldStyle(SoberTextFieldStyle())
+
+              fieldLabel("Trusted contact")
+              TextField("Contact name", text: $plan.contactName)
                 .textContentType(.name)
                 .textFieldStyle(SoberTextFieldStyle())
               TextField("Phone number", text: $plan.contactPhone)
                 .textContentType(.telephoneNumber)
                 .keyboardType(.phonePad)
                 .textFieldStyle(SoberTextFieldStyle())
-            }
-          }
-
-          SoberCard {
-            VStack(alignment: .leading, spacing: 16) {
-              Toggle(isOn: $plan.automaticParentAlerts) {
-                VStack(alignment: .leading, spacing: 4) {
-                  Text("Automatic parent alert")
-                    .font(.headline)
-                  Text("Send immediately when Sober detects concerning signals")
-                    .font(.caption)
-                    .foregroundStyle(Palette.textSecondary)
-                }
-              }
-              .tint(Palette.primary)
-
-              Divider().overlay(Palette.secondary.opacity(0.2))
-
-              Toggle(isOn: $plan.parentAlertConsent) {
-                Text(
-                  "I authorize Sober to send this safety result to the parent or guardian above."
-                )
-                .font(.subheadline.weight(.medium))
-                .fixedSize(horizontal: false, vertical: true)
-              }
-              .tint(Palette.primary)
-              .disabled(!plan.automaticParentAlerts)
-              .opacity(plan.automaticParentAlerts ? 1 : 0.45)
-
-              Label(
-                "Only the safety message is shared. Camera footage, face landmarks, task scores, and estimated substance levels are never shared.",
-                systemImage: "hand.raised.fill"
-              )
-              .font(.caption)
-              .foregroundStyle(Palette.textSecondary)
             }
           }
 
@@ -111,7 +81,7 @@ struct SafetyPlanView: View {
           }
 
           Text(
-            "Ride booking, calling, and messaging all require your tap — nothing here happens automatically."
+            "Guardian Mode is configured separately and uses a two-device invite. Ride booking and direct contact always require your tap."
           )
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)

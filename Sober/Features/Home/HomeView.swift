@@ -8,9 +8,9 @@ struct HomeView: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var launch: ScreeningLaunch?
   @State private var showingPlan = false
+  @State private var showingGuardian = false
   @State private var showingAbout = false
   @State private var showingResearch = false
-  @State private var showingGuardian = false
 
   var body: some View {
     NavigationStack {
@@ -23,19 +23,17 @@ struct HomeView: View {
           nightOutCard
             .soberEntrance(order: 2)
           guardianCard
-            .soberEntrance(order: 2)
+            .soberEntrance(order: 3)
 
-          #if DEBUG
           if model.isFounderPreview {
             founderPreviewCard
-              .soberEntrance(order: 3)
-            researchCenterCard
               .soberEntrance(order: 4)
+            researchCenterCard
+              .soberEntrance(order: 5)
           }
-          #endif
 
           evidenceNote
-            .soberEntrance(order: model.isFounderPreview ? 5 : 3)
+            .soberEntrance(order: model.isFounderPreview ? 6 : 4)
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 30)
@@ -63,6 +61,11 @@ struct HomeView: View {
       SafetyPlanView(plan: $model.safetyPlan)
         .preferredColorScheme(.dark)
     }
+    .sheet(isPresented: $showingGuardian) {
+      GuardianCenterView()
+        .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
     .sheet(isPresented: $showingAbout) {
       AboutPrototypeView()
         .environmentObject(model)
@@ -70,11 +73,6 @@ struct HomeView: View {
     }
     .sheet(isPresented: $showingResearch) {
       ResearchModeView()
-        .environmentObject(model)
-        .preferredColorScheme(.dark)
-    }
-    .sheet(isPresented: $showingGuardian) {
-      GuardianSetupView()
         .environmentObject(model)
         .preferredColorScheme(.dark)
     }
@@ -102,8 +100,8 @@ struct HomeView: View {
       }
 
       Button(heroButtonTitle) {
-        if model.baselineReady && !isSafetyCircleReady {
-          showingPlan = true
+        if model.baselineReady && !model.guardianRelationshipIsActive {
+          showingGuardian = true
         } else {
           launch = ScreeningLaunch(
             mode: model.baselineReady ? .check : .baseline,
@@ -116,30 +114,23 @@ struct HomeView: View {
     }
   }
 
-  /// A live check requires somewhere to turn if it comes back concerning —
-  /// the plan must be active and name a contact the manual call/message
-  /// buttons on the result screen can reach.
-  private var isSafetyCircleReady: Bool {
-    model.safetyPlan.isActive && model.safetyPlan.hasContact
-  }
-
   private var heroTitle: String {
     if !model.baselineReady { return "Learn your steady." }
-    if !isSafetyCircleReady { return "Connect your Safety Circle." }
+    if !model.guardianRelationshipIsActive { return "Connect your Guardian." }
     return "Pause. Check in."
   }
 
   private var heroDetail: String {
     if !model.baselineReady { return "Five high-quality sober sessions create your research baseline." }
-    if !isSafetyCircleReady {
-      return "A live check starts once you've named someone to call or message."
+    if !model.guardianRelationshipIsActive {
+      return "A live check starts after one trusted person accepts your invite."
     }
-    return "About two minutes. Call or message your Safety Circle contact from the result screen."
+    return "About two minutes. Concerning results alert your parent immediately."
   }
 
   private var heroButtonTitle: String {
     if !model.baselineReady { return "Record sober baseline" }
-    if !isSafetyCircleReady { return "Set up your Safety Circle" }
+    if !model.guardianRelationshipIsActive { return "Set up Guardian Mode" }
     return "Start a check"
   }
 
@@ -235,10 +226,10 @@ struct HomeView: View {
       SoberCard {
         HStack(spacing: 14) {
           ZStack {
-            Circle()
-              .fill(Palette.item1.opacity(0.16))
-            Image(systemName: "person.2.wave.2.fill")
-              .foregroundStyle(Palette.item1)
+            Circle().fill(Palette.primary.opacity(0.14))
+            Image(systemName: model.guardianRelationshipIsActive
+              ? "checkmark.shield.fill" : "person.badge.shield.checkmark")
+              .foregroundStyle(Palette.primary)
           }
           .frame(width: 50, height: 50)
 
@@ -259,22 +250,24 @@ struct HomeView: View {
       }
     }
     .buttonStyle(SoberCardButtonStyle())
-    .accessibilityHint("Set up a mutual driving check-in with a paired teen or parent")
+    .accessibilityHint("Set up or review the trusted guardian relationship")
   }
 
   private var guardianSummary: String {
-    switch model.guardianRole {
-    case .none: "Off — pair a teen and parent phone for driving check-ins"
-    case .teen: "Set up as a teen driver"
-    case .parent: "Set up as a parent"
+    if model.guardianRelationshipIsActive {
+      return model.guardianSession?.role == .guardian
+        ? "Ready to respond to a help request"
+        : "Connected for minimal in-app help requests"
     }
+    if model.guardianInviteCode != nil { return "Invite ready to share" }
+    return "Connect one trusted person before a live check"
   }
 
   private var safetyCircleSummary: String {
-    guard model.safetyPlan.hasContact else {
-      return "Add a contact to call or message from a result"
+    if model.safetyPlan.hasRideDestination {
+      return "\(model.safetyPlan.preferredRide) to \(model.safetyPlan.destinationDisplayName)"
     }
-    return "\(model.safetyPlan.preferredRide) + \(model.safetyPlan.contactName) are ready"
+    return "Choose and name the address you’ll ride to"
   }
 
   private var founderPreviewCard: some View {
@@ -395,7 +388,7 @@ struct AboutPrototypeView: View {
               aboutRow("Self-report hard gate", "hand.raised")
               aboutRow("Quality-gated results", "waveform.badge.magnifyingglass")
               aboutRow("Ride and contact on every result", "car.side")
-              aboutRow("Guardian Mode driving check-ins, opt-in and mutual", "person.2.wave.2")
+              aboutRow("Automatic parent alert after concerning results", "message.badge.fill")
               aboutRow("No raw biometric uploads", "network.slash")
             }
           }

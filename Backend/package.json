@@ -1,0 +1,8 @@
+{
+  "name": "sober-guardian-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -12,7 +12,6 @@ struct OnboardingView: View {
   @State private var showingRetentionPolicy = false
   @State private var nameField = ""
   @State private var ageField = ""
-  @State private var familyCodeField = ""
 
   private let validator = OnboardingValidator()
   private static let pageCount = 4
@@ -52,29 +51,19 @@ struct OnboardingView: View {
           .disabled(page == 2 && profileValidation.isBlocked)
           .opacity(page == 2 && profileValidation.isBlocked ? 0.42 : 1)
         } else {
-          #if DEBUG
           Button("Explore founder demo") {
             model.completeOnboarding(founderPreview: true)
           }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(!canConsent)
           .opacity(canConsent ? 1 : 0.42)
-          #endif
 
           Button("Start with a real baseline") {
             model.completeOnboarding(founderPreview: false)
           }
-          #if DEBUG
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(canConsent ? Palette.textSecondary : Palette.textSecondary.opacity(0.45))
           .disabled(!canConsent)
-          #else
-          // With the founder demo compiled out, this is the only CTA on the
-          // screen and needs to read as the primary action, not a footnote.
-          .buttonStyle(PrimaryActionButtonStyle())
-          .disabled(!canConsent)
-          .opacity(canConsent ? 1 : 0.42)
-          #endif
         }
       }
       .padding(.horizontal, 22)
@@ -134,14 +123,10 @@ struct OnboardingView: View {
           boundaryRow(
             icon: "person.2.badge.gearshape", title: "A Safety Circle you control",
             detail:
-              "Name someone to call or message from a result with one tap. No employer or law-enforcement mode.")
+              "You can invite one trusted guardian to receive a minimal help request. No employer or law-enforcement mode.")
           boundaryRow(
             icon: "iphone.and.arrow.forward", title: "Action built in",
             detail: "Call a ride or your person from every result.")
-          boundaryRow(
-            icon: "sun.max", title: "One step brightens the screen",
-            detail:
-              "A guided light check briefly flashes the screen three times. It's always skippable, and skipped for anyone with photosensitive epilepsy.")
         }
         .soberEntrance(order: 1)
       }
@@ -154,10 +139,7 @@ struct OnboardingView: View {
     UserProfile(
       displayName: nameField,
       ageYears: Int(ageField.trimmingCharacters(in: .whitespaces)),
-      familyCode: familyCodeField.trimmingCharacters(in: .whitespaces).isEmpty
-        ? nil
-        : validator.normalizeFamilyCode(familyCodeField)
-          ?? FamilyReferralCode(rawValue: familyCodeField)
+      familyCode: nil
     )
   }
 
@@ -179,7 +161,7 @@ struct OnboardingView: View {
           eyebrow: "Your details",
           title: "Who should your family see?",
           detail:
-            "Your name and age stay on this iPhone. They are never attached to research data and never included in an alert."
+            "Your age stays on this iPhone. Your first name may appear in a help request to the guardian you choose. Neither is attached to research data."
         )
         .soberEntrance(order: 0)
 
@@ -202,23 +184,6 @@ struct OnboardingView: View {
         }
         .soberEntrance(order: 1)
 
-        SoberCard {
-          VStack(alignment: .leading, spacing: 10) {
-            field(
-              title: "Family code",
-              prompt: "Optional — \(FamilyReferralCode.length) characters",
-              text: $familyCodeField,
-              autocapitalize: true
-            )
-            Text(
-              "Joining a family lets one person you choose receive a short help request if a check is concerning. You can add this later."
-            )
-            .font(.caption)
-            .foregroundStyle(Palette.textSecondary)
-          }
-        }
-        .soberEntrance(order: 2)
-
         if profileValidation.isOutOfOrdinary {
           VStack(alignment: .leading, spacing: 8) {
             ForEach(profileValidation.flags, id: \.self) { flag in
@@ -233,7 +198,7 @@ struct OnboardingView: View {
               .accessibilityElement(children: .combine)
             }
           }
-          .soberEntrance(order: 3)
+          .soberEntrance(order: 2)
         }
       }
       .padding(22)
@@ -274,7 +239,7 @@ struct OnboardingView: View {
           eyebrow: "Your biometric data",
           title: "Processed here. Gone right after.",
           detail:
-            "Eye and face landmarks are sensitive. They stay on this iPhone. Calling or messaging your Safety Circle contact, and Guardian Mode's completed/missed check-in, never carry biometric data with them."
+            "Eye and face landmarks are sensitive. They stay on this iPhone. If you enable Safety Circle, only a short safety alert leaves the device."
         )
         .soberEntrance(order: 0)
 
@@ -289,7 +254,7 @@ struct OnboardingView: View {
             consentToggle(
               title: "Retention and deletion",
               detail:
-                "I understand raw frames are discarded after feature extraction and are never uploaded, and nothing derived from them ever leaves this iPhone.",
+                "I understand raw frames are discarded after feature extraction and are never uploaded. Safety alerts never contain biometric data.",
               isOn: $retentionConsent
             )
           }
@@ -370,7 +335,7 @@ struct RetentionPolicyView: View {
           )
           policySection(
             "Sharing",
-            "The MVP contains no advertising, analytics, biometric export, employer portal, or law-enforcement mode. Nothing is ever sent automatically: calling or messaging your Safety Circle contact always requires your tap, and Guardian Mode only ever shares whether a check was completed, never a score or raw data."
+            "The MVP contains no advertising, analytics, biometric export, employer portal, or law-enforcement mode. If you explicitly enable Safety Circle, a concerning-result message is sent to the parent or guardian you provide."
           )
           policySection(
             "Your control",

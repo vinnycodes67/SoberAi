@@ -7,7 +7,6 @@ private enum ScreeningStep: Int {
   case tracking
   case timing
   case gaze
-  case pupil
   case analyzing
   case result
   case baselineComplete
@@ -17,23 +16,19 @@ struct ScreeningFlowView: View {
   let configuration: ScreeningLaunch
 
   @EnvironmentObject private var model: AppModel
-  @EnvironmentObject private var guardianCoordinator: GuardianCoordinator
   @Environment(\.dismiss) private var dismiss
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @StateObject private var faceTracking = FaceTrackingService()
-  @StateObject private var pupilCapture = PupilCaptureService()
   @State private var step: ScreeningStep
   @State private var selfReport: SelfReport = .no
   @State private var reactionTime = 0.0
   @State private var reactionMisses = 0
   @State private var reactionSummary: ChoiceReactionSummary?
-  @State private var trackingError: Double?
+  @State private var trackingError = 0.0
   @State private var trackingWasMeasured = true
   @State private var timingError = 0.0
-  @State private var gazeSmoothness: Double?
-  @State private var pupilSample: PupillometrySample?
-  // Defaults to failing so an unset value can never pass the quality gate.
-  @State private var qualityScore = 0.0
+  @State private var gazeSmoothness = 0.0
+  @State private var qualityScore = 1.0
   @State private var ocularSummary: GazeCaptureSummary?
   @State private var outcome: ScreeningOutcome?
   @State private var showingExitAlert = false
@@ -56,6 +51,13 @@ struct ScreeningFlowView: View {
           founderScenario: configuration.scenario
         ))
     }
+  }
+
+  private var guardianAlertState: GuardianAlertPresentationState {
+    if configuration.scenario != .live {
+      return configuration.scenario == .signals ? .preview : .notRequired
+    }
+    return model.guardianAlertState
   }
 
   var body: some View {
@@ -85,7 +87,7 @@ struct ScreeningFlowView: View {
           }
         case .tracking:
           MotorTrackingTaskView { result in
-            trackingError = result.wasMeasured ? result.error : nil
+            trackingError = result.error
             trackingWasMeasured = result.wasMeasured
             step = .timing
           }
@@ -99,11 +101,6 @@ struct ScreeningFlowView: View {
             ocularSummary = summary
             gazeSmoothness = summary.smoothnessRisk
             qualityScore = summary.qualityScore
-            step = .pupil
-          }
-        case .pupil:
-          PupillometryTaskView(service: pupilCapture) { sample in
-            pupilSample = sample
             step = .analyzing
           }
         case .analyzing:
@@ -115,7 +112,9 @@ struct ScreeningFlowView: View {
             ResultView(
               outcome: outcome,
               safetyPlan: model.safetyPlan,
-              isSample: configuration.scenario != .live
+              isSample: configuration.scenario != .live,
+              guardianAlertState: guardianAlertState,
+              onRetryGuardianAlert: { beginGuardianAlert(for: outcome) }
             ) {
               dismiss()
             }
@@ -159,6 +158,21 @@ struct ScreeningFlowView: View {
       }
     }
     .preferredColorScheme(.dark)
+    .task {
+      if configuration.scenario == .live { model.prepareGuardianForNewCheck() }
+    }
+    .task(id: model.guardianAlertState) {
+      guard step == .result,
+        configuration.scenario == .live,
+        outcome?.state == .signalsDetected,
+        model.guardianAlertState == .requestingHelp
+      else { return }
+      while !Task.isCancelled, model.guardianAlertState == .requestingHelp {
+        try? await Task.sleep(for: .seconds(2))
+        guard !Task.isCancelled else { return }
+        await model.reconcileActiveGuardianAlert()
+      }
+    }
     .interactiveDismissDisabled()
     .alert("Leave this check?", isPresented: $showingExitAlert) {
       Button("Keep going", role: .cancel) {}
@@ -205,9 +219,9 @@ struct ScreeningFlowView: View {
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: 0,
       reactionMisses: 0,
-      trackingError: nil,
+      trackingError: MotorTrackingOutcome.notMeasured.error,
       timeEstimateError: 0,
-      gazeSmoothness: nil,
+      gazeSmoothness: 0,
       qualityScore: 0,
       completedAllTasks: false
     )
@@ -231,7 +245,6 @@ struct ScreeningFlowView: View {
       trackingError: trackingError,
       timeEstimateError: timingError,
       gazeSmoothness: gazeSmoothness,
-      pupillometry: pupilSample,
       qualityScore: qualityScore,
       // A task the participant could not perform is not a completed task.
       completedAllTasks: trackingWasMeasured
@@ -242,22 +255,6 @@ struct ScreeningFlowView: View {
       baselineCompletionState = BaselineCompletionState(
         reason: baselineAccepted ? .ready : (trackingWasMeasured ? .captureQualityTooLow : .taskUnavailable)
       )
-      // A low-quality capture would poison every future comparison against
-      // this baseline, so it's held to the same quality bar as a real check
-      // rather than being recorded unconditionally. Independent of the
-      // research baseline recorded below.
-      if baselineAccepted {
-        model.recordBaseline(
-          BaselineSample(
-            reactionTimeMilliseconds: reactionTime,
-            reactionMisses: reactionMisses,
-            trackingError: trackingError,
-            timeEstimateError: timingError,
-            gazeSmoothness: gazeSmoothness,
-            pupillometry: pupilSample
-          )
-        )
-      }
       Task {
         await model.recordCompletedSession(
           mode: .baseline,
@@ -272,8 +269,7 @@ struct ScreeningFlowView: View {
       return
     }
 
-    presentOutcome(
-      engine.evaluate(selfReport: selfReport, metrics: metrics, personalBaseline: model.baseline))
+    presentOutcome(engine.evaluate(selfReport: selfReport, metrics: metrics))
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -289,12 +285,19 @@ struct ScreeningFlowView: View {
   private func presentOutcome(_ newOutcome: ScreeningOutcome) {
     outcome = newOutcome
     step = .result
-    if configuration.scenario == .live {
-      Task {
-        await guardianCoordinator.recordScreeningResult(
-          isValid: newOutcome.state != .inconclusive)
-      }
+    beginGuardianAlert(for: newOutcome)
+  }
+
+  private func beginGuardianAlert(for outcome: ScreeningOutcome) {
+    guard configuration.scenario == .live else {
+      model.presentGuardianSample(for: outcome)
+      return
     }
+    guard outcome.state == .signalsDetected else {
+      model.clearGuardianAlertPresentation()
+      return
+    }
+    Task { await model.beginConcerningGuardianAlert() }
   }
 }
 
@@ -306,7 +309,7 @@ struct FlowContainer<Content: View>: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
         if let progress {
-          StepProgress(current: progress, total: 6)
+          StepProgress(current: progress, total: 5)
             .padding(.trailing, 54)
         }
         content
@@ -461,7 +464,7 @@ private struct AnalyzingView: View {
       VStack(spacing: 8) {
         Text("Comparing your signals")
           .font(.system(.title, design: .serif, weight: .semibold))
-        Text("Reaction · tracking · timing · guided gaze · light reflex")
+        Text("Reaction · tracking · timing · guided gaze")
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
       }

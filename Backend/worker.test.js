@@ -1,0 +1,341 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { base64URL, canonicalSignatureInput, sha256Hex } from "./guardian-crypto.js";
+import { GuardianRelationship } from "./durable-guardian-relationship.js";
+import { handleGuardianRequest } from "./guardian-handler.js";
+
+const encoder = new TextEncoder();
+const origin = "https://guardian.example.test";
+
+class MemoryStorage {
+  constructor() { this.values = new Map(); }
+  async get(key) {
+    const value = this.values.get(key);
+    return value == null ? value : structuredClone(value);
+  }
+  async put(key, value) { this.values.set(key, structuredClone(value)); }
+}
+
+class MemoryDurableState {
+  constructor() { this.storage = new MemoryStorage(); }
+  blockConcurrencyWhile(operation) { return operation(); }
+}
+
+class MemoryNamespace {
+  constructor() { this.instances = new Map(); }
+  idFromName(value) { return value; }
+  get(id) {
+    if (!this.instances.has(id)) this.instances.set(id, new GuardianRelationship(new MemoryDurableState()));
+    return this.instances.get(id);
+  }
+}
+
+function environment(founderMode = "true") {
+  return { GUARDIAN_FOUNDER_MODE: founderMode, GUARDIAN_RELATIONSHIPS: new MemoryNamespace() };
+}
+
+async function keyPair() {
+  const pair = await crypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true,
+    ["sign", "verify"]
+  );
+  return { ...pair, jwk: await crypto.subtle.exportKey("jwk", pair.publicKey) };
+}
+
+async function createRelationship(env, personKey) {
+  personKey ??= await keyPair();
+  const response = await handleGuardianRequest(new Request(`${origin}/v1/guardian-relationships`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      personPublicKeyJwk: personKey.jwk,
+      personDisplayName: "Alex",
+      senderConsentVersion: "guardian-sender-v1",
+    }),
+  }), env);
+  return { response, body: await response.clone().json(), personKey };
+}
+
+async function redeemRelationship(env, created, guardianKey, overrides = {}) {
+  guardianKey ??= await keyPair();
+  const separator = created.body.inviteCode.indexOf(".");
+  const inviteToken = created.body.inviteCode.slice(separator + 1);
+  const response = await handleGuardianRequest(new Request(
+    `${origin}/v1/guardian-relationships/${created.body.relationshipId}/redeem`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        inviteToken,
+        guardianPublicKeyJwk: guardianKey.jwk,
+        guardianConsentVersion: "guardian-recipient-v1",
+        notificationDisclosureVersion: "notification-disclosure-v1",
+        differentPersonAttestation: true,
+        ...overrides,
+      }),
+    }
+  ), env);
+  return { response, body: await response.clone().json(), guardianKey };
+}
+
+async function signedRequest({
+  path,
+  method = "GET",
+  body,
+  relationshipId,
+  capabilityId,
+  privateKey,
+  idempotencyKey = "",
+  nonce = base64URL(crypto.getRandomValues(new Uint8Array(18))),
+  timestamp = new Date().toISOString(),
+}) {
+  const bodyBytes = body == null ? new Uint8Array() : encoder.encode(JSON.stringify(body));
+  const input = canonicalSignatureInput({
+    method,
+    path,
+    bodyHash: await sha256Hex(bodyBytes),
+    relationshipId,
+    capabilityId,
+    timestamp,
+    nonce,
+    idempotencyKey,
+  });
+  const signature = await crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    privateKey,
+    encoder.encode(input)
+  );
+  const headers = {
+    "sober-relationship-id": relationshipId,
+    "sober-capability-id": capabilityId,
+    "sober-timestamp": timestamp,
+    "sober-nonce": nonce,
+    "sober-signature": base64URL(signature),
+  };
+  if (body != null) headers["content-type"] = "application/json";
+  if (idempotencyKey) headers["idempotency-key"] = idempotencyKey;
+  return new Request(`${origin}${path}`, {
+    method,
+    headers,
+    ...(body == null ? {} : { body: bodyBytes }),
+  });
+}
+
+async function activeRelationship() {
+  const env = environment();
+  const created = await createRelationship(env);
+  const redeemed = await redeemRelationship(env, created);
+  assert.equal(created.response.status, 201);
+  assert.equal(redeemed.response.status, 200);
+  return { env, created, redeemed };
+}
+
+test("founder mode creates a pending relationship and one-time invite", async () => {
+  const env = environment();
+  const created = await createRelationship(env);
+  assert.equal(created.response.status, 201);
+  assert.equal(created.body.state, "pendingGuardian");
+  assert.match(created.body.relationshipId, /^rel_/);
+  assert.match(created.body.inviteCode, new RegExp(`^${created.body.relationshipId}\\.`));
+  const state = await env.GUARDIAN_RELATIONSHIPS.instances.get(created.body.relationshipId).state.storage.get("state");
+  assert.equal(JSON.stringify(state).includes(created.body.inviteCode), false);
+});
+
+test("relationship creation stays closed outside the founder build", async () => {
+  const created = await createRelationship(environment("false"));
+  assert.equal(created.response.status, 404);
+});
+
+test("guardian redeems an invite exactly once with a different key", async () => {
+  const env = environment();
+  const created = await createRelationship(env);
+  const first = await redeemRelationship(env, created);
+  const replay = await redeemRelationship(env, created);
+  assert.equal(first.response.status, 200);
+  assert.equal(first.body.relationship.state, "active");
+  assert.equal(replay.response.status, 404);
+
+  const env2 = environment();
+  const created2 = await createRelationship(env2);
+  const sameKey = await redeemRelationship(env2, created2, created2.personKey);
+  assert.equal(sameKey.response.status, 404);
+});
+
+test("signed relationship reads are role-scoped and replay protected", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const nonce = base64URL(crypto.getRandomValues(new Uint8Array(18)));
+  const request = await signedRequest({
+    path,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey,
+    nonce,
+  });
+  const first = await handleGuardianRequest(request, env);
+  const replay = await handleGuardianRequest(request.clone(), env);
+  assert.equal(first.status, 200);
+  assert.equal((await first.json()).relationship.role, "person");
+  assert.equal(replay.status, 404);
+
+  const guardianRead = await handleGuardianRequest(await signedRequest({
+    path,
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  assert.equal(guardianRead.status, 200);
+  assert.equal((await guardianRead.json()).relationship.role, "guardian");
+});
+
+test("person creates only a minimal live concerning alert", async () => {
+  const { env, created } = await activeRelationship();
+  const eventId = crypto.randomUUID();
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}/alerts/${eventId}`;
+  const body = {
+    occurredAt: new Date().toISOString(),
+    result: "SIGNALS_DETECTED",
+    source: "liveCheck",
+    messageTemplateVersion: "guardian-help-v1",
+  };
+  const response = await handleGuardianRequest(await signedRequest({
+    path, method: "PUT", body, relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: eventId,
+  }), env);
+  assert.equal(response.status, 202);
+  const result = await response.json();
+  assert.equal(result.alert.personActionState, "requestingHelp");
+  assert.equal(result.alert.canonicalEventId, eventId);
+
+  const forbidden = { ...body, message: "client-controlled content" };
+  const rejected = await handleGuardianRequest(await signedRequest({
+    path: `${path.slice(0, -1)}0`, method: "PUT", body: forbidden,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey,
+    idempotencyKey: `${eventId.slice(0, -1)}0`,
+  }), env);
+  assert.equal(rejected.status, 422);
+});
+
+test("wrong role cannot create or acknowledge an alert", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const eventId = crypto.randomUUID();
+  const alertPath = `/v1/guardian-relationships/${created.body.relationshipId}/alerts/${eventId}`;
+  const body = {
+    occurredAt: new Date().toISOString(), result: "SIGNALS_DETECTED",
+    source: "liveCheck", messageTemplateVersion: "guardian-help-v1",
+  };
+  const guardianCreate = await handleGuardianRequest(await signedRequest({
+    path: alertPath, method: "PUT", body, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: eventId,
+  }), env);
+  assert.equal(guardianCreate.status, 404);
+
+  const personCreate = await handleGuardianRequest(await signedRequest({
+    path: alertPath, method: "PUT", body, relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: eventId,
+  }), env);
+  assert.equal(personCreate.status, 202);
+  const ackPath = `${alertPath}/acknowledgment`;
+  const personAck = await handleGuardianRequest(await signedRequest({
+    path: ackPath, method: "PUT", body: { action: "helping" }, relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: eventId,
+  }), env);
+  assert.equal(personAck.status, 404);
+});
+
+test("guardian sees the pending alert and signed acknowledgment reaches the person", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const eventId = crypto.randomUUID();
+  const alertPath = `/v1/guardian-relationships/${created.body.relationshipId}/alerts/${eventId}`;
+  const alertBody = {
+    occurredAt: new Date().toISOString(), result: "SIGNALS_DETECTED",
+    source: "liveCheck", messageTemplateVersion: "guardian-help-v1",
+  };
+  await handleGuardianRequest(await signedRequest({
+    path: alertPath, method: "PUT", body: alertBody, relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: eventId,
+  }), env);
+
+  const relationshipPath = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const guardianPoll = await handleGuardianRequest(await signedRequest({
+    path: relationshipPath, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  assert.equal((await guardianPoll.json()).activeAlert.personActionState, "requestingHelp");
+
+  const acknowledgment = await handleGuardianRequest(await signedRequest({
+    path: `${alertPath}/acknowledgment`, method: "PUT", body: { action: "helping" },
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: eventId,
+  }), env);
+  assert.equal(acknowledgment.status, 200);
+  assert.equal((await acknowledgment.json()).alert.personActionState, "guardianConfirmed");
+
+  const personPoll = await handleGuardianRequest(await signedRequest({
+    path: alertPath, relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey,
+  }), env);
+  assert.equal((await personPoll.json()).alert.personActionState, "guardianConfirmed");
+});
+
+test("alert idempotency survives separate handler calls", async () => {
+  const { env, created } = await activeRelationship();
+  const eventId = crypto.randomUUID();
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}/alerts/${eventId}`;
+  const body = {
+    occurredAt: new Date().toISOString(), result: "SIGNALS_DETECTED",
+    source: "liveCheck", messageTemplateVersion: "guardian-help-v1",
+  };
+  const send = () => signedRequest({
+    path, method: "PUT", body, relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: eventId,
+  }).then((request) => handleGuardianRequest(request, env));
+  assert.equal((await send()).status, 202);
+  assert.equal((await send()).status, 200);
+});
+
+test("revocation is durable and blocks later alerts", async () => {
+  const { env, created } = await activeRelationship();
+  const relationshipPath = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const revoked = await handleGuardianRequest(await signedRequest({
+    path: relationshipPath, method: "DELETE", relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId, privateKey: created.personKey.privateKey,
+  }), env);
+  assert.equal(revoked.status, 204);
+
+  const eventId = crypto.randomUUID();
+  const body = {
+    occurredAt: new Date().toISOString(), result: "SIGNALS_DETECTED",
+    source: "liveCheck", messageTemplateVersion: "guardian-help-v1",
+  };
+  const blocked = await handleGuardianRequest(await signedRequest({
+    path: `${relationshipPath}/alerts/${eventId}`, method: "PUT", body,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId, privateKey: created.personKey.privateKey,
+    idempotencyKey: eventId,
+  }), env);
+  assert.equal(blocked.status, 404);
+});
+
+test("legacy shared-token route is removed from the compiled handler", async () => {
+  const response = await handleGuardianRequest(new Request(`${origin}/v1/alerts`, {
+    method: "POST",
+    headers: { authorization: "Bearer legacy", "content-type": "application/json" },
+    body: JSON.stringify({ message: "arbitrary" }),
+  }), environment());
+  assert.equal(response.status, 410);
+  assert.equal((await response.json()).error.code, "legacyRouteRemoved");
+});

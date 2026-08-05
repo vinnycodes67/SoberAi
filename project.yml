@@ -14,13 +14,18 @@ targets:
     platform: iOS
     sources:
       - path: Sober
-        excludes:
-          - Info.plist
-          - Sober.entitlements
     info:
       path: Sober/Info.plist
-    entitlements:
-      path: Sober/Sober.entitlements
+      properties:
+        CFBundleDisplayName: Sober
+        NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        SoberGuardianAPIURL: "$(SOBER_GUARDIAN_API_URL)"
+        LSApplicationCategoryType: public.app-category.healthcare-fitness
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        UIUserInterfaceStyle: Dark
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app
@@ -28,6 +33,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "2"
+        SOBER_GUARDIAN_API_URL: "http://127.0.0.1:8787"
     scheme:
       testTargets:
         - SoberTests

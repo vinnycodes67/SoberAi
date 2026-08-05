@@ -3,13 +3,15 @@ import UIKit
 
 // There is intentionally no green, checkmark, "pass", "clear", or dismiss X.
 // The screen's primary content is the safety message plus a route home.
-// 0.5s: the result halo and a ride/contact card dominate the screen.
-// User: someone who just received a concerning result and needs a fast way to get help.
+// 0.5s: the result halo and Guardian request state dominate the screen.
+// User: someone who just received a concerning result and needs a direct route to help.
 // Emotional intent: protected and accountable, never punished or surveilled.
 struct ResultView: View {
   let outcome: ScreeningOutcome
   let safetyPlan: SafetyPlan
   let isSample: Bool
+  let guardianAlertState: GuardianAlertPresentationState
+  let onRetryGuardianAlert: () -> Void
   let onDone: () -> Void
 
   @Environment(\.openURL) private var openURL
@@ -47,12 +49,16 @@ struct ResultView: View {
         }
         .soberEntrance(order: 1)
 
+        if outcome.state == .signalsDetected {
+          guardianAlertCard
+            .soberEntrance(order: 2)
+        }
         signalBreakdown
-          .soberEntrance(order: 2)
+          .soberEntrance(order: outcome.state == .signalsDetected ? 3 : 2)
         InterventionCard(safetyPlan: safetyPlan)
-          .soberEntrance(order: 3)
+          .soberEntrance(order: outcome.state == .signalsDetected ? 4 : 3)
         acknowledgementCard
-          .soberEntrance(order: 4)
+          .soberEntrance(order: outcome.state == .signalsDetected ? 5 : 4)
 
         Button("Return home", action: onDone)
           .buttonStyle(SecondaryActionButtonStyle(tint: Palette.textSecondary))
@@ -61,7 +67,7 @@ struct ResultView: View {
           .accessibilityValue(returnHomeAccessibilityValue)
           .accessibilityHint(
             canLeave ? "Closes this result" : "Read and acknowledge the safety message first")
-          .soberEntrance(order: 5)
+          .soberEntrance(order: outcome.state == .signalsDetected ? 6 : 5)
       }
       .padding(.horizontal, 18)
       .padding(.top, 16)
@@ -93,7 +99,7 @@ struct ResultView: View {
     switch outcome.state {
     case .signalsDetected: Palette.error
     case .inconclusive: Palette.warning
-    case .noSignalsDetected: Palette.textSecondary
+    case .noSignalsDetected: Palette.primary
     }
   }
 
@@ -132,6 +138,95 @@ struct ResultView: View {
     }
   }
 
+  private var guardianAlertCard: some View {
+    SoberCard {
+      HStack(alignment: .top, spacing: 14) {
+        ZStack {
+          Circle()
+            .fill(guardianAlertTint.opacity(0.14))
+          guardianAlertIcon
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(guardianAlertTint)
+        }
+        .frame(width: 48, height: 48)
+
+        VStack(alignment: .leading, spacing: 5) {
+          Text(guardianAlertTitle)
+            .font(.headline)
+          Text(guardianAlertMessage)
+            .font(.subheadline)
+            .foregroundStyle(Palette.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+          if guardianAlertState == .actNow || guardianAlertState == .notConfigured {
+            Button("Try Guardian request again", action: onRetryGuardianAlert)
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(Palette.primary)
+              .padding(.top, 3)
+          }
+        }
+
+        Spacer(minLength: 0)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var guardianAlertIcon: some View {
+    GuardianRequestGlyph(
+      state: guardianAlertState,
+      systemImage: guardianAlertSystemImage,
+      tint: guardianAlertTint
+    )
+    .accessibilityHidden(true)
+  }
+
+  private var guardianAlertTint: Color {
+    switch guardianAlertState {
+    case .actNow, .notConfigured: Palette.warning
+    case .guardianConfirmed: Palette.primary
+    default: Palette.item0
+    }
+  }
+
+  private var guardianAlertSystemImage: String {
+    switch guardianAlertState {
+    case .guardianConfirmed: "hand.raised.fill"
+    case .actNow, .notConfigured: "exclamationmark.message.fill"
+    case .preview: "eye.fill"
+    case .requestingHelp: "paperplane"
+    case .notRequired: "message"
+    }
+  }
+
+  private var guardianAlertTitle: String {
+    switch guardianAlertState {
+    case .requestingHelp: "Requesting help"
+    case .guardianConfirmed: "Your guardian is helping"
+    case .actNow: "Contact someone now"
+    case .notConfigured: "Guardian Mode isn’t connected"
+    case .preview: "Guardian request preview"
+    case .notRequired: "Guardian request"
+    }
+  }
+
+  private var guardianAlertMessage: String {
+    switch guardianAlertState {
+    case .requestingHelp:
+      "Your request is active. Keep the direct call, message, and ride options below available until a person confirms."
+    case .guardianConfirmed:
+      "A signed response from your guardian confirms they’re helping. No camera data or scores were shared."
+    case .actNow:
+      "Automatic status could not be confirmed. Call or message someone now and arrange a ride without driving."
+    case .notConfigured:
+      "No guardian relationship is active. Call or message someone below now."
+    case .preview:
+      "Sample only. A live concerning result would create a minimal in-app help request."
+    case .notRequired:
+      "No Guardian request was required for this result."
+    }
+  }
+
   private var acknowledgementCard: some View {
     SoberCard {
       VStack(alignment: .leading, spacing: 12) {
@@ -157,6 +252,69 @@ struct ResultView: View {
 
 }
 
+/// A restrained adaptation of the phase-driven alert motion in
+/// Amos Gyamfi's open-swiftui-animations collection (Unlicense).
+private struct GuardianRequestGlyph: View {
+  let state: GuardianAlertPresentationState
+  let systemImage: String
+  let tint: Color
+
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  private var phases: [GuardianRequestPhase] {
+    state == .requestingHelp && !reduceMotion ? GuardianRequestPhase.sending : [.settled]
+  }
+
+  var body: some View {
+    PhaseAnimator(phases) { phase in
+      Image(systemName: systemImage)
+        .symbolRenderingMode(.hierarchical)
+        .foregroundStyle(tint)
+        .offset(x: phase.offset)
+        .scaleEffect(phase.scale)
+        .opacity(phase.opacity)
+        .contentTransition(.symbolEffect(.replace))
+    } animation: { phase in
+      phase.animation
+    }
+    .animation(reduceMotion ? nil : SoberMotion.progress, value: state)
+  }
+}
+
+private enum GuardianRequestPhase {
+  case settled
+  case takeoff
+  case inFlight
+
+  static let sending: [GuardianRequestPhase] = [.takeoff, .inFlight]
+
+  var offset: CGFloat {
+    switch self {
+    case .settled: 0
+    case .takeoff: -1.5
+    case .inFlight: 2.5
+    }
+  }
+
+  var scale: CGFloat {
+    switch self {
+    case .settled, .inFlight: 1
+    case .takeoff: 0.96
+    }
+  }
+
+  var opacity: Double {
+    switch self {
+    case .settled, .inFlight: 1
+    case .takeoff: 0.68
+    }
+  }
+
+  var animation: Animation {
+    .easeInOut(duration: 0.72)
+  }
+}
+
 struct InterventionCard: View {
   let safetyPlan: SafetyPlan
 
@@ -168,7 +326,7 @@ struct InterventionCard: View {
         VStack(alignment: .leading, spacing: 4) {
           Text("Get home without driving")
             .font(.title3.weight(.semibold))
-          Text("Open a ride, or call or message your Safety Circle contact directly.")
+          Text("Your ride and direct contact options stay available while the alert is sent.")
             .font(.caption)
             .foregroundStyle(Palette.textSecondary)
         }
@@ -197,29 +355,21 @@ struct InterventionCard: View {
           }
           .buttonStyle(PrimaryActionButtonStyle())
 
-          if safetyPlan.hasContact {
-            HStack(spacing: 10) {
-              Button {
-                callContact()
-              } label: {
-                Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
-              }
-              .buttonStyle(CompactActionButtonStyle())
-
-              Button {
-                messageContact()
-              } label: {
-                Label("Message", systemImage: "message.fill")
-              }
-              .buttonStyle(CompactActionButtonStyle())
+          HStack(spacing: 10) {
+            Button {
+              callContact()
+            } label: {
+              Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
             }
-          }
-        }
+            .buttonStyle(CompactActionButtonStyle())
 
-        if !safetyPlan.hasContact {
-          Text("Add a contact in your Safety Circle to call or message them from here.")
-            .font(.caption)
-            .foregroundStyle(Palette.textSecondary)
+            Button {
+              messageContact()
+            } label: {
+              Label("Message", systemImage: "message.fill")
+            }
+            .buttonStyle(CompactActionButtonStyle())
+          }
         }
       }
     }
@@ -228,15 +378,13 @@ struct InterventionCard: View {
   private func openRide() {
     let destination = safetyPlan.trimmedHomeAddress.addingPercentEncoding(
       withAllowedCharacters: .urlQueryAllowed
-    ) ?? ""
+    )
     let rawURL: String
-    if safetyPlan.preferredRide == "Lyft", !destination.isEmpty {
-      rawURL = "https://www.lyft.com/rider?id=lyft&destination%5Bnickname%5D=\(destination)"
-    } else if safetyPlan.preferredRide == "Lyft" {
+    if safetyPlan.preferredRide == "Lyft" {
       rawURL = "https://www.lyft.com/rider"
-    } else if !destination.isEmpty {
+    } else if let destination, !destination.isEmpty {
       rawURL =
-        "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bformatted_address%5D=\(destination)"
+        "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=\(destination)"
     } else {
       rawURL = "https://m.uber.com/ul/?action=setPickup&pickup=my_location"
     }
@@ -250,16 +398,9 @@ struct InterventionCard: View {
 
   private func messageContact() {
     let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    let message = Self.messageBody(homeLabel: safetyPlan.homeLabel)
+    let message = "Can you help me get home? I’m choosing not to drive."
     let body = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? message
-    if let url = URL(string: "sms:\(digits)?body=\(body)") { openURL(url) }
-  }
-
-  /// Kept as a pure function so a regression test can assert this manual
-  /// message — the only text this app ever puts in front of a contact —
-  /// never leaks quality scores, camera details, or a BAC estimate.
-  static func messageBody(homeLabel: String) -> String {
-    "Can you help me get to \(homeLabel)? I’m choosing not to drive."
+    if let url = URL(string: "sms:\(digits)&body=\(body)") { openURL(url) }
   }
 }
 
