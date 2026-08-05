@@ -181,7 +181,10 @@ struct SafetyPlan: Codable, Equatable, Sendable {
   var additionalContactPhones: [String]
   var automaticParentAlerts: Bool
   var parentAlertConsent: Bool
+  /// A user-editable nickname such as "Home" or "Campus". This is display-only.
   var homeLabel: String
+  /// The actual ride-provider drop-off address. Never substitute the nickname for this value.
+  var homeAddress: String
   var preferredRide: String
 
   init(
@@ -193,7 +196,8 @@ struct SafetyPlan: Codable, Equatable, Sendable {
     additionalContactPhones: [String] = [],
     automaticParentAlerts: Bool = false,
     parentAlertConsent: Bool = false,
-    homeLabel: String = "Home",
+    homeLabel: String = "",
+    homeAddress: String = "",
     preferredRide: String = "Uber"
   ) {
     self.isActive = isActive
@@ -205,8 +209,23 @@ struct SafetyPlan: Codable, Equatable, Sendable {
     self.automaticParentAlerts = automaticParentAlerts
     self.parentAlertConsent = parentAlertConsent
     self.homeLabel = homeLabel
+    self.homeAddress = homeAddress
     self.preferredRide = preferredRide
   }
+
+  var trimmedHomeLabel: String {
+    homeLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  var trimmedHomeAddress: String {
+    homeAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  var destinationDisplayName: String {
+    trimmedHomeLabel.isEmpty ? "Saved destination" : trimmedHomeLabel
+  }
+
+  var hasRideDestination: Bool { !trimmedHomeAddress.isEmpty }
 
   var normalizedContactPhone: String { contactPhone.filter(\.isNumber) }
 
@@ -255,6 +274,7 @@ struct SafetyPlan: Codable, Equatable, Sendable {
     case automaticParentAlerts
     case parentAlertConsent
     case homeLabel
+    case homeAddress
     case preferredRide
   }
 
@@ -270,7 +290,20 @@ struct SafetyPlan: Codable, Equatable, Sendable {
     automaticParentAlerts =
       try values.decodeIfPresent(Bool.self, forKey: .automaticParentAlerts) ?? false
     parentAlertConsent = try values.decodeIfPresent(Bool.self, forKey: .parentAlertConsent) ?? false
-    homeLabel = try values.decodeIfPresent(String.self, forKey: .homeLabel) ?? "Home"
+    let legacyLabel = try values.decodeIfPresent(String.self, forKey: .homeLabel) ?? ""
+    if let storedAddress = try values.decodeIfPresent(String.self, forKey: .homeAddress) {
+      homeLabel = legacyLabel
+      homeAddress = storedAddress
+    } else if legacyLabel.rangeOfCharacter(from: .decimalDigits) != nil {
+      // The old UI called this field a label but passed it to the ride provider as an address.
+      // Preserve address-like legacy input while separating it from the nickname going forward.
+      homeLabel = ""
+      homeAddress = legacyLabel
+    } else {
+      // Do not keep the old hard-coded "Home" value. A fresh nickname should be the user's choice.
+      homeLabel = legacyLabel.caseInsensitiveCompare("Home") == .orderedSame ? "" : legacyLabel
+      homeAddress = ""
+    }
     preferredRide = try values.decodeIfPresent(String.self, forKey: .preferredRide) ?? "Uber"
   }
 }

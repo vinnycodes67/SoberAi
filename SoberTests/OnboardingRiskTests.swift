@@ -323,7 +323,38 @@ final class OnboardingRiskTests: XCTestCase {
     let plan = try JSONDecoder().decode(SafetyPlan.self, from: Data(legacy.utf8))
     XCTAssertEqual(plan.selfPhone, "")
     XCTAssertEqual(plan.additionalContactPhones, [])
+    XCTAssertEqual(plan.homeLabel, "")
+    XCTAssertEqual(plan.homeAddress, "")
     XCTAssertTrue(plan.canAutomaticallyAlertParent)
     XCTAssertFalse(plan.hasDuplicateContactPhones)
+  }
+
+  func testSafetyPlanPersistsEditableDestinationNameAndAddress() throws {
+    let original = SafetyPlan(
+      homeLabel: "Campus apartment",
+      homeAddress: "1234 West Main Street, Austin, TX 78701"
+    )
+
+    let restored = try JSONDecoder().decode(
+      SafetyPlan.self,
+      from: try JSONEncoder().encode(original)
+    )
+
+    XCTAssertEqual(restored.homeLabel, "Campus apartment")
+    XCTAssertEqual(restored.homeAddress, "1234 West Main Street, Austin, TX 78701")
+    XCTAssertEqual(restored.destinationDisplayName, "Campus apartment")
+    XCTAssertTrue(restored.hasRideDestination)
+  }
+
+  func testLegacyAddressLikeHomeLabelMigratesToAddressField() throws {
+    let legacy = """
+      {"homeLabel":"850 West Jackson Boulevard, Chicago, IL 60607"}
+      """
+
+    let plan = try JSONDecoder().decode(SafetyPlan.self, from: Data(legacy.utf8))
+
+    XCTAssertEqual(plan.homeLabel, "")
+    XCTAssertEqual(plan.homeAddress, "850 West Jackson Boulevard, Chicago, IL 60607")
+    XCTAssertTrue(plan.hasRideDestination)
   }
 }

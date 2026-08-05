@@ -1,5 +1,9 @@
 import SwiftUI
 
+// 0.5s: A calm stack of dark setup cards with one unmistakable destination form.
+// User: someone configuring their safety plan before going out, who needs to save the exact place
+// they want a ride to without confusing a nickname for an address.
+// Emotional intent: calm and confident.
 struct SafetyPlanView: View {
   @Binding var plan: SafetyPlan
   @Environment(\.dismiss) private var dismiss
@@ -77,16 +81,32 @@ struct SafetyPlanView: View {
 
           SoberCard {
             VStack(alignment: .leading, spacing: 16) {
-              fieldLabel("Ride home")
+              fieldLabel("Ride destination")
               Picker("Preferred ride", selection: $plan.preferredRide) {
                 Text("Uber").tag("Uber")
                 Text("Lyft").tag("Lyft")
               }
               .pickerStyle(.segmented)
 
-              TextField("Destination label", text: $plan.homeLabel)
-                .textContentType(.fullStreetAddress)
+              TextField("Place name, such as Home or Campus", text: $plan.homeLabel)
+                .textInputAutocapitalization(.words)
+                .submitLabel(.next)
                 .textFieldStyle(SoberTextFieldStyle())
+
+              TextField("Full street address", text: $plan.homeAddress)
+                .textContentType(.fullStreetAddress)
+                .textInputAutocapitalization(.words)
+                .submitLabel(.done)
+                .textFieldStyle(SoberTextFieldStyle())
+
+              Label(
+                plan.hasRideDestination
+                  ? "Ride drop-off: \(plan.destinationDisplayName)"
+                  : "Add the exact drop-off address before you need a ride.",
+                systemImage: plan.hasRideDestination ? "mappin.and.ellipse" : "location.slash"
+              )
+              .font(.caption)
+              .foregroundStyle(plan.hasRideDestination ? Palette.textSecondary : Palette.warning)
             }
           }
 

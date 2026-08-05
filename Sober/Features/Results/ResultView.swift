@@ -173,6 +173,22 @@ struct InterventionCard: View {
             .foregroundStyle(Palette.textSecondary)
         }
 
+        if safetyPlan.hasRideDestination {
+          Label {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(safetyPlan.destinationDisplayName)
+                .font(.subheadline.weight(.semibold))
+              Text(safetyPlan.trimmedHomeAddress)
+                .font(.caption)
+                .foregroundStyle(Palette.textSecondary)
+            }
+          } icon: {
+            Image(systemName: "mappin.and.ellipse")
+              .foregroundStyle(Palette.primary)
+          }
+          .fixedSize(horizontal: false, vertical: true)
+        }
+
         SoberGlassControlGroup(spacing: 10) {
           Button {
             openRide()
@@ -210,14 +226,19 @@ struct InterventionCard: View {
   }
 
   private func openRide() {
-    let destination =
-      safetyPlan.homeLabel.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Home"
+    let destination = safetyPlan.trimmedHomeAddress.addingPercentEncoding(
+      withAllowedCharacters: .urlQueryAllowed
+    ) ?? ""
     let rawURL: String
-    if safetyPlan.preferredRide == "Lyft" {
+    if safetyPlan.preferredRide == "Lyft", !destination.isEmpty {
       rawURL = "https://www.lyft.com/rider?id=lyft&destination%5Bnickname%5D=\(destination)"
-    } else {
+    } else if safetyPlan.preferredRide == "Lyft" {
+      rawURL = "https://www.lyft.com/rider"
+    } else if !destination.isEmpty {
       rawURL =
         "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bformatted_address%5D=\(destination)"
+    } else {
+      rawURL = "https://m.uber.com/ul/?action=setPickup&pickup=my_location"
     }
     if let url = URL(string: rawURL) { openURL(url) }
   }
