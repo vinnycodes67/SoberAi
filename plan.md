@@ -158,3 +158,341 @@ Before this plan was written:
 - 2026-08-04: Agent Reach research confirmed Apple's iOS 26 Liquid Glass hierarchy, grouping, interaction, performance, and Reduce Motion guidance.
 - 2026-08-04: Added the nocturnal-instrument design system, availability-gated native glass controls, iOS 17 material fallbacks, an atmospheric background, a refined signal halo, entrance/progress/state motion, and accessibility-aware motion/transparency behavior.
 - 2026-08-04: UI verification passed on the iPhone 17 Pro iOS 26.5 simulator at default and Accessibility Medium Dynamic Type. Final verification passed: 53 iOS tests, 13 backend tests, Cloudflare dry-run, and `git diff --check` with zero failures.
+
+---
+
+# Sober Finish-Out 0.3 — Guardian, Validation, and Reliability
+
+Last updated: 2026-08-05
+
+## Status and planning inputs
+
+This is the executable plan for the previously proposed steps 3–5:
+
+1. Build Guardian Mode with app-based alerts, acknowledgment, and SMS fallback.
+2. Establish a defensible data and validation program before training a model.
+3. Harden every camera, network, notification, interruption, and provider failure path.
+
+Codex produced this repository-grounded synthesis. Claude's existing independent findings in
+`Docs/CLAUDE_REVIEW.md` are incorporated, especially the open physical-device, deployed-relay,
+delivery-callback, and clinical-validation risks. Claude completed the fresh Gate 0 challenge in
+`Docs/CLAUDE_FINISH_REVIEW.md` on 2026-08-05. Its three P0 findings blocked the original account/D1
+architecture. Codex revised the contracts around relationship-scoped signing capabilities and one
+Durable Object consistency boundary; Claude re-review remains required before Gate 1.
+
+## Non-negotiable product boundary
+
+- Sober detects concerning deviation from a person's measured baseline; it does not determine
+  sobriety, BAC, fitness to drive, or completion of an official field sobriety test.
+- `INCONCLUSIVE` remains a first-class result. Missing, interrupted, contradictory, or poor-quality
+  data may never be converted into reassurance.
+- Guardian notifications share only the minimum safety message and help request. They never contain
+  camera frames, landmarks, task-level scores, inferred substances, or a “sober/drunk” label.
+- APNs or SMS provider acceptance is not delivery. Only a signed guardian acknowledgment may be
+  shown as “acknowledged.”
+- Raw face video remains on-device and unpersisted. Any future raw-video research would require a
+  separate build, separate consent, separate retention policy, and separate security review.
+- External human-subject research and user-facing accuracy claims require qualified research,
+  legal, privacy, and regulatory review. The FDA's current
+  [Digital Health Policy Navigator](https://www.fda.gov/medical-devices/digital-health-center-excellence/digital-health-policy-navigator)
+  is an explicit classification checkpoint before public claims change.
+
+## Architecture decision
+
+Use one iOS binary with two roles: **Person being screened** and **Guardian**. A guardian installs
+Sober, accepts an expiring invite, grants notification permission, and explicitly acknowledges the
+relationship. The existing phone-number-only Safety Circle remains available until the guardian is
+linked.
+
+Recommended production path:
+
+- Each role creates a P-256 signing key stored in this-device-only Keychain/Secure Enclave storage.
+  The backend stores public keys only and verifies signatures covering the relationship, request,
+  event, timestamp, nonce, and idempotency key.
+- One `GuardianRelationship` Durable Object stores the relationship, consent, public keys, devices,
+  verified phone digests, revocation, alert idempotency, provider state, acknowledgment deadline,
+  and SMS alarm. D1 and accounts are deliberately excluded from the founder build.
+- Revocation and alert submission serialize through that one object. If revocation commits first,
+  no provider is called; if a provider attempt starts first, it may finish but no later fallback or
+  acknowledgment proceeds after revocation.
+- Signed concerning events coalesce into one recent unacknowledged canonical alert instead of being
+  silently dropped by an event-count rate limit. Retry and fallback consume no second reservation.
+- APNs sends the immediate app notification. Follow Apple's device-token registration lifecycle;
+  tokens are variable-length and must be refreshed when iOS changes them. See
+  [Registering your app with APNs](https://developer.apple.com/documentation/usernotifications/registering-your-app-with-apns).
+- Guardian pushes are Time Sensitive. A Critical Alerts entitlement is a separate Apple dependency
+  if the founders require reliable Focus override; provider acceptance is never shown as delivery.
+- If no active guardian device exists or APNs rejects the request, send SMS immediately only to a
+  separately verified, consented guardian phone. If APNs accepts but no signed acknowledgment arrives
+  within 30 seconds, the same object sends one SMS fallback using the canonical event ID.
+- Alert status is retained for 24 hours; invite tokens expire after 24 hours; founder relationships
+  expire after 90 days and require a fresh two-sided invite. Exact retention still requires counsel.
+
+## Team ownership and conflict boundaries
+
+| Area | Claude Code owner | Codex owner | Shared gate |
+| --- | --- | --- | --- |
+| Guardian backend | `Backend/**`, backend tests, `Docs/GUARDIAN_API.md`, `Docs/GUARDIAN_THREAT_MODEL.md` | iOS/API integration review | Contract review before either side codes |
+| Guardian iOS | Read-only UX, privacy, and failure-mode challenge | `Sober/Features/Guardian/**`, guardian models/services, entitlements, iOS tests | End-to-end simulator/device review |
+| Validation program | Challenge labels, leakage, claims, subgroup risks, and protocol gaps | Research schema, data dictionary, export validation, analysis harness | Protocol sign-off before collecting study data |
+| Failure hardening | Backend chaos cases and adversarial review | iOS state machine, interruption handling, device QA harness | Full failure matrix and joint diff review |
+| Integration | No edits to Codex-owned files; return findings in review docs | Own shared project files, resolve API mismatches, run final suite | Claude challenge followed by Codex fixes |
+
+Claude and Codex must work in separate branches or worktrees. Claude does not edit iOS files and
+Codex does not edit Claude-owned backend files while parallel work is active. `plan.md`,
+`project.yml`, and cross-system contract fixtures are integrated by Codex only.
+
+## Gate 0 — Freeze the contract before implementation
+
+**Claude**
+
+- [x] Authenticate the Claude CLI and review this plan plus `Docs/CLAUDE_REVIEW.md`.
+- [x] Produce `Docs/CLAUDE_FINISH_REVIEW.md` covering threat boundaries, notification truthfulness,
+  duplicate-alert risks, consent/revocation, research-label leakage, and missing failure cases.
+- [x] Challenge whether Sign in with Apple + D1 + Durable Objects is the smallest architecture that can
+  safely support two-sided identity and acknowledgment.
+- [ ] Re-review the capability-based revision of `Docs/GUARDIAN_API.md` and
+  `Docs/GUARDIAN_DATA_GOVERNANCE.md`.
+
+**Codex**
+
+- [x] Commit the current 53-test green UI/animation checkpoint without staging unrelated files
+  (`0ee4e31`).
+- [x] Write the guardian API contract and state diagram before adding views
+  (`Docs/GUARDIAN_API.md`).
+- [x] Record all new data fields, retention, log redaction, and consent-version behavior
+  (`Docs/GUARDIAN_DATA_GOVERNANCE.md`).
+
+**Exit criteria**
+
+- Both agents agree on API payloads, authentication, idempotency, state names, fallback timing,
+  retention, and which claims the UI may display.
+- Unresolved one-way security/privacy decisions stop implementation and go to the founders.
+
+Codex's Gate 0 revision is complete. Implementation remains blocked until Claude re-reviews the
+revised contracts and the shared exit criteria are accepted.
+
+## Workstream 3 — Guardian Mode
+
+### 3A. Backend and notification foundation — Claude owns
+
+- Add a versioned per-relationship Durable Object schema for public-key capabilities, consent,
+  invites, devices, verified phone digests, revocation, alerts, aliases, and alarms. Do not add D1.
+- Add ES256 request verification with signed body/path/event, timestamp bounds, nonce replay
+  prevention, role scoping, and generic non-enumerating failures. Retire the app-wide bearer token
+  before the first guardian build leaves founder-controlled devices.
+- Add endpoints to create and verify the person's relationship, redeem an invite once, verify a
+  distinct guardian fallback phone, register/rotate/delete role APNs tokens, revoke, query status,
+  and submit a signed acknowledgment.
+- Add APNs provider-token signing, response parsing, token invalidation, retry classification, and
+  zero-sensitive-body logging. Send Time Sensitive notifications and document the optional Critical
+  Alerts profile separately.
+- Extend the Durable Object state machine:
+  `reserved → pushAccepted/fallbackScheduled → guardianAcknowledged`, with explicit
+  `pushRejected`, `smsAccepted`, `statusUnknown`, and `expired` states. Keep guardian-open telemetry
+  backend-only; never show it to the screened person.
+- Schedule one 30-second SMS fallback alarm. Cancel it only after a valid guardian acknowledgment.
+  Persist the alarm before APNs contact, reuse the canonical event ID across every channel, and
+  serialize the t=30 acknowledgment race inside the same object.
+- Add Twilio status callbacks for `queued`, `sent`, `delivered`, `undelivered`, and `failed`, while
+  keeping provider delivery separate from guardian acknowledgment.
+- Coalesce a recent unacknowledged duplicate-content event into the existing canonical alert. A
+  fallback or replay consumes no second reservation, and any abuse-control failure is explicit.
+- Add contract, signature, replay, invite/phone verification, revocation ordering, APNs error/Focus,
+  alarm-race, callback-signature, provider-ambiguity, and idempotency tests.
+
+### 3B. Guardian iOS experience — Codex owns
+
+- Add role selection, P-256 capability-key provisioning, person/guardian phone verification,
+  guardian invite creation, universal-link redemption, two-sided consent, notification permission,
+  relationship status, expiry, and revocation.
+- Add a Guardian home screen with the person's display name, relationship state, a minimal alert
+  card, “I'm helping,” call, message, and safe-ride actions. Do not show screening metrics.
+- Register for remote notifications at launch only after role/consent setup, send token changes to
+  the backend, and remove the token on logout or relationship revocation.
+- Add a signed alert-status client that survives app backgrounding, relaunch, network changes, stale
+  responses, canonical-event coalescing, and lost/corrupt receipts. Persist only the relationship
+  capability, opaque IDs, and minimal pending receipt in Keychain-protected storage.
+- Extend the screened-person result card to show truthful states: alerting, push accepted, SMS
+  fallback accepted, alert already active, guardian acknowledged, failed, or status unknown. Never
+  show guardian-opened or delivered as a person-facing state.
+- If acknowledgment is absent, keep direct Call/Message/Ride actions prominent. Never block those
+  actions on network state.
+- Add VoiceOver labels, Dynamic Type layouts, Reduce Motion behavior, notification deep-link routing,
+  explicit permission-denied recovery, generic revocation notification handling, and foreground
+  relationship reconciliation that returns a revoked Safety Circle to unconfigured.
+
+### 3C. Guardian Mode acceptance criteria
+
+- A linked guardian receives an app notification for a live concerning result and can acknowledge
+  it from the alert screen.
+- The screened person's app displays acknowledgment only after the backend accepts an authenticated
+  guardian action for that relationship and event.
+- A missing device token, denied notifications, APNs rejection, timeout, app uninstall, expired
+  session, or unacknowledged push produces exactly one SMS fallback where allowed.
+- Replaying an invite, revoked relationship, wrong capability, mismatched event/signature, or
+  duplicate acknowledgment is rejected without exposing whether another relationship exists.
+- Samples, founder previews, `INCONCLUSIVE`, and `NO_SIGNALS_DETECTED` never notify a guardian.
+- Push and SMS contain no score, camera detail, or substance inference; logs contain no names, phone
+  numbers, message bodies, tokens, or raw device tokens.
+
+## Workstream 4 — Data and validation before model training
+
+### 4A. Define the target — Claude challenges, Codex documents
+
+- Freeze the intended target as **personal performance deviation under usable capture**, not
+  “alcohol detected” or “safe to drive.”
+- Publish a versioned data dictionary for every input, unit, missing-value meaning, protocol variant,
+  quality field, confounder, transformation, and exclusion rule.
+- Version the external dictionary independently of the storage envelope. Optionality, units,
+  missing-value meaning, or protocol changes require a dictionary-version bump even when storage
+  schema decoding is unchanged.
+- List Guardian relationship, capability, invite, device, event, provider, delivery, and
+  acknowledgment identifiers as prohibited research/export fields and test their absence.
+- Pre-register primary metrics, abstention rules, subgroup analyses, and stop conditions with a
+  qualified statistician/research partner. Do not select success thresholds after viewing results.
+- Define ground truth separately from model inputs. Self-report alone is not a sufficient label.
+  Reference instruments and supervised observations must be captured independently and time-aligned.
+
+### 4B. Stage the evidence program — Codex implements tooling
+
+1. **Technical repeatability pilot:** collect at least five sober sessions per participant across
+   lighting, time of day, glasses/contacts, supported devices, and both motion protocols. Measure
+   missingness, test-retest variability, device effects, capture rejection, and baseline stability.
+2. **Observational paired pilot:** only after protocol/consent review, collect time-aligned reference
+   measures and Sober sessions in a supervised setting. Preserve the reference label separately from
+   derived features and app outcomes.
+3. **Controlled impairment study:** do not run informally. Proceed only with a qualified clinical or
+   academic partner, appropriate ethics/IRB determination, age/consent controls, adverse-event plan,
+   transport plan, and legal/regulatory review.
+
+### 4C. Training and evaluation gates
+
+- Do not train until schema, protocol, labels, exclusions, and consent are frozen and versioned.
+- Split train/validation/test by participant, never by session. A person's baseline and follow-up
+  sessions may not leak across partitions.
+- Keep a locked final test set. Report sensitivity, specificity, calibration, confidence intervals,
+  abstention rate, false-negative cases, device/protocol effects, and subgroup slices.
+- Compare every model against simple transparent baselines. Reject a model that adds complexity
+  without reproducible out-of-participant improvement.
+- Run candidates in silent shadow mode first. They may write research-only comparisons but may not
+  alter the user-facing result, parent-alert rule, or safety language.
+- Version the model, feature pipeline, protocol, threshold set, and training dataset together. Ship a
+  model card, dataset statement, rollback path, and monitoring plan.
+
+### 4D. Validation acceptance criteria
+
+- Export validation proves that every field matches the data dictionary and no prohibited identity
+  or raw-image data appears.
+- Repeatability and failure rates are quantified on physical supported devices before any accuracy
+  claim or threshold change.
+- Evaluation is participant-held-out and reproducible from immutable scripts/configuration.
+- Subgroup or device gaps trigger abstention, more data, or scope reduction; they are not hidden by
+  an aggregate score.
+- No model reaches users until founders, research lead, privacy/legal reviewer, and Claude/Codex
+  review all sign off on the evidence and exact user-facing claim.
+
+## Workstream 5 — Failure-mode hardening
+
+### 5A. Codex iOS reliability work
+
+- Replace implicit view-driven progression with an explicit screening state machine whose transitions
+  are unit tested: foreground/background, camera denied/revoked, AR session interruption, call/audio
+  interruption, thermal pressure, low power, task abandonment, and relaunch.
+- Pause or invalidate capture when timestamps, target phases, or camera samples lose alignment.
+- Add network state handling for offline start, timeout, reconnect, duplicated responses, stale status,
+  and response-after-cancellation.
+- Persist a minimal pending-alert receipt so relaunch can recover the same event ID and query status
+  instead of creating a new alert.
+- Verify the camera indicator and AR session stop outside calibration/ocular phases; run a ten-session
+  memory/leak test on hardware.
+- Add deterministic fakes for camera quality, clocks, lifecycle events, APNs registration, status
+  polling, and guardian acknowledgment.
+
+### 5B. Claude backend chaos and operations work
+
+- Test Durable Object restart, deploy between retries, storage failure before/after provider calls,
+  alarm duplication, revocation/send ordering, t=30 acknowledgment races, capability replay, abuse
+  limiter unavailability, APNs timeout/410/429/5xx, Focus/silent delivery, and Twilio callback replay.
+- Add structured, privacy-safe observability keyed by opaque event IDs: request outcome, state
+  transition, latency, retry count, fallback reason, and acknowledgment latency.
+- Add alerts for elevated push rejection, fallback rate, unknown-status events, callback signature
+  failures, and rate-limit spikes without logging sensitive payloads.
+- Write deployment, credential rotation, APNs key rotation, provider outage, rollback, and incident
+  runbooks. Add a founder-number allowlist and staging environment before production.
+
+### 5C. Joint failure matrix
+
+Test every combination that can change user truthfulness:
+
+| Domain | Required cases |
+| --- | --- |
+| Camera | unsupported, denied, revoked, no face, multiple faces, poor light, glare, dropout, interruption |
+| Tasks | anticipation, miss, wrong choice, abandonment, backgrounding, clock drift, Reduced Motion |
+| Network | offline, timeout, reconnect, duplicate, stale response, cancellation, server 4xx/5xx |
+| Guardian | no app, denied notifications, Focus/silent push, expired capability, revoked link, wrong key, same device/phone, uninstall, no acknowledgment |
+| Providers | APNs accepted/rejected/invalid token; Twilio accepted/delivered/failed; callback replay/forgery |
+| Storage | Keychain unavailable, corrupt local archive, Durable Object/abuse-limiter failure, restart, post-send write failure |
+| Accessibility | VoiceOver, largest Dynamic Type, Reduce Motion, Reduce Transparency, Switch Control path |
+
+### 5D. Reliability acceptance criteria
+
+- Every failure produces one of: safe recovery, explicit `INCONCLUSIVE`, direct-help fallback, or a
+  truthful alert failure. No failure silently produces reassurance.
+- The same concerning event can never create multiple SMS sends under supported retry/relaunch paths.
+- No UI says delivered or acknowledged without the corresponding provider callback or authenticated
+  guardian action.
+- Physical TrueDepth QA passes on at least two supported iPhones, including glasses, low light,
+  background/foreground, camera revocation, full protocol, and Reduced Motion protocol.
+- All iOS tests, backend tests, contract tests, Cloudflare dry-run, privacy-log inspection,
+  accessibility pass, and `git diff --check` pass before TestFlight distribution.
+
+## Execution order and review gates
+
+1. **Gate 0:** authenticate Claude, freeze contracts/threat model, checkpoint the current green diff.
+2. **Gate 1:** Claude implements relationship capabilities/invites/APNs/status; Codex implements iOS
+   key handling, guardian models, and screens against frozen fixtures.
+3. **Gate 2:** Codex integrates and runs end-to-end staging tests; Claude performs an adversarial diff
+   challenge; Codex fixes every P0/P1 finding.
+4. **Gate 3:** Codex completes the iOS failure state machine and physical-device checklist while
+   Claude completes backend chaos tests and operational runbooks.
+5. **Gate 4:** freeze the research protocol/data dictionary, run the sober repeatability pilot, and
+   review data quality. Training remains blocked.
+6. **Gate 5:** only after independent labels and formal oversight exist, build offline model
+   experiments and shadow-mode evaluation.
+7. **Ship gate:** fresh Claude challenge, Codex review, 100% green verification matrix, founder signoff,
+   then TestFlight. Public release remains blocked on legal/privacy/regulatory and evidence review.
+
+## Human dependencies that agents cannot complete
+
+- Apple Developer configuration: associated domains, push entitlement, APNs key, Time Sensitive
+  notifications, and TestFlight access. A Critical Alerts entitlement is additionally required if
+  reliable Focus override is part of the product promise.
+- Cloudflare/Twilio staging credentials, Durable Object migrations, encryption/HMAC secrets,
+  callback URL, and consenting allowlisted verification/fallback phone numbers.
+- Two or more supported physical TrueDepth iPhones and participating guardians.
+- Qualified research/statistics leadership, ethics/IRB determination where applicable, privacy/legal
+  review, controlled-study site, reference instruments, and participant recruitment.
+
+## Definition of finished
+
+“Finished” for the next founder build means a real concerning result can notify a linked guardian in
+the app, recover through SMS, receive an authenticated acknowledgment, and remain truthful under every
+tested failure; the camera/task pipeline has physical-device evidence; and the research system can
+collect versioned, consented, quality-audited data without claiming that an unvalidated model works.
+It does **not** mean the product is clinically validated or ready to tell anyone they are sober.
+
+## 0.3 execution log
+
+- 2026-08-05: Codex regenerated the project, passed 53 iOS tests, 13 backend tests, the Worker dry
+  run, and `git diff --check`, then committed the UI/motion checkpoint as `0ee4e31` without staging
+  the finish-out plan.
+- 2026-08-05: Claude completed `Docs/CLAUDE_FINISH_REVIEW.md` and blocked the original Sign in with
+  Apple + D1 design on shared-token scope, revocation consistency, and notification truthfulness.
+- 2026-08-05: Codex revised the API and data-governance contracts to use relationship-scoped ES256
+  capabilities and a single relationship Durable Object; added verified distinct-phone fallback,
+  pre-APNs alarm persistence, explicit dependency fail directions, safe alert coalescing, visible
+  revocation reconciliation, Time Sensitive/Critical Alerts handling, and research-ID exclusion.
+- 2026-08-05: Local Claude CLI re-review could not run because this shell has no Claude credentials.
+  Gate 1 remains blocked pending the required independent re-review and founder acceptance of the
+  Apple/privacy human dependencies.
