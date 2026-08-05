@@ -2,6 +2,10 @@
 
 Last updated: 2026-08-04
 
+## Current next-build plan
+
+The executable 0.4 roadmap is in [`Docs/NEXT_BUILD_PLAN.md`](Docs/NEXT_BUILD_PLAN.md). It sequences location reliability, consented Night Out sessions, person-owned named Places, APNs plumbing, and offline validation tooling while separating work Codex can implement from physical-device, Apple Developer, legal, and research gates.
+
 ## UI Motion + Liquid Glass Pass
 
 ### Goal
