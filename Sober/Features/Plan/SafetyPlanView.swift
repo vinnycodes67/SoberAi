@@ -102,6 +102,7 @@ struct SafetyPlanView: View {
           .foregroundStyle(Palette.textSecondary)
           .padding(.horizontal, 4)
         }
+        .soberEntrance()
         .padding(22)
       }
       .soberBackground()

@@ -15,9 +15,9 @@ deployment target.
 - Four-hour self-report gate that overrides task scoring
 - Six-trial color/shape reaction task with latency, errors, misses, anticipations, and variability
 - Motor tracking, time-estimation, and a 25-second fixation/pursuit/structured-saccade ocular protocol, with a separate 11-second Reduced Motion variant
-- Mirrored TrueDepth preview with face, centering, distance, lighting, stability, frame-rate, dropout, and sample-count gating
+- Mirrored TrueDepth preview with face, centering, distance, lighting, stability, frame-rate, dropout, sample-count, and capture-duration quality gating
 - Separate left/right gaze, blink, head-motion, and target samples held in a bounded in-memory buffer
-- Research-only fixation jitter, pursuit error, saccade error, asymmetry, blink-rate, and head-compensation summaries
+- Research-only fixation jitter, pursuit error, saccade error, asymmetry, optional blink-rate, and head-compensation summaries
 - A transparent weighted prototype scorer that refuses to guess on unusable capture
 - Exactly three result states: signals detected, inconclusive, no signals detected
 - No green/pass/cleared/safe state
@@ -29,6 +29,7 @@ deployment target.
 - A founder-only Research Center with explicit consent, contextual confounders, local session count, JSON export, and delete-all controls
 - Versioned, pseudonymous research envelopes stored locally with file protection where available
 - Founder previews for all result states using visibly labeled sample data
+- Availability-gated iOS 26 Liquid Glass controls, calm motion, Dynamic Type, Reduce Motion, and Reduce Transparency support with an iOS 17 material fallback
 - Unit tests for safety invariants, ocular quality, research storage/baselines, and alert reliability
 
 ## Run it
@@ -117,3 +118,4 @@ xcodebuild \
 - Ride links open the provider; production destination and location handling remain to be implemented.
 
 Read [Founder Review](Docs/FOUNDER_REVIEW.md) before deciding what to build next.
+The visual and motion rules live in [DESIGN.md](DESIGN.md).

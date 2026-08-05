@@ -17,6 +17,7 @@ struct ScreeningFlowView: View {
 
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @StateObject private var faceTracking = FaceTrackingService()
   @State private var step: ScreeningStep
   @State private var selfReport: SelfReport = .no
@@ -129,6 +130,16 @@ struct ScreeningFlowView: View {
           )
         }
       }
+      .id(step)
+      .transition(
+        reduceMotion
+          ? .opacity
+          : .asymmetric(
+            insertion: .opacity.combined(with: .offset(x: 10)),
+            removal: .opacity.combined(with: .offset(x: -8))
+          )
+      )
+      .animation(reduceMotion ? nil : SoberMotion.screen, value: step)
 
       if canExit {
         HStack {
@@ -140,7 +151,7 @@ struct ScreeningFlowView: View {
               .font(.subheadline.weight(.bold))
               .foregroundStyle(Palette.textSecondary)
               .frame(width: 44, height: 44)
-              .background(.ultraThinMaterial, in: Circle())
+              .soberGlassCircle()
           }
           .accessibilityLabel("Exit check")
         }
@@ -286,6 +297,7 @@ struct FlowContainer<Content: View>: View {
         }
         content
       }
+      .soberEntrance()
       .padding(.horizontal, 22)
       .padding(.top, 58)
       .padding(.bottom, 24)
@@ -440,6 +452,7 @@ private struct AnalyzingView: View {
           .foregroundStyle(Palette.textSecondary)
       }
     }
+    .soberEntrance()
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .soberBackground()
     .task {
@@ -459,6 +472,7 @@ private struct BaselineCompleteView: View {
     VStack(spacing: 24) {
       Spacer()
       SignalHalo(tone: Palette.item0, size: 210, isActive: false)
+        .soberEntrance(order: 0)
       VStack(spacing: 9) {
         Text(accepted ? "Baseline recorded" : completionState.title)
           .font(.system(.largeTitle, design: .serif, weight: .semibold))
@@ -472,6 +486,7 @@ private struct BaselineCompleteView: View {
         .foregroundStyle(Palette.textSecondary)
         .multilineTextAlignment(.center)
       }
+      .soberEntrance(order: 1)
       SoberCard {
         Text(
           "This was calibration—not a driving result. It does not mean you’re sober or safe to drive."
@@ -479,9 +494,11 @@ private struct BaselineCompleteView: View {
         .font(.subheadline.weight(.medium))
         .fixedSize(horizontal: false, vertical: true)
       }
+      .soberEntrance(order: 2)
       Spacer()
       Button("Return home", action: onDone)
         .buttonStyle(PrimaryActionButtonStyle())
+        .soberEntrance(order: 3)
     }
     .padding(22)
     .soberBackground()

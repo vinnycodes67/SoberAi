@@ -65,6 +65,7 @@ final class ParentAlertReliabilityTests: XCTestCase {
     ])
     let service = ParentAlertService(
       configuration: configuredRelay,
+      eventID: eventID,
       transport: { request in
         (data, Self.httpResponse(for: request, statusCode: 200))
       }
@@ -81,6 +82,36 @@ final class ParentAlertReliabilityTests: XCTestCase {
       configuration: configuredRelay,
       transport: { request in
         (Data("not-json".utf8), Self.httpResponse(for: request, statusCode: 202))
+      }
+    )
+
+    await assertServiceError(.invalidResponse) {
+      try await service.send(outcome: concerningOutcome, safetyPlan: safetyPlan)
+    }
+  }
+
+  func testIncompleteRelayReceiptIsRejected() async {
+    let data = try! JSONSerialization.data(withJSONObject: ["reference": "SM123"])
+    let service = ParentAlertService(
+      configuration: configuredRelay,
+      transport: { request in
+        (data, Self.httpResponse(for: request, statusCode: 202))
+      }
+    )
+
+    await assertServiceError(.invalidResponse) {
+      try await service.send(outcome: concerningOutcome, safetyPlan: safetyPlan)
+    }
+  }
+
+  func testMismatchedRelayEventIDIsRejected() async {
+    let requestEventID = UUID()
+    let responseEventID = UUID()
+    let service = ParentAlertService(
+      configuration: configuredRelay,
+      eventID: requestEventID,
+      transport: { request in
+        Self.acceptedResponse(for: request, eventID: responseEventID)
       }
     )
 

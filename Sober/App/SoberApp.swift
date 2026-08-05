@@ -16,6 +16,7 @@ struct SoberApp: App {
 
 struct RootView: View {
   @EnvironmentObject private var model: AppModel
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     Group {
@@ -25,6 +26,6 @@ struct RootView: View {
         OnboardingView()
       }
     }
-    .animation(.easeInOut(duration: 0.35), value: model.hasCompletedOnboarding)
+    .animation(reduceMotion ? nil : SoberMotion.screen, value: model.hasCompletedOnboarding)
   }
 }

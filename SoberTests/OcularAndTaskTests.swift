@@ -69,6 +69,93 @@ final class OcularAndTaskTests: XCTestCase {
     XCTAssertTrue(summary.quality.issues.contains(.insufficientSamples))
   }
 
+  func testAnalyzerKeepsMissingBlinkTelemetryAbsent() {
+    let samples = syntheticSamples(framesPerSecond: 30).map { sample in
+      OcularSample(
+        timestamp: sample.timestamp,
+        phase: sample.phase,
+        targetX: sample.targetX,
+        targetY: sample.targetY,
+        leftGazeX: sample.leftGazeX,
+        leftGazeY: sample.leftGazeY,
+        rightGazeX: sample.rightGazeX,
+        rightGazeY: sample.rightGazeY,
+        headX: sample.headX,
+        headY: sample.headY,
+        headZ: sample.headZ,
+        blinkLeft: nil,
+        blinkRight: nil
+      )
+    }
+
+    let summary = OcularSignalAnalyzer().summarize(
+      samples: samples,
+      observedFrameCount: samples.count,
+      liveQuality: CaptureQualitySnapshot(
+        isSupported: true,
+        hasCameraPermission: true,
+        facePresent: true,
+        centered: true,
+        distanceAcceptable: true,
+        lightingAcceptable: true,
+        headStable: true,
+        frameRate: 30,
+        sampleCount: samples.count,
+        dropoutRatio: 0,
+        issues: []
+      )
+    )
+
+    XCTAssertNil(summary.features.blinkRatePerMinute)
+  }
+
+  func testCaptureQualityCannotBeRescuedByOneGoodFinalFrame() {
+    var history = CaptureQualityHistory()
+    for _ in 0..<8 {
+      history.record(
+        facePresent: true,
+        centered: false,
+        distanceAcceptable: false,
+        lightingAcceptable: false,
+        headStable: false
+      )
+    }
+    for _ in 0..<2 {
+      history.record(
+        facePresent: true,
+        centered: true,
+        distanceAcceptable: true,
+        lightingAcceptable: true,
+        headStable: true
+      )
+    }
+
+    let finalFrame = CaptureQualitySnapshot(
+      isSupported: true,
+      hasCameraPermission: true,
+      facePresent: true,
+      centered: true,
+      distanceAcceptable: true,
+      lightingAcceptable: true,
+      headStable: true,
+      frameRate: 30,
+      sampleCount: 300,
+      dropoutRatio: 0,
+      issues: []
+    )
+    let aggregate = history.applying(to: finalFrame)
+
+    XCTAssertFalse(aggregate.isUsable)
+    XCTAssertFalse(aggregate.centered)
+    XCTAssertFalse(aggregate.distanceAcceptable)
+    XCTAssertFalse(aggregate.lightingAcceptable)
+    XCTAssertFalse(aggregate.headStable)
+    XCTAssertTrue(aggregate.issues.contains(.offCenter))
+    XCTAssertTrue(aggregate.issues.contains(.distance))
+    XCTAssertTrue(aggregate.issues.contains(.lowLight))
+    XCTAssertTrue(aggregate.issues.contains(.unstable))
+  }
+
   func testChoiceReactionSummaryIncludesEveryErrorType() {
     let summary = ChoiceReactionSummary(trials: [
       ChoiceReactionTrial(

@@ -317,6 +317,7 @@ struct MotorTrackingTaskView: View {
 struct TimeEstimateTaskView: View {
   let onComplete: (Double) -> Void
 
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var startedAt: Date?
   @State private var finished = false
 
@@ -336,12 +337,12 @@ struct TimeEstimateTaskView: View {
         if startedAt == nil {
           SignalHalo(size: 220, isActive: false)
         } else {
-          TimelineView(.animation) { timeline in
+          TimelineView(.animation(paused: reduceMotion)) { timeline in
             let elapsed = timeline.date.timeIntervalSince(startedAt ?? timeline.date)
             ZStack {
               Circle()
                 .stroke(Palette.primary.opacity(0.12), lineWidth: 2)
-                .frame(width: 150 + sin(elapsed * 1.4) * 12)
+                .frame(width: reduceMotion ? 150 : 150 + sin(elapsed * 1.4) * 12)
               Circle()
                 .fill(Palette.primary)
                 .frame(width: 12, height: 12)

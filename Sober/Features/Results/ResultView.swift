@@ -15,6 +15,7 @@ struct ResultView: View {
   let onDone: () -> Void
 
   @Environment(\.openURL) private var openURL
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var acknowledged = false
   @State private var secondsRemaining = 4
 
@@ -29,6 +30,7 @@ struct ResultView: View {
         }
 
         SignalHalo(tone: stateColor, size: 164, isActive: outcome.state != .noSignalsDetected)
+          .soberEntrance(order: 0)
 
         VStack(spacing: 9) {
           Text(outcome.state.rawValue.replacingOccurrences(of: "_", with: " "))
@@ -45,13 +47,18 @@ struct ResultView: View {
             .foregroundStyle(Palette.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
         }
+        .soberEntrance(order: 1)
 
         if outcome.state == .signalsDetected {
           parentAlertCard
+            .soberEntrance(order: 2)
         }
         signalBreakdown
+          .soberEntrance(order: outcome.state == .signalsDetected ? 3 : 2)
         InterventionCard(safetyPlan: safetyPlan)
+          .soberEntrance(order: outcome.state == .signalsDetected ? 4 : 3)
         acknowledgementCard
+          .soberEntrance(order: outcome.state == .signalsDetected ? 5 : 4)
 
         Button("Return home", action: onDone)
           .buttonStyle(SecondaryActionButtonStyle(tint: Palette.textSecondary))
@@ -60,6 +67,7 @@ struct ResultView: View {
           .accessibilityValue(returnHomeAccessibilityValue)
           .accessibilityHint(
             canLeave ? "Closes this result" : "Read and acknowledge the safety message first")
+          .soberEntrance(order: outcome.state == .signalsDetected ? 6 : 5)
       }
       .padding(.horizontal, 18)
       .padding(.top, 16)
@@ -234,6 +242,8 @@ struct ResultView: View {
           )
           .font(.caption.monospacedDigit())
           .foregroundStyle(Palette.textSecondary)
+          .contentTransition(.numericText())
+          .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: secondsRemaining)
         }
       }
     }
@@ -257,27 +267,29 @@ struct InterventionCard: View {
             .foregroundStyle(Palette.textSecondary)
         }
 
-        Button {
-          openRide()
-        } label: {
-          Label("Open \(safetyPlan.preferredRide)", systemImage: "car.side.fill")
-        }
-        .buttonStyle(PrimaryActionButtonStyle())
-
-        HStack(spacing: 10) {
+        SoberGlassControlGroup(spacing: 10) {
           Button {
-            callContact()
+            openRide()
           } label: {
-            Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
+            Label("Open \(safetyPlan.preferredRide)", systemImage: "car.side.fill")
           }
-          .buttonStyle(CompactActionButtonStyle())
+          .buttonStyle(PrimaryActionButtonStyle())
 
-          Button {
-            messageContact()
-          } label: {
-            Label("Message", systemImage: "message.fill")
+          HStack(spacing: 10) {
+            Button {
+              callContact()
+            } label: {
+              Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
+            }
+            .buttonStyle(CompactActionButtonStyle())
+
+            Button {
+              messageContact()
+            } label: {
+              Label("Message", systemImage: "message.fill")
+            }
+            .buttonStyle(CompactActionButtonStyle())
           }
-          .buttonStyle(CompactActionButtonStyle())
         }
       }
     }
@@ -310,7 +322,35 @@ struct InterventionCard: View {
 }
 
 private struct CompactActionButtonStyle: ButtonStyle {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+  @ViewBuilder
   func makeBody(configuration: Configuration) -> some View {
+    if #available(iOS 26.0, *) {
+      label(configuration)
+        .glassEffect(
+          .regular.interactive(),
+          in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+        )
+    } else {
+      label(configuration)
+        .background(
+          reduceTransparency
+            ? Palette.cardBackground
+            : Palette.primary.opacity(configuration.isPressed ? 0.16 : 0.08),
+          in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+        )
+        .overlay {
+          RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .stroke(Palette.primary.opacity(0.34), lineWidth: 1)
+        }
+        .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.978)
+        .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
+    }
+  }
+
+  private func label(_ configuration: Configuration) -> some View {
     configuration.label
       .font(.subheadline.weight(.semibold))
       .lineLimit(1)
@@ -318,13 +358,6 @@ private struct CompactActionButtonStyle: ButtonStyle {
       .frame(maxWidth: .infinity)
       .frame(minHeight: 50)
       .foregroundStyle(Palette.primary)
-      .background(
-        Palette.primary.opacity(configuration.isPressed ? 0.16 : 0.08),
-        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-      )
-      .overlay {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-          .stroke(Palette.primary.opacity(0.34), lineWidth: 1)
-      }
+      .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
   }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 // Primary goal: begin a private check or get home without driving.
 struct HomeView: View {
   @EnvironmentObject private var model: AppModel
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var launch: ScreeningLaunch?
   @State private var showingPlan = false
   @State private var showingAbout = false
@@ -15,15 +16,21 @@ struct HomeView: View {
       ScrollView {
         VStack(spacing: 14) {
           hero
+            .soberEntrance(order: 0)
           baselineCard
+            .soberEntrance(order: 1)
           nightOutCard
+            .soberEntrance(order: 2)
 
           if model.isFounderPreview {
             founderPreviewCard
+              .soberEntrance(order: 3)
             researchCenterCard
+              .soberEntrance(order: 4)
           }
 
           evidenceNote
+            .soberEntrance(order: model.isFounderPreview ? 5 : 3)
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 30)
@@ -137,6 +144,8 @@ struct HomeView: View {
           Text("\(model.baselineSessions)/5")
             .font(.title2.monospacedDigit().weight(.semibold))
             .foregroundStyle(Palette.primary)
+            .contentTransition(.numericText())
+            .animation(reduceMotion ? nil : SoberMotion.progress, value: model.baselineSessions)
         }
 
         HStack(spacing: 8) {
@@ -146,6 +155,11 @@ struct HomeView: View {
                 index < model.baselineSessions ? Palette.primary : Palette.secondary.opacity(0.22)
               )
               .frame(height: 8)
+              .scaleEffect(x: index < model.baselineSessions ? 1 : 0.84, anchor: .leading)
+              .animation(
+                reduceMotion ? nil : SoberMotion.progress.delay(Double(index) * 0.035),
+                value: model.baselineSessions
+              )
           }
         }
 
@@ -193,7 +207,7 @@ struct HomeView: View {
         }
       }
     }
-    .buttonStyle(.plain)
+    .buttonStyle(SoberCardButtonStyle())
     .accessibilityHint("Configure your ride and designated contact")
   }
 
@@ -269,7 +283,7 @@ struct HomeView: View {
         }
       }
     }
-    .buttonStyle(.plain)
+    .buttonStyle(SoberCardButtonStyle())
     .accessibilityHint("Open local research data controls")
   }
 
@@ -310,7 +324,7 @@ struct AboutPrototypeView: View {
             .frame(maxWidth: .infinity)
 
           ScreenHeader(
-            eyebrow: "Sober 0.1",
+            eyebrow: "Sober 0.2",
             title: "A founder-review build.",
             detail:
               "The app demonstrates an ethically constrained screening and intervention flow—not a validated impairment detector."

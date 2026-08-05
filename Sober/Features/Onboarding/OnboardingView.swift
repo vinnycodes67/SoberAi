@@ -5,6 +5,7 @@ import SwiftUI
 // Emotional intent: calm, protected, and never judged.
 struct OnboardingView: View {
   @EnvironmentObject private var model: AppModel
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var page = 0
   @State private var biometricConsent = false
   @State private var retentionConsent = false
@@ -18,6 +19,8 @@ struct OnboardingView: View {
         Text("\(page + 1) / 3")
           .font(.caption.monospacedDigit())
           .foregroundStyle(Palette.textSecondary)
+          .contentTransition(.numericText())
+          .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: page)
       }
       .padding(.horizontal, 22)
       .padding(.top, 12)
@@ -28,7 +31,7 @@ struct OnboardingView: View {
         consent.tag(2)
       }
       .tabViewStyle(.page(indexDisplayMode: .never))
-      .animation(.easeInOut, value: page)
+      .animation(reduceMotion ? nil : SoberMotion.screen, value: page)
 
       VStack(spacing: 14) {
         StepProgress(current: page, total: 3)
@@ -71,6 +74,7 @@ struct OnboardingView: View {
       VStack(spacing: 30) {
         SignalHalo(size: 244)
           .padding(.top, 28)
+          .soberEntrance(order: 0)
 
         VStack(spacing: 12) {
           Text("Take a beat before you move.")
@@ -86,6 +90,7 @@ struct OnboardingView: View {
           .foregroundStyle(Palette.textSecondary)
           .padding(.horizontal, 14)
         }
+        .soberEntrance(order: 1)
       }
       .padding(.horizontal, 22)
     }
@@ -100,6 +105,7 @@ struct OnboardingView: View {
           detail:
             "This prototype screens for changes from your own baseline. It cannot measure BAC, diagnose impairment, or tell you it’s safe to drive."
         )
+        .soberEntrance(order: 0)
 
         VStack(spacing: 10) {
           boundaryRow(
@@ -113,6 +119,7 @@ struct OnboardingView: View {
             icon: "iphone.and.arrow.forward", title: "Action built in",
             detail: "Call a ride or your person from every result.")
         }
+        .soberEntrance(order: 1)
       }
       .padding(22)
     }
@@ -127,6 +134,7 @@ struct OnboardingView: View {
           detail:
             "Eye and face landmarks are sensitive. They stay on this iPhone. If you enable Safety Circle, only a short safety alert leaves the device."
         )
+        .soberEntrance(order: 0)
 
         SoberCard {
           VStack(spacing: 18) {
@@ -144,16 +152,19 @@ struct OnboardingView: View {
             )
           }
         }
+        .soberEntrance(order: 1)
 
         Button("Read the retention policy") {
           showingRetentionPolicy = true
         }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(Palette.primary)
+        .soberEntrance(order: 2)
 
         Text("Prototype consent only—not legal advice or a production privacy policy.")
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
+          .soberEntrance(order: 3)
       }
       .padding(22)
     }

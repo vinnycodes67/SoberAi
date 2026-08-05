@@ -265,8 +265,10 @@ The Reduced Motion route now runs an 11-second measured fixation-and-jump-target
 skipping ocular capture. Full and Reduced Motion sessions carry an explicit protocol variant and are
 never pooled into one baseline. Legacy records without a variant decode as the full protocol.
 
-Continuation verification passed 49 iOS tests and 13 relay tests. The actual Cloudflare bundle also
-passes `wrangler deploy --dry-run` with the `AlertCoordinator` Durable Object binding present.
+Final Codex review verification passed 53 iOS tests and 13 relay tests. That review also made missing
+blink telemetry optional end to end, required exact relay receipts before showing a successful alert,
+and prevented one good final camera frame from rescuing a mostly poor capture. The actual Cloudflare
+bundle also passes `wrangler deploy --dry-run` with the `AlertCoordinator` Durable Object binding present.
 
 ---
 

@@ -2,6 +2,46 @@
 
 Last updated: 2026-08-04
 
+## UI Motion + Liquid Glass Pass
+
+### Goal
+
+Make the founder build feel like a polished native iOS product while preserving every safety, privacy, refusal, and alert invariant. The first half-second should read as a calm luminous signal halo floating above one decisive action.
+
+### Research findings
+
+- Apple positions Liquid Glass as a floating navigation and control layer, not a general content-card material.
+- Native iOS 26 APIs are `glassEffect`, `.glass` / `.glassProminent`, `GlassEffectContainer`, and `glassEffectID`; adjacent glass should share a container for correct sampling and performance.
+- Interactive glass provides native scale, bounce, and shimmer. Tint is reserved for meaningful primary actions.
+- SwiftUI `phaseAnimator`, `keyframeAnimator`, `symbolEffect`, `contentTransition`, and spring animations support the remaining state motion.
+- `accessibilityReduceMotion` must remove large or spatial animation; strengthened solid fallbacks are required when transparency is reduced.
+
+### Design direction
+
+- **Aesthetic:** Nocturnal instrument: deep blue-black field, restrained cyan light, serif hero type, and precise data typography.
+- **Safe choices:** Native navigation and sheets, familiar single-column tasks, one accent hue, minimum 54 pt primary actions.
+- **Creative risks:** A living orbital halo, a slow atmospheric background, and grouped glass controls that materialize on iOS 26.
+- **Restraint:** No confetti, celebratory concern states, nested glass, glass-filled scrolling lists, or green pass language.
+
+### Implementation sequence
+
+- [x] Research current Apple SwiftUI Liquid Glass, animation, performance, and accessibility guidance with Agent Reach.
+- [x] Record the visual and motion rules in `DESIGN.md`.
+- [x] Add reusable motion tokens, entrance transitions, atmospheric background, and transparency fallbacks.
+- [x] Add availability-gated iOS 26 Liquid Glass button and floating-control styles with iOS 17 material fallbacks.
+- [x] Refine the signal halo, progress, and changing-number motion.
+- [x] Apply entrance and control treatments to Home, onboarding, Safety Circle, screening, and result flows without touching scoring or alert behavior.
+- [x] Run project generation, all iOS and backend tests, `git diff --check`, and simulator screenshot review.
+
+### Acceptance criteria
+
+- The project still targets iOS 17 and compiles with Xcode 26.
+- iOS 26 uses real Liquid Glass APIs for key interactive controls; older versions render a deliberate material fallback.
+- Reduce Motion removes continuous orbit, positional entrance travel, and decorative background movement.
+- Reduce Transparency produces readable opaque surfaces.
+- Result semantics, parent-alert timing, camera capture, storage, and the no-safe-to-drive language are unchanged.
+- No nested glass or high-frequency scrolling glass is introduced.
+
 ## Goal
 
 Turn the founder MVP into a research-ready prototype that visibly uses the front camera, refuses unusable captures, records versioned sessions, and stores real sober baselines without claiming clinical accuracy.
@@ -114,3 +154,7 @@ Before this plan was written:
 - 2026-08-04: Codex continued the review plan: corrected anticipation archives, research quality semantics, participant-ID rotation, consent copy, empty Safety Circle defaults, legacy protocol decoding, and result-screen accessibility.
 - 2026-08-04: Replaced isolate-local relay deduplication with a SQLite-backed per-recipient Durable Object, constant-time token verification, a 24-hour deduplication window, a three-per-ten-minute rate limit, and fail-closed uncertain-delivery handling.
 - 2026-08-04: Final continuation verification passed: project generation, 49 iOS tests, 13 backend tests, Cloudflare Worker bundle dry-run, and `git diff --check`, all with zero failures.
+- 2026-08-04: Final Codex review fixed missing ocular telemetry semantics, capture-wide quality refusal, and exact parent-alert receipt validation; 53 iOS tests and 13 backend tests passed with zero failures.
+- 2026-08-04: Agent Reach research confirmed Apple's iOS 26 Liquid Glass hierarchy, grouping, interaction, performance, and Reduce Motion guidance.
+- 2026-08-04: Added the nocturnal-instrument design system, availability-gated native glass controls, iOS 17 material fallbacks, an atmospheric background, a refined signal halo, entrance/progress/state motion, and accessibility-aware motion/transparency behavior.
+- 2026-08-04: UI verification passed on the iPhone 17 Pro iOS 26.5 simulator at default and Accessibility Medium Dynamic Type. Final verification passed: 53 iOS tests, 13 backend tests, Cloudflare dry-run, and `git diff --check` with zero failures.

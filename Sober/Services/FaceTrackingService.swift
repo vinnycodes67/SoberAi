@@ -24,6 +24,66 @@ enum FaceTrackingStatus: Equatable {
   }
 }
 
+/// Aggregates the per-anchor checks that otherwise only describe the final
+/// camera frame. A capture must finish in a good state and remain acceptable
+/// for at least the same 70% coverage required by the dropout gate.
+struct CaptureQualityHistory: Sendable {
+  static let minimumAcceptableFraction = 0.7
+
+  private(set) var observationCount = 0
+  private var facePresentCount = 0
+  private var centeredCount = 0
+  private var distanceAcceptableCount = 0
+  private var lightingAcceptableCount = 0
+  private var headStableCount = 0
+
+  mutating func record(
+    facePresent: Bool,
+    centered: Bool,
+    distanceAcceptable: Bool,
+    lightingAcceptable: Bool,
+    headStable: Bool
+  ) {
+    observationCount += 1
+    facePresentCount += facePresent ? 1 : 0
+    centeredCount += centered ? 1 : 0
+    distanceAcceptableCount += distanceAcceptable ? 1 : 0
+    lightingAcceptableCount += lightingAcceptable ? 1 : 0
+    headStableCount += headStable ? 1 : 0
+  }
+
+  func applying(to finalFrame: CaptureQualitySnapshot) -> CaptureQualitySnapshot {
+    guard observationCount > 0 else { return finalFrame }
+
+    var result = finalFrame
+    result.facePresent = finalFrame.facePresent && isAcceptable(facePresentCount)
+    result.centered = finalFrame.centered && isAcceptable(centeredCount)
+    result.distanceAcceptable =
+      finalFrame.distanceAcceptable && isAcceptable(distanceAcceptableCount)
+    result.lightingAcceptable =
+      finalFrame.lightingAcceptable && isAcceptable(lightingAcceptableCount)
+    result.headStable = finalFrame.headStable && isAcceptable(headStableCount)
+
+    if !result.facePresent { append(.noFace, to: &result.issues) }
+    if !result.centered { append(.offCenter, to: &result.issues) }
+    if !result.distanceAcceptable { append(.distance, to: &result.issues) }
+    if !result.lightingAcceptable { append(.lowLight, to: &result.issues) }
+    if !result.headStable { append(.unstable, to: &result.issues) }
+    return result
+  }
+
+  private func isAcceptable(_ passingCount: Int) -> Bool {
+    Double(passingCount) / Double(observationCount) >= Self.minimumAcceptableFraction
+  }
+
+  private func append(
+    _ issue: CaptureQualityIssue,
+    to issues: inout [CaptureQualityIssue]
+  ) {
+    if !issues.contains(issue) { issues.append(issue) }
+  }
+}
+
 /// ARKit face and eye capture for the research prototype. The service keeps a
 /// bounded in-memory buffer of numeric landmarks. Camera frames are displayed
 /// by ARSCNView but are never persisted or uploaded by this code.
@@ -42,6 +102,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
   private var protocolStartedAt: TimeInterval?
   private var captureStartedAt: TimeInterval?
   private var recentHeadPositions: [SIMD3<Float>] = []
+  private var qualityHistory = CaptureQualityHistory()
   private var wantsSessionRunning = false
   private var currentMode: OcularPhase = .calibration
   private var lastFaceSeenAt: TimeInterval?
@@ -89,7 +150,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
     wantsSessionRunning = false
     session.pause()
 
-    var finalQuality = quality
+    var finalQuality = qualityHistory.applying(to: quality)
     if let lastFaceSeenAt,
       ProcessInfo.processInfo.systemUptime - lastFaceSeenAt > 0.75
     {
@@ -148,6 +209,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
     observedFrameCount = 0
     captureStartedAt = nil
     recentHeadPositions.removeAll(keepingCapacity: true)
+    qualityHistory = CaptureQualityHistory()
     lastFaceSeenAt = nil
     currentMode = mode
     wantsSessionRunning = true
@@ -249,8 +311,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
       target = OcularTarget(phase: .calibration, x: 0.5, y: 0.5)
     }
 
-    let blinkLeft = face.blendShapes[.eyeBlinkLeft]?.doubleValue ?? 0
-    let blinkRight = face.blendShapes[.eyeBlinkRight]?.doubleValue ?? 0
+    let blinkLeft = face.blendShapes[.eyeBlinkLeft]?.doubleValue
+    let blinkRight = face.blendShapes[.eyeBlinkRight]?.doubleValue
     samples.append(OcularSample(
       timestamp: timestamp,
       phase: target.phase,
@@ -281,6 +343,14 @@ final class FaceTrackingService: NSObject, ObservableObject {
     let distanceAcceptable = (0.25...0.75).contains(distance)
     let lightingAcceptable = (ambientIntensity ?? 0) >= 180
     let headStable = recentHeadMovement() <= 0.025
+
+    qualityHistory.record(
+      facePresent: face.isTracked,
+      centered: centered,
+      distanceAcceptable: distanceAcceptable,
+      lightingAcceptable: lightingAcceptable,
+      headStable: headStable
+    )
 
     var issues: [CaptureQualityIssue] = []
     if !face.isTracked { issues.append(.noFace) }

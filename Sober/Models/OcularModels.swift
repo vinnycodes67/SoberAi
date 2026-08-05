@@ -144,8 +144,10 @@ struct OcularSample: Equatable, Sendable {
   let headX: Double
   let headY: Double
   let headZ: Double
-  let blinkLeft: Double
-  let blinkRight: Double
+  /// Nil means ARKit did not provide the corresponding blendshape. Missing
+  /// telemetry must not be converted into an "eyes open" observation.
+  let blinkLeft: Double?
+  let blinkRight: Double?
 }
 
 struct OcularSignalFeatures: Codable, Equatable, Sendable {
@@ -154,7 +156,8 @@ struct OcularSignalFeatures: Codable, Equatable, Sendable {
   var verticalPursuitError: Double
   var saccadeError: Double
   var leftRightAsymmetry: Double
-  var blinkRatePerMinute: Double
+  /// Nil means the capture contained no usable blink telemetry.
+  var blinkRatePerMinute: Double?
   var headCompensation: Double
 
   static let unavailable = OcularSignalFeatures(
@@ -163,7 +166,7 @@ struct OcularSignalFeatures: Codable, Equatable, Sendable {
     verticalPursuitError: 1,
     saccadeError: 1,
     leftRightAsymmetry: 1,
-    blinkRatePerMinute: 0,
+    blinkRatePerMinute: nil,
     headCompensation: 1
   )
 }

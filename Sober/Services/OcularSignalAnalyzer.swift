@@ -59,7 +59,7 @@ struct OcularSignalAnalyzer: Sendable {
     // Blink rate is archived as an exploratory research feature. It does not
     // contribute to the prototype safety score.
     let blinks = countBlinkEvents(samples)
-    let blinkRate = duration > 0 ? (Double(blinks) / duration) * 60 : 0
+    let blinkRate = blinks.map { (Double($0) / duration) * 60 }
 
     let features = OcularSignalFeatures(
       fixationJitter: min(fixationJitter / 0.03, 1),
@@ -194,15 +194,23 @@ struct OcularSignalAnalyzer: Sendable {
     return mean(distances)
   }
 
-  private func countBlinkEvents(_ samples: [OcularSample]) -> Int {
+  private func countBlinkEvents(_ samples: [OcularSample]) -> Int? {
     var count = 0
     var wasClosed = false
+    var observedBlinkTelemetry = false
     for sample in samples {
-      let isClosed = max(sample.blinkLeft, sample.blinkRight) >= 0.65
+      let values = [sample.blinkLeft, sample.blinkRight].compactMap { $0 }
+      guard let maximum = values.max() else {
+        // Do not bridge one blink event across a gap with no telemetry.
+        wasClosed = false
+        continue
+      }
+      observedBlinkTelemetry = true
+      let isClosed = maximum >= 0.65
       if isClosed && !wasClosed { count += 1 }
       wasClosed = isClosed
     }
-    return count
+    return observedBlinkTelemetry ? count : nil
   }
 
   private func mean(_ values: [Double]) -> Double {

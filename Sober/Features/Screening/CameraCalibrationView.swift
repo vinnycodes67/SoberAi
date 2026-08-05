@@ -5,6 +5,7 @@ struct CameraCalibrationView: View {
   @ObservedObject var service: FaceTrackingService
   let onContinue: () -> Void
 
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var hasHeldReady = false
   @State private var readyTask: Task<Void, Never>?
 
@@ -38,7 +39,9 @@ struct CameraCalibrationView: View {
         }
         .foregroundStyle(Palette.textPrimary)
         .padding(12)
-        .background(.ultraThinMaterial, in: Capsule())
+        .soberGlassCapsule(
+          tint: service.quality.isUsable ? Palette.primary : Palette.warning
+        )
         .padding(14)
       }
       .frame(height: 360)
@@ -50,6 +53,7 @@ struct CameraCalibrationView: View {
             lineWidth: service.quality.isUsable ? 2 : 1
           )
       }
+      .animation(reduceMotion ? nil : SoberMotion.progress, value: service.quality.isUsable)
 
       LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
         qualityTile("Face", icon: "faceid", ready: service.quality.facePresent)
@@ -155,6 +159,7 @@ struct CameraCalibrationView: View {
       Image(systemName: ready ? "checkmark.circle.fill" : icon)
         .foregroundStyle(ready ? Palette.primary : Palette.textSecondary)
         .frame(width: 20)
+        .contentTransition(.symbolEffect(.replace))
       Text(title)
         .font(.caption.weight(.semibold))
       Spacer(minLength: 0)
@@ -166,5 +171,6 @@ struct CameraCalibrationView: View {
       RoundedRectangle(cornerRadius: 13, style: .continuous)
         .stroke((ready ? Palette.primary : Palette.secondary).opacity(0.3), lineWidth: 1)
     }
+    .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: ready)
   }
 }

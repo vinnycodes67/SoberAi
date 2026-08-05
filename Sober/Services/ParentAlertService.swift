@@ -28,23 +28,8 @@ enum ParentAlertSubmissionStatus: String, Decodable, Equatable, Sendable {
 
 struct ParentAlertReceipt: Decodable, Equatable, Sendable {
   let submissionStatus: ParentAlertSubmissionStatus
-  let reference: String?
-  let eventID: UUID?
-
-  private enum CodingKeys: String, CodingKey {
-    case submissionStatus
-    case reference
-    case eventID
-  }
-
-  init(from decoder: Decoder) throws {
-    let values = try decoder.container(keyedBy: CodingKeys.self)
-    submissionStatus =
-      try values.decodeIfPresent(ParentAlertSubmissionStatus.self, forKey: .submissionStatus)
-      ?? .accepted
-    reference = try values.decodeIfPresent(String.self, forKey: .reference)
-    eventID = try values.decodeIfPresent(UUID.self, forKey: .eventID)
-  }
+  let reference: String
+  let eventID: UUID
 }
 
 struct ParentAlertRequest: Encodable, Equatable, Sendable {
@@ -183,7 +168,17 @@ struct ParentAlertService: Sendable {
       throw ParentAlertServiceError.invalidResponse
     }
     do {
-      return try JSONDecoder().decode(ParentAlertReceipt.self, from: data)
+      let receipt = try JSONDecoder().decode(ParentAlertReceipt.self, from: data)
+      let statusMatchesResponse =
+        (httpResponse.statusCode == 202 && receipt.submissionStatus == .accepted)
+        || (httpResponse.statusCode == 200 && receipt.submissionStatus == .deduplicated)
+      guard receipt.eventID == payload.eventID,
+        !receipt.reference.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        statusMatchesResponse
+      else {
+        throw ParentAlertServiceError.invalidResponse
+      }
+      return receipt
     } catch {
       throw ParentAlertServiceError.invalidResponse
     }
