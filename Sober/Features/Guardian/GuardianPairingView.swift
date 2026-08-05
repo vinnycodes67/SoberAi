@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import SwiftUI
 
 /// Teen side: generates and displays a QR code inviting a parent to pair.
@@ -191,7 +191,12 @@ struct QRScannerView: UIViewControllerRepresentable {
 final class QRScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
   var onScan: ((URL) -> Void)?
 
-  private let session = AVCaptureSession()
+  // AVCaptureSession isn't Sendable, but Apple's own guidance is to only
+  // ever start/stop it off the main thread, so all access to it — from
+  // `configureSession()` on the main actor and from the detached tasks
+  // below — is already serialized onto AVCaptureSession's own internal
+  // queue. `nonisolated(unsafe)` reflects that manually-verified safety.
+  private nonisolated(unsafe) let session = AVCaptureSession()
   private var lastScannedString: String?
 
   override func viewDidLoad() {
@@ -238,18 +243,26 @@ final class QRScannerViewController: UIViewController, AVCaptureMetadataOutputOb
     previewLayer = layer
   }
 
-  func metadataOutput(
+  // `setMetadataObjectsDelegate(self, queue: .main)` guarantees this always
+  // fires on the main queue, but the delegate protocol itself isn't
+  // main-actor-isolated — `assumeIsolated` bridges that runtime guarantee
+  // into the type system rather than hopping with an async `Task`.
+  // AVMetadataObject itself isn't Sendable, so the decoded string is
+  // extracted here, in the nonisolated context, before crossing over.
+  nonisolated func metadataOutput(
     _ output: AVCaptureMetadataOutput,
     didOutput metadataObjects: [AVMetadataObject],
     from connection: AVCaptureConnection
   ) {
     guard
       let code = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
-      let value = code.stringValue,
-      value != lastScannedString,
-      let url = URL(string: value)
+      let value = code.stringValue
     else { return }
-    lastScannedString = value
-    onScan?(url)
+
+    MainActor.assumeIsolated {
+      guard value != lastScannedString, let url = URL(string: value) else { return }
+      lastScannedString = value
+      onScan?(url)
+    }
   }
 }
