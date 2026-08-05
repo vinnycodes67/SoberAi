@@ -42,6 +42,41 @@ struct SafetyPlanView: View {
 
           SoberCard {
             VStack(alignment: .leading, spacing: 16) {
+              Toggle(isOn: $plan.automaticParentAlerts) {
+                VStack(alignment: .leading, spacing: 4) {
+                  Text("Automatic parent alert")
+                    .font(.headline)
+                  Text("Send immediately when Sober detects concerning signals")
+                    .font(.caption)
+                    .foregroundStyle(Palette.textSecondary)
+                }
+              }
+              .tint(Palette.primary)
+
+              Divider().overlay(Palette.secondary.opacity(0.2))
+
+              Toggle(isOn: $plan.parentAlertConsent) {
+                Text(
+                  "I authorize Sober to send this safety result to the parent or guardian above."
+                )
+                .font(.subheadline.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+              }
+              .tint(Palette.primary)
+              .disabled(!plan.automaticParentAlerts)
+              .opacity(plan.automaticParentAlerts ? 1 : 0.45)
+
+              Label(
+                "Only the safety message is shared. Camera footage, face landmarks, task scores, and estimated substance levels are never shared.",
+                systemImage: "hand.raised.fill"
+              )
+              .font(.caption)
+              .foregroundStyle(Palette.textSecondary)
+            }
+          }
+
+          SoberCard {
+            VStack(alignment: .leading, spacing: 16) {
               fieldLabel("Ride home")
               Picker("Preferred ride", selection: $plan.preferredRide) {
                 Text("Uber").tag("Uber")

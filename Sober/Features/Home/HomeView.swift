@@ -181,7 +181,7 @@ struct HomeView: View {
         }
 
         Text(
-          "Five sessions unlock this research build. A defensible production baseline still needs a larger validated protocol, likely 10–20 sessions."
+          "Five sessions unlock this research build. A defensible production baseline still needs a larger validated protocol, likely 10 to 20 sessions."
         )
         .font(.caption)
         .foregroundStyle(Palette.textSecondary)
@@ -386,7 +386,7 @@ struct AboutPrototypeView: View {
             eyebrow: "Sober 0.2",
             title: "A founder-review build.",
             detail:
-              "The app demonstrates an ethically constrained screening and intervention flow—not a validated impairment detector."
+              "The app demonstrates an ethically constrained screening and intervention flow, not a validated impairment detector."
           )
 
           SoberCard {

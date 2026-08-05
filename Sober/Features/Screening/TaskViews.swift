@@ -289,7 +289,7 @@ struct MotorTrackingTaskView: View {
         .accessibilityHint("Drag from the left edge to the right edge following the curved path")
         // This path cannot measure coordination, so it reports "not measured"
         // rather than a stand-in score. The check then ends as inconclusive.
-        .accessibilityAction(named: "Skip tracing — result will be inconclusive") {
+        .accessibilityAction(named: "Skip tracing; result will be inconclusive") {
           guard !finished else { return }
           finished = true
           onComplete(.notMeasured)

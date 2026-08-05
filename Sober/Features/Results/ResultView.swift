@@ -22,7 +22,7 @@ struct ResultView: View {
       VStack(spacing: 18) {
         if isSample {
           PrototypeBadge()
-          Text("Sample result—no live measurement was used")
+          Text("Sample result. No live measurement was used")
             .font(.caption)
             .foregroundStyle(Palette.textSecondary)
         }

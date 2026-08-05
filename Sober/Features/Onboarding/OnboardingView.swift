@@ -10,13 +10,19 @@ struct OnboardingView: View {
   @State private var biometricConsent = false
   @State private var retentionConsent = false
   @State private var showingRetentionPolicy = false
+  @State private var nameField = ""
+  @State private var ageField = ""
+  @State private var familyCodeField = ""
+
+  private let validator = OnboardingValidator()
+  private static let pageCount = 4
 
   var body: some View {
     VStack(spacing: 0) {
       HStack {
         SoberWordmark()
         Spacer()
-        Text("\(page + 1) / 3")
+        Text("\(page + 1) / \(Self.pageCount)")
           .font(.caption.monospacedDigit())
           .foregroundStyle(Palette.textSecondary)
           .contentTransition(.numericText())
@@ -28,19 +34,23 @@ struct OnboardingView: View {
       TabView(selection: $page) {
         introduction.tag(0)
         boundaries.tag(1)
-        consent.tag(2)
+        profile.tag(2)
+        consent.tag(3)
       }
       .tabViewStyle(.page(indexDisplayMode: .never))
       .animation(reduceMotion ? nil : SoberMotion.screen, value: page)
 
       VStack(spacing: 14) {
-        StepProgress(current: page, total: 3)
+        StepProgress(current: page, total: Self.pageCount)
 
-        if page < 2 {
+        if page < Self.pageCount - 1 {
           Button("Continue") {
+            if page == 2 { commitProfile() }
             page += 1
           }
           .buttonStyle(PrimaryActionButtonStyle())
+          .disabled(page == 2 && profileValidation.isBlocked)
+          .opacity(page == 2 && profileValidation.isBlocked ? 0.42 : 1)
         } else {
           #if DEBUG
           Button("Explore founder demo") {
@@ -93,7 +103,7 @@ struct OnboardingView: View {
             .multilineTextAlignment(.center)
             .foregroundStyle(Palette.textPrimary)
           Text(
-            "A short, private check for changes in reaction, coordination, and guided gaze—followed by a way home."
+            "A short, private check for changes in reaction, coordination, and guided gaze, followed by a way home."
           )
           .font(.body)
           .multilineTextAlignment(.center)
@@ -139,6 +149,124 @@ struct OnboardingView: View {
     }
   }
 
+  /// The draft the profile page is validating on every keystroke.
+  private var profileDraft: UserProfile {
+    UserProfile(
+      displayName: nameField,
+      ageYears: Int(ageField.trimmingCharacters(in: .whitespaces)),
+      familyCode: familyCodeField.trimmingCharacters(in: .whitespaces).isEmpty
+        ? nil
+        : validator.normalizeFamilyCode(familyCodeField)
+          ?? FamilyReferralCode(rawValue: familyCodeField)
+    )
+  }
+
+  private var profileValidation: OnboardingValidation {
+    validator.validate(profile: profileDraft, safetyPlan: model.safetyPlan)
+  }
+
+  private func commitProfile() {
+    model.userProfile = profileDraft
+    // Keep the Safety Circle's display name in step with onboarding so the
+    // alert copy and the family roster agree.
+    model.safetyPlan.userName = profileDraft.trimmedName
+  }
+
+  private var profile: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 22) {
+        ScreenHeader(
+          eyebrow: "Your details",
+          title: "Who should your family see?",
+          detail:
+            "Your name and age stay on this iPhone. They are never attached to research data and never included in an alert."
+        )
+        .soberEntrance(order: 0)
+
+        SoberCard {
+          VStack(alignment: .leading, spacing: 18) {
+            field(
+              title: "Name",
+              prompt: "First name",
+              text: $nameField,
+              contentType: .givenName
+            )
+            Divider().overlay(Palette.secondary.opacity(0.2))
+            field(
+              title: "Age",
+              prompt: "\(OnboardingValidator.minimumAgeYears) or older",
+              text: $ageField,
+              keyboard: .numberPad
+            )
+          }
+        }
+        .soberEntrance(order: 1)
+
+        SoberCard {
+          VStack(alignment: .leading, spacing: 10) {
+            field(
+              title: "Family code",
+              prompt: "Optional — \(FamilyReferralCode.length) characters",
+              text: $familyCodeField,
+              autocapitalize: true
+            )
+            Text(
+              "Joining a family lets one person you choose receive a short help request if a check is concerning. You can add this later."
+            )
+            .font(.caption)
+            .foregroundStyle(Palette.textSecondary)
+          }
+        }
+        .soberEntrance(order: 2)
+
+        if profileValidation.isOutOfOrdinary {
+          VStack(alignment: .leading, spacing: 8) {
+            ForEach(profileValidation.flags, id: \.self) { flag in
+              HStack(alignment: .top, spacing: 9) {
+                Image(systemName: flag.isBlocking ? "exclamationmark.circle.fill" : "info.circle")
+                  .foregroundStyle(flag.isBlocking ? Palette.accent : Palette.textSecondary)
+                Text(flag.message)
+                  .font(.footnote)
+                  .foregroundStyle(flag.isBlocking ? Palette.textPrimary : Palette.textSecondary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+              .accessibilityElement(children: .combine)
+            }
+          }
+          .soberEntrance(order: 3)
+        }
+      }
+      .padding(22)
+    }
+  }
+
+  private func field(
+    title: String,
+    prompt: String,
+    text: Binding<String>,
+    keyboard: UIKeyboardType = .default,
+    contentType: UITextContentType? = nil,
+    autocapitalize: Bool = false
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text(title).font(.headline)
+      TextField(prompt, text: text)
+        .keyboardType(keyboard)
+        .textContentType(contentType)
+        .textInputAutocapitalization(autocapitalize ? .characters : .words)
+        .autocorrectionDisabled(autocapitalize)
+        .font(.body)
+        .foregroundStyle(Palette.textPrimary)
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) {
+          Rectangle()
+            .fill(Palette.secondary.opacity(0.28))
+            .frame(height: 1)
+        }
+        .accessibilityLabel(title)
+    }
+  }
+
   private var consent: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 22) {
@@ -175,7 +303,7 @@ struct OnboardingView: View {
         .foregroundStyle(Palette.primary)
         .soberEntrance(order: 2)
 
-        Text("Prototype consent only—not legal advice or a production privacy policy.")
+        Text("Prototype consent only, not legal advice or a production privacy policy.")
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
           .soberEntrance(order: 3)

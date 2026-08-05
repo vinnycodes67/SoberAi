@@ -503,7 +503,7 @@ private struct BaselineCompleteView: View {
       .soberEntrance(order: 1)
       SoberCard {
         Text(
-          "This was calibration—not a driving result. It does not mean you’re sober or safe to drive."
+          "This was calibration, not a driving result. It does not mean you’re sober or safe to drive."
         )
         .font(.subheadline.weight(.medium))
         .fixedSize(horizontal: false, vertical: true)

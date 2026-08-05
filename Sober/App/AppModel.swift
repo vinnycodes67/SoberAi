@@ -74,6 +74,15 @@ final class AppModel: ObservableObject {
     }
   }
 
+  /// App-local identity. Deliberately never passed to `ResearchSessionEnvelope`.
+  @Published var userProfile: UserProfile {
+    didSet {
+      if let data = try? JSONEncoder().encode(userProfile) {
+        defaults.set(data, forKey: Keys.userProfile)
+      }
+    }
+  }
+
   @Published private(set) var participantID: PseudonymousParticipantID
 
   private let defaults: UserDefaults
@@ -155,6 +164,14 @@ final class AppModel: ObservableObject {
       storedGuardianCheckWindowState = storedState
     } else {
       storedGuardianCheckWindowState = nil
+    }
+
+    if let data = defaults.data(forKey: Keys.userProfile),
+      let storedProfile = try? JSONDecoder().decode(UserProfile.self, from: data)
+    {
+      userProfile = storedProfile
+    } else {
+      userProfile = UserProfile()
     }
 
     Task { await reloadResearchData() }
@@ -363,6 +380,8 @@ final class AppModel: ObservableObject {
     drivingSchedule = .default
     guardianPairingInfo = nil
     storedGuardianCheckWindowState = nil
+    userProfile = UserProfile()
+    defaults.removeObject(forKey: Keys.userProfile)
     defaults.removeObject(forKey: Keys.onboarding)
     defaults.removeObject(forKey: Keys.baselines)
     defaults.removeObject(forKey: Keys.baseline)
@@ -400,5 +419,6 @@ final class AppModel: ObservableObject {
     static let drivingSchedule = "sober.guardian.schedule"
     static let guardianPairingInfo = "sober.guardian.pairing"
     static let guardianCheckWindowState = "sober.guardian.window-state"
+    static let userProfile = "sober.user.profile"
   }
 }
