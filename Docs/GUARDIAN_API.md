@@ -1,14 +1,15 @@
 # Guardian API Contract
 
-Status: Gate 0 revision for Claude re-review
+Status: Contract ready for founder-only Gate 1
 
 Contract version: `guardian-api-v1`
 
 Last updated: 2026-08-05
 
 This document freezes the iOS/backend boundary before Guardian Mode implementation. It incorporates
-the P0/P1 findings in `Docs/CLAUDE_FINISH_REVIEW.md`. Gate 1 remains blocked until Claude re-reviews
-this revision and the founders accept the human-dependency decisions.
+the P0/P1 findings in `Docs/CLAUDE_FINISH_REVIEW.md` and Claude's code-grounded required changes in
+`Docs/CODEX_CLAUDE_GATE0_SYNTHESIS.md`. Claude accepted it for founder-only Gate 1. That acceptance
+does not claim the shipping Worker or iOS client already implements these controls.
 
 ## Architecture decision
 
@@ -28,9 +29,10 @@ It does not use D1.
   no account recovery or multi-device continuity. Those features are the future trigger to evaluate
   an additive identity layer.
 
-The current shared-token founder SMS endpoint remains isolated during Gate 0. It must be removed
-before any guardian receives a distributed build. No Guardian endpoint accepts the app-wide shared
-token.
+The current shared-token founder SMS endpoint remains isolated during Gate 0. Gate 1 deletes it in
+the same change that adds relationship-authenticated alert creation and server-owned message
+templates. Old and new alert endpoints may not run side by side. No Guardian endpoint accepts the
+app-wide shared token or a client-authored notification/SMS body.
 
 ## Safety and privacy invariants
 
@@ -145,8 +147,9 @@ Relationship states are `pendingPersonVerification`, `pendingGuardian`, `active`
 Creates an inert relationship and sends a code to the screened person's own phone. This endpoint is
 not capability-authenticated because the relationship does not exist yet. The founder build accepts
 only configured allowlisted self-phone digests plus strict per-phone-digest and network abuse limits.
-Abuse-limiter unavailability fails closed before any SMS. Removing the allowlist requires a separate
-reviewed App Attest or equivalent enrollment contract and is blocked for v1.
+Abuse-limiter unavailability fails closed before any SMS. Any build installed on a non-founder
+device must additionally verify App Attest or an independently reviewed equivalent before sending
+the code. Removing the allowlist or treating App Attest as “future hardening” is blocked for v1.
 
 ```json
 {
@@ -250,7 +253,9 @@ used, revoked, malformed, wrong-relationship, or same-key tokens all return `404
 ```
 
 Guardian v1 relationships expire after 90 days and require a fresh two-sided invite. There is no
-silent renewal, key recovery, or multi-device enrollment.
+silent renewal, key recovery, or multi-device enrollment. Both roles receive warnings beginning 14
+days before expiry. The relationship-change push plus foreground reconciliation returns the screened
+person's Safety Circle to explicitly unconfigured when expiry commits.
 
 ## Relationship state and revocation
 
@@ -306,7 +311,9 @@ relationship revocation, or local reset. APNs `410` invalidates it.
 Guardian alerts use `apns-priority: 10` and `interruption-level: time-sensitive`. If Apple grants
 the Critical Alerts entitlement and the guardian explicitly enables it, the reviewed production
 profile may use `critical`; ordinary builds must never claim to bypass every Focus mode. APNs
-acceptance remains only provider acceptance in all profiles.
+acceptance remains only provider acceptance in all profiles. If Apple denies Critical Alerts, push
+is the acknowledgment channel and the separately verified 30-second SMS fallback is the reachability
+channel; the product still does not promise that either channel woke or reached the guardian.
 
 ## Guardian SMS fallback verification
 
@@ -364,9 +371,14 @@ one 30-second fallback alarm before calling APNs. This pre-provider write is the
 
 If an unacknowledged canonical alert already exists from the prior ten minutes with the same
 relationship, result, source, and message template, a new event is durably recorded as an alias of
-that alert. No second push or SMS is sent. The response uses `uiState: alertAlreadyActive` and
-returns `canonicalEventId`. Retries and SMS fallback for a canonical event consume no additional
+that alert. No second push or SMS is sent. The response uses
+`personActionState: requestingHelp` and returns `canonicalEventId`. Retries and SMS fallback for a canonical event consume no additional
 rate reservation. There is no fixed three-alert limiter on signed active relationships.
+
+Coalescing is a notification-control decision, not an incident classifier. One canonical alert can
+represent multiple concerning checks, so one notification must never be interpreted or reported as
+one behavioral, medical, or safety incident. The alias count remains backend diagnostic data and is
+not shown to the screened person as an impairment count.
 
 The first canonical event returns `202`; an identical replay or alias returns `200`. Reuse of an
 event ID with changed canonical content returns `409 idempotencyConflict`.
@@ -382,7 +394,7 @@ IDs in the response:
     "requestedEventId": "5c275a44-ea12-4e6d-9f73-d5f72e837a55",
     "canonicalEventId": "5c275a44-ea12-4e6d-9f73-d5f72e837a55",
     "workflowState": "fallbackScheduled",
-    "uiState": "pushAccepted",
+    "personActionState": "requestingHelp",
     "version": 4,
     "createdAt": "2026-08-05T18:55:00.100Z",
     "updatedAt": "2026-08-05T18:55:00.350Z",
@@ -435,18 +447,18 @@ Nested states:
 - `fallback.availability`: `verified`, `unavailable`, `revoked`.
 - `sms.state`: `notAttempted`, `accepted`, `sent`, `delivered`, `undelivered`, `failed`, `unknown`.
 
-Screened-person `uiState` values:
+Screened-person `personActionState` values are deliberately collapsed for an impaired user:
 
-- `alerting`: no provider acceptance is proven yet.
-- `alertAlreadyActive`: a recent unacknowledged canonical alert remains active; no duplicate sent.
-- `pushAccepted`: APNs accepted for sending; delivery and viewing are unconfirmed.
-- `smsFallbackAccepted`: Twilio accepted for sending; delivery and viewing are unconfirmed.
-- `guardianAcknowledged`: a signed acknowledgment was accepted.
-- `failed`: attempted automatic routes definitively failed or no eligible route exists.
-- `statusUnknown`: provider outcome or durable reconstruction is uncertain.
-- `expired`: status expired without acknowledgment.
+- `requestingHelp`: the request is being processed or a recent canonical request remains active.
+  Provider acceptance is not exposed as a human-reaching milestone, and direct help stays visible.
+- `guardianConfirmed`: a signed guardian acknowledgment was accepted for this relationship/event.
+- `actNow`: no acknowledgment exists and automatic help definitively failed, may already have sent,
+  is unavailable, or expired. Copy says status could not be confirmed and directs the person to
+  Call/Message/Ride; a `425` or provider-unknown outcome must never be described as “failed.”
 
-There is no screened-person `guardianOpened` or `delivered` state.
+Detailed `workflowState`, push, fallback, and SMS fields remain available for reconciliation and
+diagnostics but do not create additional person-facing steps. There is no screened-person
+`guardianOpened`, provider-accepted, or `delivered` state.
 
 ## Alert transitions
 
@@ -563,8 +575,8 @@ or acknowledgment.
 
 Clients retry only network failures, `408`, setup/verification `429`, and explicitly retryable `5xx`
 using backoff, jitter, and the same idempotency key. After an alert timeout they first query the
-event. `425`, provider `unknown`, and corrupt local receipt stop automatic sends and surface direct
-help.
+event. `425`, provider `unknown`, and corrupt local receipt stop automatic sends and return
+`personActionState: actNow` with “automatic status could not be confirmed” copy, never “failed.”
 
 ## Required shared fixtures
 
@@ -576,7 +588,12 @@ help.
 - APNs registration, rotation, `410`, permission denial, time-sensitive payload, and revocation;
 - canonical alert creation, exact replay, fingerprint conflict, alias/coalescing, and fallback with
   no second reservation;
-- every workflow, nested transport, and screened-person UI state;
+- a fourth distinct concerning event inside ten minutes that is handled/coalesced rather than
+  rejected by the legacy three-event limiter;
+- every workflow and nested transport state mapped onto exactly three screened-person action states;
+- `425`/provider-unknown mapped to `actNow`, never failed, and never automatically resent;
+- app relaunch between reservation and receipt recovering the same canonical event ID;
+- compiled Worker proof that the shared-token endpoint and client-authored message body are absent;
 - guardian open with no person-facing state change;
 - signed acknowledgment before, during, and after alarm execution;
 - revocation immediately before and after alert reservation;

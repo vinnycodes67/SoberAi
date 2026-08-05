@@ -1,6 +1,6 @@
 # Guardian Data Governance Contract
 
-Status: Gate 0 revision for Claude re-review
+Status: Contract ready for founder-only Gate 1
 
 Schema family: `guardian-data-v1`
 
@@ -16,6 +16,9 @@ Guardian v1 has no account database and no D1 dependency. One `GuardianRelations
 stores one relationship and its alerts so authorization, revocation, alarms, and provider calls use
 one consistency boundary. A separate phone-keyed `AbuseLimiter` Durable Object stores only short
 verification rate-limit reservations; it never decides whether an active relationship may alert.
+Before any non-founder setup SMS, an installation-keyed `EnrollmentAttestation` Durable Object stores
+only the minimum App Attest verification state and monotonic counter needed to reject forged or
+replayed enrollment. It cannot read relationship/alert state or authorize an active alert.
 
 The server stores public verification keys, never role private keys or bearer session secrets.
 
@@ -43,6 +46,7 @@ The server stores public verification keys, never role private keys or bearer se
 | Role public signing key | P-256 public JWK | Reconstructable from private key |
 | Alert event ID | UUID in Durable Object for 24 hours | Pending receipt in Keychain |
 | Installation ID | Keyed digest only | Random this-device-only Keychain value |
+| App Attest key/counter | Keyed key-ID digest, verified public key, environment, monotonic counter | App Attest framework-managed key reference |
 | Invite token | Keyed hash only; raw returned once | Universal-link handoff only |
 | Verification code | Slow password hash only for ten minutes | Entry only; never persisted |
 | Person self phone | Ciphertext during challenge, then keyed digest only | Entry only; discarded after request |
@@ -143,7 +147,7 @@ The object prunes expired nonce entries on every authenticated mutation and a sc
 | --- | --- |
 | `requested_event_id`, `canonical_event_id` | Idempotency and safe coalescing |
 | `request_fingerprint` | Detect event reuse with changed content |
-| `workflow_state`, `ui_state`, `version` | Monotonic reconciliation |
+| `workflow_state`, `person_action_state`, `version` | Detailed reconciliation plus the three-state person-facing projection |
 | `created_at`, `updated_at`, `expires_at` | 24-hour lifetime |
 | `message_template_version` | Template audit without storing body |
 | `push_state`, `push_accepted_at`, `push_error_class` | APNs truth without response body/token |
@@ -195,6 +199,7 @@ These are founder-staging maximums. Backups and restored objects cannot extend t
 | Revoked relationship/consent audit | 30 days | Hard delete after founder dispute/debug window |
 | Active fallback phone | Active verified consent only | Logical revocation immediately; hard delete within 24 hours |
 | APNs token | Eligible relationship/device only | Invalidate immediately; hard delete within 24 hours |
+| App Attest verification state | Active installation, maximum 90 days | Re-attestation, invalidation, or local reset |
 | Signature nonce | 10 minutes | Replay-window expiry |
 | Alert, alias, and provider digest | 24 hours from canonical event | Hard delete within one hour after expiry |
 | Phone abuse reservation | 24 hours | Rolling deletion |
@@ -228,7 +233,9 @@ without contractual and configuration evidence.
    on foreground. The app must return to an explicit unconfigured Safety Circle state.
 8. Material disclosure changes set `reauthorizationRequired`; new automatic alerts stop until the
    required signed acceptances exist.
-9. Relationship expiry is not silent renewal. Both people must complete a new invite.
+9. Relationship expiry is not silent renewal. Both people must complete a new invite. Both roles
+   receive advance warnings, and expiry returns the person's Safety Circle to explicitly unconfigured
+   even if the relationship-change push is missed.
 10. Guardian data is never merged into, linked from, or exported with research data.
 
 ## Research separation and dictionary versioning
@@ -286,6 +293,8 @@ Middleware defaults to allowlisted metadata. Full-object serialization is prohib
   changes fail compatibility tests without a dictionary-version bump.
 - Invite, challenge, signature nonce, relationship, alert, device, log, and backup retention jobs
   pass clock-driven boundary tests.
+- App Attest enrollment rejects invalid environment, stale assertion, counter replay, wrong app, and
+  missing attestation before any non-founder verification SMS is attempted.
 - Same key and same verified phone cannot activate a guardian.
 - Revocation blocks new provider work immediately and removes every derived digest on schedule.
 - Key rotation rewrites current ciphertext without plaintext logging.
@@ -298,6 +307,8 @@ External TestFlight or human-subject use is blocked until:
 - privacy/legal review approves this schema, contact-relationship category, providers, retention,
   consent copy, deletion, and incident handling;
 - Apple capabilities for push, associated domains, and Time Sensitive notifications are configured;
+- App Attest enrollment is implemented and code-reviewed before any non-founder installation may
+  call a setup endpoint that sends SMS;
 - Apple approves the Critical Alerts entitlement if the founders require Focus override as part of
   the product claim;
 - founder staging proves that no Guardian identifiers enter research exports.
