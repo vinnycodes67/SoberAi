@@ -3,15 +3,13 @@ import UIKit
 
 // There is intentionally no green, checkmark, "pass", "clear", or dismiss X.
 // The screen's primary content is the safety message plus a route home.
-// 0.5s: the result halo and a protected-parent alert card dominate the screen.
-// User: someone who just received a concerning result and needs proof that help was contacted.
+// 0.5s: the result halo and a ride/contact card dominate the screen.
+// User: someone who just received a concerning result and needs a fast way to get help.
 // Emotional intent: protected and accountable, never punished or surveilled.
 struct ResultView: View {
   let outcome: ScreeningOutcome
   let safetyPlan: SafetyPlan
   let isSample: Bool
-  let parentAlertState: ParentAlertDeliveryState
-  let onRetryParentAlert: () -> Void
   let onDone: () -> Void
 
   @Environment(\.openURL) private var openURL
@@ -49,16 +47,12 @@ struct ResultView: View {
         }
         .soberEntrance(order: 1)
 
-        if outcome.state == .signalsDetected {
-          parentAlertCard
-            .soberEntrance(order: 2)
-        }
         signalBreakdown
-          .soberEntrance(order: outcome.state == .signalsDetected ? 3 : 2)
+          .soberEntrance(order: 2)
         InterventionCard(safetyPlan: safetyPlan)
-          .soberEntrance(order: outcome.state == .signalsDetected ? 4 : 3)
+          .soberEntrance(order: 3)
         acknowledgementCard
-          .soberEntrance(order: outcome.state == .signalsDetected ? 5 : 4)
+          .soberEntrance(order: 4)
 
         Button("Return home", action: onDone)
           .buttonStyle(SecondaryActionButtonStyle(tint: Palette.textSecondary))
@@ -67,7 +61,7 @@ struct ResultView: View {
           .accessibilityValue(returnHomeAccessibilityValue)
           .accessibilityHint(
             canLeave ? "Closes this result" : "Read and acknowledge the safety message first")
-          .soberEntrance(order: outcome.state == .signalsDetected ? 6 : 5)
+          .soberEntrance(order: 5)
       }
       .padding(.horizontal, 18)
       .padding(.top, 16)
@@ -138,94 +132,6 @@ struct ResultView: View {
     }
   }
 
-  private var parentAlertCard: some View {
-    SoberCard {
-      HStack(alignment: .top, spacing: 14) {
-        ZStack {
-          Circle()
-            .fill(parentAlertTint.opacity(0.14))
-          parentAlertIcon
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(parentAlertTint)
-        }
-        .frame(width: 48, height: 48)
-
-        VStack(alignment: .leading, spacing: 5) {
-          Text(parentAlertTitle)
-            .font(.headline)
-          Text(parentAlertMessage)
-            .font(.subheadline)
-            .foregroundStyle(Palette.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-
-          if parentAlertState == .failed || parentAlertState == .notConfigured {
-            Button("Try automatic alert again", action: onRetryParentAlert)
-              .font(.subheadline.weight(.semibold))
-              .foregroundStyle(Palette.primary)
-              .padding(.top, 3)
-          }
-        }
-
-        Spacer(minLength: 0)
-      }
-    }
-  }
-
-  @ViewBuilder
-  private var parentAlertIcon: some View {
-    if parentAlertState == .sending {
-      ProgressView()
-        .tint(parentAlertTint)
-    } else {
-      Image(systemName: parentAlertSystemImage)
-    }
-  }
-
-  private var parentAlertTint: Color {
-    switch parentAlertState {
-    case .failed, .notConfigured: Palette.warning
-    default: Palette.primary
-    }
-  }
-
-  private var parentAlertSystemImage: String {
-    switch parentAlertState {
-    case .sent: "paperplane.fill"
-    case .failed, .notConfigured: "exclamationmark.message.fill"
-    case .preview: "eye.fill"
-    case .sending: "paperplane"
-    case .notRequired: "message"
-    }
-  }
-
-  private var parentAlertTitle: String {
-    switch parentAlertState {
-    case .sending: "Alerting \(safetyPlan.contactName)…"
-    case .sent: "Alert accepted for sending"
-    case .failed: "Automatic alert didn’t go through"
-    case .notConfigured: "Automatic parent alert needs setup"
-    case .preview: "Parent alert preview"
-    case .notRequired: "Parent alert"
-    }
-  }
-
-  private var parentAlertMessage: String {
-    switch parentAlertState {
-    case .sending:
-      "Sober is sending the concerning result now. You don’t need to compose the message."
-    case .sent:
-      "The messaging service accepted the alert for \(safetyPlan.contactName). Carrier delivery is not yet confirmed. No camera data or scores were shared."
-    case .failed:
-      "Call or message them below now. Sober will not hide a delivery failure."
-    case .notConfigured:
-      "Add consent, a valid parent number, and the alert-service configuration. Call or message them below now."
-    case .preview:
-      "Sample only. A live concerning result would alert \(safetyPlan.contactName) immediately."
-    case .notRequired:
-      "No automatic alert was required for this result."
-    }
-  }
-
   private var acknowledgementCard: some View {
     SoberCard {
       VStack(alignment: .leading, spacing: 12) {
@@ -262,7 +168,7 @@ struct InterventionCard: View {
         VStack(alignment: .leading, spacing: 4) {
           Text("Get home without driving")
             .font(.title3.weight(.semibold))
-          Text("Your ride and direct contact options stay available while the alert is sent.")
+          Text("Open a ride, or call or message your Safety Circle contact directly.")
             .font(.caption)
             .foregroundStyle(Palette.textSecondary)
         }
@@ -323,9 +229,16 @@ struct InterventionCard: View {
 
   private func messageContact() {
     let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    let message = "Can you help me get to \(safetyPlan.homeLabel)? I’m choosing not to drive."
+    let message = Self.messageBody(homeLabel: safetyPlan.homeLabel)
     let body = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? message
     if let url = URL(string: "sms:\(digits)?body=\(body)") { openURL(url) }
+  }
+
+  /// Kept as a pure function so a regression test can assert this manual
+  /// message — the only text this app ever puts in front of a contact —
+  /// never leaks quality scores, camera details, or a BAC estimate.
+  static func messageBody(homeLabel: String) -> String {
+    "Can you help me get to \(homeLabel)? I’m choosing not to drive."
   }
 }
 

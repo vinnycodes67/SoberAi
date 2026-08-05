@@ -124,7 +124,7 @@ struct OnboardingView: View {
           boundaryRow(
             icon: "person.2.badge.gearshape", title: "A Safety Circle you control",
             detail:
-              "You can pre-authorize a parent alert for concerning results. No employer or law-enforcement mode.")
+              "Name someone to call or message from a result with one tap. No employer or law-enforcement mode.")
           boundaryRow(
             icon: "iphone.and.arrow.forward", title: "Action built in",
             detail: "Call a ride or your person from every result.")
@@ -146,7 +146,7 @@ struct OnboardingView: View {
           eyebrow: "Your biometric data",
           title: "Processed here. Gone right after.",
           detail:
-            "Eye and face landmarks are sensitive. They stay on this iPhone. If you enable Safety Circle, only a short safety alert leaves the device."
+            "Eye and face landmarks are sensitive. They stay on this iPhone. Calling or messaging your Safety Circle contact, and Guardian Mode's completed/missed check-in, never carry biometric data with them."
         )
         .soberEntrance(order: 0)
 
@@ -161,7 +161,7 @@ struct OnboardingView: View {
             consentToggle(
               title: "Retention and deletion",
               detail:
-                "I understand raw frames are discarded after feature extraction and are never uploaded. Safety alerts never contain biometric data.",
+                "I understand raw frames are discarded after feature extraction and are never uploaded, and nothing derived from them ever leaves this iPhone.",
               isOn: $retentionConsent
             )
           }
@@ -242,7 +242,7 @@ struct RetentionPolicyView: View {
           )
           policySection(
             "Sharing",
-            "The MVP contains no advertising, analytics, biometric export, employer portal, or law-enforcement mode. If you explicitly enable Safety Circle, a concerning-result message is sent to the parent or guardian you provide."
+            "The MVP contains no advertising, analytics, biometric export, employer portal, or law-enforcement mode. Nothing is ever sent automatically: calling or messaging your Safety Circle contact always requires your tap, and Guardian Mode only ever shares whether a check was completed, never a score or raw data."
           )
           policySection(
             "Your control",

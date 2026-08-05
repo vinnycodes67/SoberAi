@@ -10,16 +10,16 @@ struct SafetyPlanView: View {
         VStack(alignment: .leading, spacing: 18) {
           ScreenHeader(
             eyebrow: "Safety Circle",
-            title: "Put a parent in your corner.",
+            title: "Line up your way home.",
             detail:
-              "Set this up while clear-headed. A concerning result can alert them immediately without waiting for you to compose a message."
+              "Set this up while clear-headed. A concerning result puts a ride and a direct call or message to this contact one tap away."
           )
 
           SoberCard {
             Toggle(isOn: $plan.isActive) {
               VStack(alignment: .leading, spacing: 3) {
                 Text("Safety Circle").font(.headline)
-                Text(plan.isActive ? "Ride and parent plan active" : "Safety Circle paused")
+                Text(plan.isActive ? "Ride and contact plan active" : "Safety Circle paused")
                   .font(.caption)
                   .foregroundStyle(Palette.textSecondary)
               }
@@ -29,54 +29,14 @@ struct SafetyPlanView: View {
 
           SoberCard {
             VStack(alignment: .leading, spacing: 16) {
-              fieldLabel("Who is taking the check?")
-              TextField("Your first name", text: $plan.userName)
-                .textContentType(.name)
-                .textFieldStyle(SoberTextFieldStyle())
-
-              fieldLabel("Parent or guardian")
-              TextField("Parent name", text: $plan.contactName)
+              fieldLabel("Contact")
+              TextField("Name", text: $plan.contactName)
                 .textContentType(.name)
                 .textFieldStyle(SoberTextFieldStyle())
               TextField("Phone number", text: $plan.contactPhone)
                 .textContentType(.telephoneNumber)
                 .keyboardType(.phonePad)
                 .textFieldStyle(SoberTextFieldStyle())
-            }
-          }
-
-          SoberCard {
-            VStack(alignment: .leading, spacing: 16) {
-              Toggle(isOn: $plan.automaticParentAlerts) {
-                VStack(alignment: .leading, spacing: 4) {
-                  Text("Automatic parent alert")
-                    .font(.headline)
-                  Text("Send immediately when Sober detects concerning signals")
-                    .font(.caption)
-                    .foregroundStyle(Palette.textSecondary)
-                }
-              }
-              .tint(Palette.primary)
-
-              Divider().overlay(Palette.secondary.opacity(0.2))
-
-              Toggle(isOn: $plan.parentAlertConsent) {
-                Text(
-                  "I authorize Sober to send this safety result to the parent or guardian above."
-                )
-                .font(.subheadline.weight(.medium))
-                .fixedSize(horizontal: false, vertical: true)
-              }
-              .tint(Palette.primary)
-              .disabled(!plan.automaticParentAlerts)
-              .opacity(plan.automaticParentAlerts ? 1 : 0.45)
-
-              Label(
-                "Only the safety message is shared—never camera footage, face landmarks, task scores, or an estimated substance level.",
-                systemImage: "hand.raised.fill"
-              )
-              .font(.caption)
-              .foregroundStyle(Palette.textSecondary)
             }
           }
 
@@ -96,7 +56,7 @@ struct SafetyPlanView: View {
           }
 
           Text(
-            "Automatic delivery requires the parent-alert service configured for this build. Ride booking still requires your tap."
+            "Ride booking, calling, and messaging all require your tap — nothing here happens automatically."
           )
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
@@ -111,11 +71,6 @@ struct SafetyPlanView: View {
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
           Button("Done") { dismiss() }
-        }
-      }
-      .onChange(of: plan.automaticParentAlerts) { _, isEnabled in
-        if !isEnabled {
-          plan.parentAlertConsent = false
         }
       }
     }

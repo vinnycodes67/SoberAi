@@ -69,12 +69,11 @@ final class ReviewRegressionTests: XCTestCase {
   }
 
   func testDefaultSafetyPlanRequiresExplicitContactEntry() {
-    let plan = SafetyPlan(automaticParentAlerts: true, parentAlertConsent: true)
+    let plan = SafetyPlan()
 
-    XCTAssertTrue(plan.userName.isEmpty)
     XCTAssertTrue(plan.contactName.isEmpty)
     XCTAssertTrue(plan.contactPhone.isEmpty)
-    XCTAssertFalse(plan.canAutomaticallyAlertParent)
+    XCTAssertFalse(plan.hasContact, "there is no placeholder contact shipped by default")
   }
 
   func testBaselineProfileEngineNeverPoolsVariants() {
@@ -164,6 +163,19 @@ final class ReviewRegressionTests: XCTestCase {
     XCTAssertNotEqual(unavailable.message, lowQuality.message)
   }
 
+  // MARK: - The manual contact message never leaks diagnostic detail
+
+  func testManualMessageBodySharesOnlyASafeRequestForHelp() {
+    let body = InterventionCard.messageBody(homeLabel: "Home")
+
+    XCTAssertTrue(body.contains("Home"))
+    XCTAssertFalse(body.localizedCaseInsensitiveContains("quality"))
+    XCTAssertFalse(body.localizedCaseInsensitiveContains("camera"))
+    XCTAssertFalse(body.localizedCaseInsensitiveContains("BAC"))
+    XCTAssertFalse(body.localizedCaseInsensitiveContains("score"))
+    XCTAssertFalse(body.localizedCaseInsensitiveContains("signal"))
+  }
+
   // MARK: - P0: the non-visual motor tracking path must not invent a score
 
   func testUnmeasuredMotorTrackingIsNeverScoredAsGoodPerformance() {
@@ -193,133 +205,6 @@ final class ReviewRegressionTests: XCTestCase {
       ScreeningEngine().evaluate(selfReport: .no, metrics: metrics).state,
       .noSignalsDetected
     )
-  }
-
-  // MARK: - P0: one stable event ID per screening run
-
-  @MainActor
-  func testRetriesReuseASingleEventIDForTheWholeRun() async {
-    let recorder = EventIDRecorder()
-    let coordinator = ParentAlertCoordinator(
-      makeService: { eventID, occurredAt in
-        Self.recordingService(eventID: eventID, occurredAt: occurredAt, recorder: recorder) {
-          Self.response(statusCode: 502)
-        }
-      }
-    )
-    let stableEventID = coordinator.eventID
-
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    await coordinator.waitForDelivery()
-    XCTAssertEqual(coordinator.state, .failed)
-
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    await coordinator.waitForDelivery()
-
-    let observed = await recorder.eventIDs
-    XCTAssertEqual(observed.count, 2)
-    XCTAssertEqual(observed, [stableEventID.uuidString, stableEventID.uuidString])
-  }
-
-  @MainActor
-  func testASucceededAlertIsNotResentOnRetry() async {
-    let recorder = EventIDRecorder()
-    let coordinator = ParentAlertCoordinator(
-      makeService: { eventID, occurredAt in
-        Self.recordingService(eventID: eventID, occurredAt: occurredAt, recorder: recorder) {
-          Self.acceptedResponse(eventID: eventID)
-        }
-      }
-    )
-
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    await coordinator.waitForDelivery()
-    XCTAssertEqual(coordinator.state, .sent)
-
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    await coordinator.waitForDelivery()
-
-    let observed = await recorder.eventIDs
-    XCTAssertEqual(observed.count, 1, "A delivered alert must not be submitted twice")
-  }
-
-  @MainActor
-  func testConcurrentSendsProduceOnlyOneSubmission() async {
-    let recorder = EventIDRecorder()
-    let coordinator = ParentAlertCoordinator(
-      makeService: { eventID, occurredAt in
-        Self.recordingService(eventID: eventID, occurredAt: occurredAt, recorder: recorder) {
-          Self.acceptedResponse(eventID: eventID)
-        }
-      }
-    )
-
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    await coordinator.waitForDelivery()
-
-    let observed = await recorder.eventIDs
-    XCTAssertEqual(observed.count, 1)
-  }
-
-  @MainActor
-  func testConcerningLiveResultStartsSendingImmediately() {
-    let coordinator = ParentAlertCoordinator(
-      makeService: { eventID, occurredAt in
-        Self.recordingService(
-          eventID: eventID,
-          occurredAt: occurredAt,
-          recorder: EventIDRecorder()
-        ) {
-          Self.acceptedResponse(eventID: eventID)
-        }
-      }
-    )
-
-    coordinator.send(outcome: Self.concerningOutcome, safetyPlan: Self.configuredPlan)
-    XCTAssertEqual(coordinator.state, .sending)
-  }
-
-  @MainActor
-  func testSamplePreviewsNeverContactTheRelay() async {
-    let recorder = EventIDRecorder()
-    let coordinator = ParentAlertCoordinator(
-      makeService: { eventID, occurredAt in
-        Self.recordingService(eventID: eventID, occurredAt: occurredAt, recorder: recorder) {
-          Self.acceptedResponse(eventID: eventID)
-        }
-      }
-    )
-
-    coordinator.presentSample(for: Self.concerningOutcome)
-    XCTAssertEqual(coordinator.state, .preview)
-
-    let observed = await recorder.eventIDs
-    XCTAssertTrue(observed.isEmpty)
-  }
-
-  @MainActor
-  func testNonConcerningResultNeverSends() async {
-    let recorder = EventIDRecorder()
-    let coordinator = ParentAlertCoordinator(
-      makeService: { eventID, occurredAt in
-        Self.recordingService(eventID: eventID, occurredAt: occurredAt, recorder: recorder) {
-          Self.acceptedResponse(eventID: eventID)
-        }
-      }
-    )
-    let clearOutcome = ScreeningEngine().evaluate(
-      selfReport: .no,
-      metrics: .demoClear,
-      founderScenario: .noSignals
-    )
-
-    coordinator.send(outcome: clearOutcome, safetyPlan: Self.configuredPlan)
-    XCTAssertEqual(coordinator.state, .notRequired)
-
-    let observed = await recorder.eventIDs
-    XCTAssertTrue(observed.isEmpty)
   }
 
   // MARK: - P1: a skipped or blocked ocular task is never archived as a capture
@@ -515,65 +400,6 @@ final class ReviewRegressionTests: XCTestCase {
 
   // MARK: - Fixtures
 
-  private static var concerningOutcome: ScreeningOutcome {
-    ScreeningEngine().evaluate(
-      selfReport: .no,
-      metrics: .demoClear,
-      founderScenario: .signals
-    )
-  }
-
-  private static var configuredPlan: SafetyPlan {
-    SafetyPlan(
-      userName: "Alex",
-      contactName: "Casey",
-      contactPhone: "512-555-0147",
-      automaticParentAlerts: true,
-      parentAlertConsent: true
-    )
-  }
-
-  private static func recordingService(
-    eventID: UUID,
-    occurredAt: Date,
-    recorder: EventIDRecorder,
-    response: @escaping @Sendable () -> (Data, URLResponse)
-  ) -> ParentAlertService {
-    ParentAlertService(
-      configuration: ParentAlertConfiguration(
-        endpoint: URL(string: "https://alerts.example.test/v1/alerts")!,
-        bearerToken: "test-shared-token-at-least-20-characters"
-      ),
-      eventID: eventID,
-      occurredAt: occurredAt,
-      transport: { request in
-        await recorder.capture(request)
-        return response()
-      }
-    )
-  }
-
-  private static func acceptedResponse(eventID: UUID) -> (Data, URLResponse) {
-    let data = try! JSONSerialization.data(withJSONObject: [
-      "submissionStatus": "accepted",
-      "eventID": eventID.uuidString,
-      "reference": "SM123",
-    ])
-    return (data, response(statusCode: 202).1)
-  }
-
-  private static func response(statusCode: Int) -> (Data, URLResponse) {
-    (
-      Data("{}".utf8),
-      HTTPURLResponse(
-        url: URL(string: "https://alerts.example.test/v1/alerts")!,
-        statusCode: statusCode,
-        httpVersion: "HTTP/1.1",
-        headerFields: ["Content-Type": "application/json"]
-      )!
-    )
-  }
-
   private static func syntheticSamples(framesPerSecond: Int) -> [OcularSample] {
     let step = 1 / Double(framesPerSecond)
     return stride(from: 0.0, through: OcularProtocolSchedule.totalDuration, by: step).map { time in
@@ -669,15 +495,5 @@ final class ReviewRegressionTests: XCTestCase {
       ),
       protocolVariant: variant
     )
-  }
-}
-
-private actor EventIDRecorder {
-  private(set) var eventIDs: [String] = []
-
-  func capture(_ request: URLRequest) {
-    if let header = request.value(forHTTPHeaderField: "Idempotency-Key") {
-      eventIDs.append(header)
-    }
   }
 }

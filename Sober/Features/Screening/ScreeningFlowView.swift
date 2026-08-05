@@ -36,7 +36,6 @@ struct ScreeningFlowView: View {
   @State private var qualityScore = 0.0
   @State private var ocularSummary: GazeCaptureSummary?
   @State private var outcome: ScreeningOutcome?
-  @StateObject private var parentAlert: ParentAlertCoordinator
   @State private var showingExitAlert = false
   @State private var sessionStartedAt = Date()
   @State private var baselineAccepted = false
@@ -48,14 +47,8 @@ struct ScreeningFlowView: View {
     self.configuration = configuration
     if configuration.scenario == .live {
       _step = State(initialValue: .attestation)
-      _parentAlert = StateObject(wrappedValue: ParentAlertCoordinator())
     } else {
       _step = State(initialValue: .result)
-      _parentAlert = StateObject(
-        wrappedValue: ParentAlertCoordinator(
-          state: configuration.scenario == .signals ? .preview : .notRequired
-        )
-      )
       _outcome = State(
         initialValue: ScreeningEngine().evaluate(
           selfReport: .no,
@@ -64,8 +57,6 @@ struct ScreeningFlowView: View {
         ))
     }
   }
-
-  private var parentAlertState: ParentAlertDeliveryState { parentAlert.state }
 
   var body: some View {
     ZStack(alignment: .top) {
@@ -124,9 +115,7 @@ struct ScreeningFlowView: View {
             ResultView(
               outcome: outcome,
               safetyPlan: model.safetyPlan,
-              isSample: configuration.scenario != .live,
-              parentAlertState: parentAlertState,
-              onRetryParentAlert: { beginParentAlert(for: outcome) }
+              isSample: configuration.scenario != .live
             ) {
               dismiss()
             }
@@ -300,21 +289,12 @@ struct ScreeningFlowView: View {
   private func presentOutcome(_ newOutcome: ScreeningOutcome) {
     outcome = newOutcome
     step = .result
-    beginParentAlert(for: newOutcome)
     if configuration.scenario == .live {
       Task {
         await guardianCoordinator.recordScreeningResult(
           isValid: newOutcome.state != .inconclusive)
       }
     }
-  }
-
-  private func beginParentAlert(for outcome: ScreeningOutcome) {
-    guard configuration.scenario == .live else {
-      parentAlert.presentSample(for: outcome)
-      return
-    }
-    parentAlert.send(outcome: outcome, safetyPlan: model.safetyPlan)
   }
 }
 

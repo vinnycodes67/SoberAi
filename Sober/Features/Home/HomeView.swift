@@ -102,7 +102,7 @@ struct HomeView: View {
       }
 
       Button(heroButtonTitle) {
-        if model.baselineReady && !model.safetyPlan.canAutomaticallyAlertParent {
+        if model.baselineReady && !isSafetyCircleReady {
           showingPlan = true
         } else {
           launch = ScreeningLaunch(
@@ -116,23 +116,30 @@ struct HomeView: View {
     }
   }
 
+  /// A live check requires somewhere to turn if it comes back concerning —
+  /// the plan must be active and name a contact the manual call/message
+  /// buttons on the result screen can reach.
+  private var isSafetyCircleReady: Bool {
+    model.safetyPlan.isActive && model.safetyPlan.hasContact
+  }
+
   private var heroTitle: String {
     if !model.baselineReady { return "Learn your steady." }
-    if !model.safetyPlan.canAutomaticallyAlertParent { return "Connect your Safety Circle." }
+    if !isSafetyCircleReady { return "Connect your Safety Circle." }
     return "Pause. Check in."
   }
 
   private var heroDetail: String {
     if !model.baselineReady { return "Five high-quality sober sessions create your research baseline." }
-    if !model.safetyPlan.canAutomaticallyAlertParent {
-      return "A live check starts after a parent alert is authorized and ready."
+    if !isSafetyCircleReady {
+      return "A live check starts once you've named someone to call or message."
     }
-    return "About two minutes. Concerning results alert your parent immediately."
+    return "About two minutes. Call or message your Safety Circle contact from the result screen."
   }
 
   private var heroButtonTitle: String {
     if !model.baselineReady { return "Record sober baseline" }
-    if !model.safetyPlan.canAutomaticallyAlertParent { return "Set up parent alerts" }
+    if !isSafetyCircleReady { return "Set up your Safety Circle" }
     return "Start a check"
   }
 
@@ -264,8 +271,8 @@ struct HomeView: View {
   }
 
   private var safetyCircleSummary: String {
-    if model.safetyPlan.canAutomaticallyAlertParent {
-      return "\(model.safetyPlan.contactName) will be alerted after concerning results"
+    guard model.safetyPlan.hasContact else {
+      return "Add a contact to call or message from a result"
     }
     return "\(model.safetyPlan.preferredRide) + \(model.safetyPlan.contactName) are ready"
   }
@@ -388,7 +395,7 @@ struct AboutPrototypeView: View {
               aboutRow("Self-report hard gate", "hand.raised")
               aboutRow("Quality-gated results", "waveform.badge.magnifyingglass")
               aboutRow("Ride and contact on every result", "car.side")
-              aboutRow("Automatic parent alert after concerning results", "message.badge.fill")
+              aboutRow("Guardian Mode driving check-ins, opt-in and mutual", "person.2.wave.2")
               aboutRow("No raw biometric uploads", "network.slash")
             }
           }

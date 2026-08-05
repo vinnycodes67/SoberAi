@@ -10,10 +10,6 @@
 	<string>Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Guardian Mode uses motion activity to notice when driving may have started, entirely on this iPhone. No motion data leaves the device.</string>
-	<key>SoberParentAlertAPIURL</key>
-	<string>$(SOBER_PARENT_ALERT_API_URL)</string>
-	<key>SoberParentAlertToken</key>
-	<string>$(SOBER_PARENT_ALERT_TOKEN)</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>

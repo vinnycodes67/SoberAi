@@ -171,30 +171,21 @@ struct ScreeningLaunch: Identifiable, Sendable {
 
 struct SafetyPlan: Codable, Equatable, Sendable {
   var isActive: Bool
-  var userName: String
   var contactName: String
   var contactPhone: String
-  var automaticParentAlerts: Bool
-  var parentAlertConsent: Bool
   var homeLabel: String
   var preferredRide: String
 
   init(
     isActive: Bool = true,
-    userName: String = "",
     contactName: String = "",
     contactPhone: String = "",
-    automaticParentAlerts: Bool = false,
-    parentAlertConsent: Bool = false,
     homeLabel: String = "Home",
     preferredRide: String = "Uber"
   ) {
     self.isActive = isActive
-    self.userName = userName
     self.contactName = contactName
     self.contactPhone = contactPhone
-    self.automaticParentAlerts = automaticParentAlerts
-    self.parentAlertConsent = parentAlertConsent
     self.homeLabel = homeLabel
     self.preferredRide = preferredRide
   }
@@ -208,23 +199,10 @@ struct SafetyPlan: Codable, Equatable, Sendable {
       && !normalizedContactPhone.isEmpty
   }
 
-  var canAutomaticallyAlertParent: Bool {
-    isActive
-      && automaticParentAlerts
-      && parentAlertConsent
-      && !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-      && !contactName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-      && normalizedContactPhone.count >= 10
-      && normalizedContactPhone.count <= 15
-  }
-
   private enum CodingKeys: String, CodingKey {
     case isActive
-    case userName
     case contactName
     case contactPhone
-    case automaticParentAlerts
-    case parentAlertConsent
     case homeLabel
     case preferredRide
   }
@@ -232,12 +210,8 @@ struct SafetyPlan: Codable, Equatable, Sendable {
   init(from decoder: Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     isActive = try values.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
-    userName = try values.decodeIfPresent(String.self, forKey: .userName) ?? ""
     contactName = try values.decodeIfPresent(String.self, forKey: .contactName) ?? ""
     contactPhone = try values.decodeIfPresent(String.self, forKey: .contactPhone) ?? ""
-    automaticParentAlerts =
-      try values.decodeIfPresent(Bool.self, forKey: .automaticParentAlerts) ?? false
-    parentAlertConsent = try values.decodeIfPresent(Bool.self, forKey: .parentAlertConsent) ?? false
     homeLabel = try values.decodeIfPresent(String.self, forKey: .homeLabel) ?? "Home"
     preferredRide = try values.decodeIfPresent(String.self, forKey: .preferredRide) ?? "Uber"
   }
