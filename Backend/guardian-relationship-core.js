@@ -4,6 +4,10 @@ const relationshipLifetimeMilliseconds = 90 * 24 * 60 * 60 * 1000;
 const alertLifetimeMilliseconds = 24 * 60 * 60 * 1000;
 const nonceLifetimeMilliseconds = 10 * 60 * 1000;
 const allowedAlertFields = new Set(["occurredAt", "result", "source", "messageTemplateVersion"]);
+const allowedCheckInProposalFields = new Set([
+  "proposalId", "cadence", "localTime", "timeZoneIdentifier", "condition", "graceMinutes",
+  "proposalConsentVersion",
+]);
 
 export async function handleRelationshipRequest(storage, request) {
   const url = new URL(request.url);
@@ -33,6 +37,7 @@ export async function handleRelationshipRequest(storage, request) {
       alerts: {},
       aliases: {},
       activeEventId: null,
+      checkInPlan: null,
     };
     await storage.put("state", state);
     return json({
@@ -84,6 +89,7 @@ export async function handleRelationshipRequest(storage, request) {
   await storage.put("state", current);
 
   const alertMatch = path.match(/\/alerts\/([0-9a-f-]{36})(?:\/(acknowledgment))?$/);
+  const completionMatch = path.match(/\/check-ins\/(plan[0-9]+-[0-9]{8}-[0-9]{4})\/completion$/);
 
   if (request.method === "GET" && path.endsWith(`/${current.relationshipId}`)) {
     await storage.put("state", current);
@@ -93,6 +99,7 @@ export async function handleRelationshipRequest(storage, request) {
     return json({
       relationship: relationshipView(current, authentication.role),
       activeAlert,
+      checkInPlan: checkInPlanView(current.checkInPlan),
     });
   }
 
@@ -102,6 +109,78 @@ export async function handleRelationshipRequest(storage, request) {
     current.inviteTokenHash = null;
     await storage.put("state", current);
     return new Response(null, { status: 204, headers: responseHeaders() });
+  }
+
+  if (request.method === "PUT" && path.endsWith("/check-in-plan/proposal")) {
+    const input = await jsonBody(request);
+    if (!input.ok || !validCheckInProposalBody(input.value)
+      || request.headers.get("idempotency-key") !== input.value.proposalId) {
+      return error(422, "invalidRequest");
+    }
+    if (current.relationshipState !== "active") return error(409, "relationshipNotActive");
+
+    const fingerprint = await sha256Base64URL(JSON.stringify(input.value));
+    if (current.checkInPlan?.proposalId === input.value.proposalId) {
+      if (current.checkInPlan.fingerprint !== fingerprint) return error(409, "idempotencyConflict");
+      return json({ checkInPlan: checkInPlanView(current.checkInPlan) });
+    }
+
+    const now = new Date().toISOString();
+    current.checkInPlan = {
+      proposalId: input.value.proposalId,
+      fingerprint,
+      version: (current.checkInPlan?.version ?? 0) + 1,
+      state: "pendingPersonConsent",
+      cadence: input.value.cadence,
+      localTime: input.value.localTime,
+      timeZoneIdentifier: input.value.timeZoneIdentifier,
+      condition: input.value.condition,
+      graceMinutes: input.value.graceMinutes,
+      proposalConsentVersion: input.value.proposalConsentVersion,
+      participantConsentVersion: null,
+      proposedAt: now,
+      decidedAt: null,
+      lastCompletion: current.checkInPlan?.lastCompletion ?? null,
+    };
+    await storage.put("state", current);
+    return json({ checkInPlan: checkInPlanView(current.checkInPlan) }, 202);
+  }
+
+  if (request.method === "PUT" && path.endsWith("/check-in-plan/decision")) {
+    const input = await jsonBody(request);
+    if (!input.ok || !validCheckInDecisionBody(input.value)) return error(422, "invalidRequest");
+    const isPendingDecision = current.checkInPlan?.state === "pendingPersonConsent";
+    const isActiveWithdrawal = current.checkInPlan?.state === "active" && input.value.decision === "decline";
+    if (!current.checkInPlan || current.checkInPlan.version !== input.value.version
+      || (!isPendingDecision && !isActiveWithdrawal)) {
+      return error(409, "planNotPending");
+    }
+    current.checkInPlan.state = input.value.decision === "accept" ? "active" : "declined";
+    current.checkInPlan.participantConsentVersion = input.value.participantConsentVersion;
+    current.checkInPlan.decidedAt = new Date().toISOString();
+    await storage.put("state", current);
+    return json({ checkInPlan: checkInPlanView(current.checkInPlan) });
+  }
+
+  if (completionMatch && request.method === "PUT") {
+    const occurrenceId = completionMatch[1];
+    const input = await jsonBody(request);
+    if (!input.ok || !validCheckInCompletionBody(input.value)
+      || request.headers.get("idempotency-key") !== occurrenceId) {
+      return error(422, "invalidRequest");
+    }
+    if (!current.checkInPlan || current.checkInPlan.state !== "active"
+      || !occurrenceId.startsWith(`plan${current.checkInPlan.version}-`)) {
+      return error(409, "planNotActive");
+    }
+    if (current.checkInPlan.lastCompletion?.occurrenceId !== occurrenceId) {
+      current.checkInPlan.lastCompletion = {
+        occurrenceId,
+        completedAt: input.value.completedAt,
+      };
+      await storage.put("state", current);
+    }
+    return json({ checkInPlan: checkInPlanView(current.checkInPlan) });
   }
 
   if (alertMatch && request.method === "PUT" && !alertMatch[2]) {
@@ -175,9 +254,31 @@ export async function handleRelationshipRequest(storage, request) {
 }
 
 function expectedRole(path, method) {
+  if (method === "PUT" && path.endsWith("/check-in-plan/proposal")) return "guardian";
+  if (method === "PUT" && path.endsWith("/check-in-plan/decision")) return "person";
+  if (method === "PUT" && /\/check-ins\/plan[0-9]+-[0-9]{8}-[0-9]{4}\/completion$/.test(path)) {
+    return "person";
+  }
   if (method === "PUT" && /\/alerts\/[0-9a-f-]{36}$/.test(path)) return "person";
   if (method === "PUT" && path.endsWith("/acknowledgment")) return "guardian";
   return null;
+}
+
+function checkInPlanView(plan) {
+  if (!plan) return null;
+  return {
+    proposalId: plan.proposalId,
+    version: plan.version,
+    state: plan.state,
+    cadence: plan.cadence,
+    localTime: plan.localTime,
+    timeZoneIdentifier: plan.timeZoneIdentifier,
+    condition: plan.condition,
+    graceMinutes: plan.graceMinutes,
+    proposedAt: plan.proposedAt,
+    decidedAt: plan.decidedAt,
+    lastCompletion: plan.lastCompletion,
+  };
 }
 
 function relationshipView(state, role) {
@@ -248,6 +349,46 @@ function validAlertBody(value) {
     && value.source === "liveCheck"
     && value.messageTemplateVersion === "guardian-help-v1"
     && Number.isFinite(Date.parse(value.occurredAt));
+}
+
+function validCheckInProposalBody(value) {
+  if (!value || Object.keys(value).length !== allowedCheckInProposalFields.size
+    || !Object.keys(value).every((key) => allowedCheckInProposalFields.has(key))) return false;
+  if (typeof value.proposalId !== "string"
+    || !/^[0-9a-f-]{36}$/.test(value.proposalId)
+    || value.cadence !== "daily"
+    || !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(value.localTime)
+    || typeof value.timeZoneIdentifier !== "string"
+    || value.timeZoneIdentifier.length < 1
+    || value.timeZoneIdentifier.length > 64
+    || !["always", "awayFromHome"].includes(value.condition)
+    || !Number.isInteger(value.graceMinutes)
+    || value.graceMinutes < 0
+    || value.graceMinutes > 120
+    || value.proposalConsentVersion !== "guardian-check-in-proposer-v1") return false;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value.timeZoneIdentifier });
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function validCheckInDecisionBody(value) {
+  return value
+    && Object.keys(value).length === 3
+    && Number.isInteger(value.version)
+    && value.version > 0
+    && ["accept", "decline"].includes(value.decision)
+    && value.participantConsentVersion === "guardian-check-in-participant-v1";
+}
+
+function validCheckInCompletionBody(value) {
+  return value
+    && Object.keys(value).length === 2
+    && value.status === "completed"
+    && typeof value.completedAt === "string"
+    && Number.isFinite(Date.parse(value.completedAt));
 }
 
 async function jsonBody(request) {

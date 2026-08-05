@@ -10,7 +10,7 @@ Implementation note (2026-08-05): the repository now contains a runnable,
 founder-controlled vertical slice for relationship creation, single-use invite
 redemption, relationship-scoped ES256 signatures, nonce replay protection,
 minimal alert creation, polling, signed guardian acknowledgment, revocation,
-and relaunch-stable event IDs. The legacy shared-token Worker route is removed.
+relaunch-stable event IDs, and consent-gated daily check-in plans. The legacy shared-token Worker route is removed.
 This slice intentionally does not claim the complete contract: founder-mode
 creation bypasses person-phone verification/App Attest, transport is foreground
 polling rather than APNs, and verified SMS fallback/callback handling is not yet
@@ -64,6 +64,12 @@ app-wide shared token or a client-authored notification/SMS body.
 - Samples and research archives never contain relationship, capability, guardian-device, alert, or
   provider identifiers.
 - Logs follow `Docs/GUARDIAN_DATA_GOVERNANCE.md`.
+- A Guardian may propose a daily check-in time and either `always` or `awayFromHome`, but only the
+  screened person's signed decision can activate it. The screened person can later withdraw.
+- Home coordinates and measured distances never enter this API. They remain in protected local
+  storage and are evaluated with a one-time foreground location request.
+- Check-in completion contains only the occurrence ID and completion time. Missing, overdue, and
+  completed status never disclose or imply a screening result.
 
 ## Protocol conventions
 
@@ -141,11 +147,32 @@ are therefore signed. A bearer token cannot create an acknowledgment.
 | `guardian-recipient-v1` | Guardian | Accept the relationship and acknowledgment responsibility |
 | `notification-disclosure-v1` | Guardian | Confirm provider acceptance is not delivery and configure notifications |
 | `guardian-sms-fallback-v1` | Guardian | Verify one fallback number and permit minimal fallback SMS messages |
+| `guardian-check-in-proposer-v1` | Guardian | Propose a daily time and optional away-from-Home condition |
+| `guardian-check-in-participant-v1` | Screened person | Accept, decline, or later withdraw from that plan |
 
 Consent is an affirmative, timestamped action. It is never inferred from permission, invite use, or
 a preselected switch. A material consent update changes the relationship to
 `reauthorizationRequired`; new automatic alerts stop until both affected current versions are
 signed. Call, Message, and Ride actions remain available.
+
+## Founder check-in plan extension
+
+The founder Worker implements three relationship-scoped, signed mutations:
+
+- `PUT /v1/guardian-relationships/{relationshipId}/check-in-plan/proposal` requires the Guardian
+  capability, a UUID `Idempotency-Key`, `cadence: daily`, `localTime: HH:mm`, an IANA time-zone ID,
+  `condition: always | awayFromHome`, a 0–120 minute grace period, and
+  `guardian-check-in-proposer-v1`. It returns `pendingPersonConsent`; it cannot activate the plan.
+- `PUT /v1/guardian-relationships/{relationshipId}/check-in-plan/decision` requires the screened
+  person's capability, the current plan version, `accept | decline`, and
+  `guardian-check-in-participant-v1`. Declining an active plan withdraws consent immediately.
+- `PUT /v1/guardian-relationships/{relationshipId}/check-ins/{occurrenceId}/completion` requires the
+  screened person's capability and matching idempotency key. Its body is exactly
+  `{ "status": "completed", "completedAt": "<RFC3339>" }`.
+
+Relationship reads return the caller-safe plan state and latest completion. They never return Home,
+current location, distance, result state, score, task output, camera data, or a missed-check
+impairment inference.
 
 ## Relationship creation and person verification
 

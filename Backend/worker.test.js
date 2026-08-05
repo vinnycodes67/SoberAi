@@ -339,3 +339,134 @@ test("legacy shared-token route is removed from the compiled handler", async () 
   assert.equal(response.status, 410);
   assert.equal((await response.json()).error.code, "legacyRouteRemoved");
 });
+
+test("guardian proposes a daily check-in but cannot activate it", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const proposalId = crypto.randomUUID();
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}/check-in-plan/proposal`;
+  const body = {
+    proposalId,
+    cadence: "daily",
+    localTime: "22:30",
+    timeZoneIdentifier: "America/Chicago",
+    condition: "awayFromHome",
+    graceMinutes: 15,
+    proposalConsentVersion: "guardian-check-in-proposer-v1",
+  };
+  const response = await handleGuardianRequest(await signedRequest({
+    path, method: "PUT", body, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: proposalId,
+  }), env);
+  assert.equal(response.status, 202);
+  const plan = (await response.json()).checkInPlan;
+  assert.equal(plan.state, "pendingPersonConsent");
+  assert.equal(plan.condition, "awayFromHome");
+  assert.equal(JSON.stringify(plan).includes("latitude"), false);
+
+  const guardianDecision = await handleGuardianRequest(await signedRequest({
+    path: path.replace("proposal", "decision"), method: "PUT",
+    body: { version: plan.version, decision: "accept", participantConsentVersion: "guardian-check-in-participant-v1" },
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  assert.equal(guardianDecision.status, 404);
+});
+
+test("person explicitly accepts and can later withdraw from a check-in plan", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const proposalId = crypto.randomUUID();
+  const proposalPath = `/v1/guardian-relationships/${created.body.relationshipId}/check-in-plan/proposal`;
+  const proposal = {
+    proposalId, cadence: "daily", localTime: "21:15", timeZoneIdentifier: "America/Chicago",
+    condition: "always", graceMinutes: 10,
+    proposalConsentVersion: "guardian-check-in-proposer-v1",
+  };
+  const proposed = await handleGuardianRequest(await signedRequest({
+    path: proposalPath, method: "PUT", body: proposal, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: proposalId,
+  }), env);
+  const version = (await proposed.json()).checkInPlan.version;
+  const decisionPath = proposalPath.replace("proposal", "decision");
+  const accepted = await handleGuardianRequest(await signedRequest({
+    path: decisionPath, method: "PUT",
+    body: { version, decision: "accept", participantConsentVersion: "guardian-check-in-participant-v1" },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId, privateKey: created.personKey.privateKey,
+  }), env);
+  assert.equal(accepted.status, 200);
+  assert.equal((await accepted.json()).checkInPlan.state, "active");
+
+  const withdrawn = await handleGuardianRequest(await signedRequest({
+    path: decisionPath, method: "PUT",
+    body: { version, decision: "decline", participantConsentVersion: "guardian-check-in-participant-v1" },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId, privateKey: created.personKey.privateKey,
+  }), env);
+  assert.equal(withdrawn.status, 200);
+  assert.equal((await withdrawn.json()).checkInPlan.state, "declined");
+});
+
+test("only the person can record completion and no result is stored", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const proposalId = crypto.randomUUID();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const proposal = {
+    proposalId, cadence: "daily", localTime: "20:00", timeZoneIdentifier: "America/Chicago",
+    condition: "always", graceMinutes: 15,
+    proposalConsentVersion: "guardian-check-in-proposer-v1",
+  };
+  const proposed = await handleGuardianRequest(await signedRequest({
+    path: `${base}/check-in-plan/proposal`, method: "PUT", body: proposal,
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: proposalId,
+  }), env);
+  const version = (await proposed.json()).checkInPlan.version;
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/check-in-plan/decision`, method: "PUT",
+    body: { version, decision: "accept", participantConsentVersion: "guardian-check-in-participant-v1" },
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId, privateKey: created.personKey.privateKey,
+  }), env);
+
+  const occurrenceId = `plan${version}-20260805-2000`;
+  const completionBody = { status: "completed", completedAt: "2026-08-06T01:04:00.000Z" };
+  const completionPath = `${base}/check-ins/${occurrenceId}/completion`;
+  const guardianAttempt = await handleGuardianRequest(await signedRequest({
+    path: completionPath, method: "PUT", body: completionBody,
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: occurrenceId,
+  }), env);
+  assert.equal(guardianAttempt.status, 404);
+
+  const completed = await handleGuardianRequest(await signedRequest({
+    path: completionPath, method: "PUT", body: completionBody,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId, privateKey: created.personKey.privateKey,
+    idempotencyKey: occurrenceId,
+  }), env);
+  const plan = (await completed.json()).checkInPlan;
+  assert.equal(plan.lastCompletion.occurrenceId, occurrenceId);
+  assert.deepEqual(Object.keys(plan.lastCompletion).sort(), ["completedAt", "occurrenceId"]);
+});
+
+test("invalid timezone and location-bearing proposal fields are rejected", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const proposalId = crypto.randomUUID();
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}/check-in-plan/proposal`;
+  const body = {
+    proposalId, cadence: "daily", localTime: "22:30", timeZoneIdentifier: "Not/AZone",
+    condition: "awayFromHome", graceMinutes: 15, latitude: 41.8,
+    proposalConsentVersion: "guardian-check-in-proposer-v1",
+  };
+  const response = await handleGuardianRequest(await signedRequest({
+    path, method: "PUT", body, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey, idempotencyKey: proposalId,
+  }), env);
+  assert.equal(response.status, 422);
+});

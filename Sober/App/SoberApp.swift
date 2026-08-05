@@ -1,69 +1,15 @@
-import BackgroundTasks
 import SwiftUI
-import UIKit
 
 @main
 struct SoberApp: App {
   @StateObject private var model = AppModel()
-  @StateObject private var guardianCoordinator = GuardianCoordinator()
-  @UIApplicationDelegateAdaptor(SoberAppDelegate.self) private var appDelegate
 
   var body: some Scene {
     WindowGroup {
       RootView()
         .environmentObject(model)
-        .environmentObject(guardianCoordinator)
         .preferredColorScheme(.dark)
         .tint(Palette.primary)
-        .onAppear {
-          guardianCoordinator.configure(model: model)
-          appDelegate.guardianCoordinator = guardianCoordinator
-          if model.guardianRole == .teen {
-            guardianCoordinator.startTeenMonitoring()
-          } else if model.guardianRole == .parent {
-            guardianCoordinator.startParentMonitoring()
-          }
-        }
-    }
-  }
-}
-
-/// Only exists to register the two OS-level entry points Guardian Mode
-/// needs before the app finishes launching: the background catch-up task
-/// and remote (CloudKit) push notifications. Nothing else in the app goes
-/// through this delegate.
-final class SoberAppDelegate: NSObject, UIApplicationDelegate {
-  weak var guardianCoordinator: GuardianCoordinator?
-
-  func application(
-    _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-  ) -> Bool {
-    GuardianCoordinator.registerBackgroundTask { [weak self] task in
-      guard let coordinator = self?.guardianCoordinator else {
-        task.setTaskCompleted(success: true)
-        return
-      }
-      Task { @MainActor in
-        coordinator.runBackgroundCatchUp(task: task)
-      }
-    }
-    application.registerForRemoteNotifications()
-    return true
-  }
-
-  func application(
-    _ application: UIApplication,
-    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
-    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
-  ) {
-    guard let coordinator = guardianCoordinator else {
-      completionHandler(.noData)
-      return
-    }
-    Task { @MainActor in
-      await coordinator.handleRemoteNotification()
-      completionHandler(.newData)
     }
   }
 }

@@ -587,3 +587,10 @@ It does **not** mean the product is clinically validated or ready to tell anyone
   Worker route and legacy iOS relay client were removed. Verification passed with 67 iOS tests and
   10 backend tests. APNs, phone/App Attest verification, and SMS fallback remain open Gate 1 work,
   so the build remains founder-controlled and is not Gate 1 complete.
+- 2026-08-05: Codex reconciled the co-founder CloudKit branch with the capability-signed Guardian
+  architecture and added a founder check-in-plan slice. Guardians can propose a daily time and an
+  optional away-from-Home condition; the screened person must explicitly accept, may decline or
+  withdraw, and keeps the Home coordinate in this-device-only Keychain storage. iOS uses a local
+  calendar notification and a one-time foreground location request rather than background tracking.
+  The Guardian API stores only plan state and completion time, never location, result, or score.
+  Verification passed with 82 iOS tests and 14 backend tests.

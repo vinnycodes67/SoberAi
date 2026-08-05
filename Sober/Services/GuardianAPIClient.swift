@@ -143,6 +143,63 @@ struct GuardianAPIClient: Sendable {
     )
   }
 
+  func proposeCheckInPlan(
+    session: GuardianSession,
+    localTime: String,
+    timeZoneIdentifier: String,
+    condition: GuardianCheckInCondition,
+    graceMinutes: Int
+  ) async throws -> GuardianCheckInPlanEnvelope {
+    let proposalID = UUID().uuidString.lowercased()
+    return try await sendSigned(
+      session: session,
+      method: "PUT",
+      path: "/v1/guardian-relationships/\(session.relationshipID)/check-in-plan/proposal",
+      body: CheckInProposalRequest(
+        proposalId: proposalID,
+        cadence: "daily",
+        localTime: localTime,
+        timeZoneIdentifier: timeZoneIdentifier,
+        condition: condition,
+        graceMinutes: graceMinutes,
+        proposalConsentVersion: "guardian-check-in-proposer-v1"
+      ),
+      idempotencyKey: proposalID
+    )
+  }
+
+  func decideCheckInPlan(
+    session: GuardianSession,
+    version: Int,
+    decision: String
+  ) async throws -> GuardianCheckInPlanEnvelope {
+    try await sendSigned(
+      session: session,
+      method: "PUT",
+      path: "/v1/guardian-relationships/\(session.relationshipID)/check-in-plan/decision",
+      body: CheckInDecisionRequest(
+        version: version,
+        decision: decision,
+        participantConsentVersion: "guardian-check-in-participant-v1"
+      ),
+      idempotencyKey: nil
+    )
+  }
+
+  func completeCheckIn(
+    session: GuardianSession,
+    occurrenceID: String,
+    completedAt: Date
+  ) async throws -> GuardianCheckInPlanEnvelope {
+    try await sendSigned(
+      session: session,
+      method: "PUT",
+      path: "/v1/guardian-relationships/\(session.relationshipID)/check-ins/\(occurrenceID)/completion",
+      body: CheckInCompletionRequest(status: "completed", completedAt: Self.timestamp(completedAt)),
+      idempotencyKey: occurrenceID
+    )
+  }
+
   func revoke(session: GuardianSession) async throws {
     let _: EmptyResponse = try await sendSigned(
       session: session,
@@ -289,6 +346,24 @@ private struct CreateAlertRequest: Encodable {
 }
 
 private struct AcknowledgmentRequest: Encodable { let action: String }
+private struct CheckInProposalRequest: Encodable {
+  let proposalId: String
+  let cadence: String
+  let localTime: String
+  let timeZoneIdentifier: String
+  let condition: GuardianCheckInCondition
+  let graceMinutes: Int
+  let proposalConsentVersion: String
+}
+private struct CheckInDecisionRequest: Encodable {
+  let version: Int
+  let decision: String
+  let participantConsentVersion: String
+}
+private struct CheckInCompletionRequest: Encodable {
+  let status: String
+  let completedAt: String
+}
 private struct EmptyBody: Encodable {}
 private struct EmptyResponse: Decodable {}
 private struct ErrorEnvelope: Decodable {

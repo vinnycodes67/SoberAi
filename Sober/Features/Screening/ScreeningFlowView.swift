@@ -35,6 +35,7 @@ struct ScreeningFlowView: View {
   @State private var sessionStartedAt = Date()
   @State private var baselineAccepted = false
   @State private var baselineCompletionState = BaselineCompletionState(reason: .ready)
+  @State private var didSubmitCheckInCompletion = false
 
   private let engine = ScreeningEngine()
 
@@ -286,6 +287,16 @@ struct ScreeningFlowView: View {
     outcome = newOutcome
     step = .result
     beginGuardianAlert(for: newOutcome)
+    submitScheduledCheckInCompletionIfNeeded()
+  }
+
+  private func submitScheduledCheckInCompletionIfNeeded() {
+    guard !didSubmitCheckInCompletion,
+      configuration.scenario == .live,
+      let occurrenceID = configuration.guardianCheckInOccurrenceID
+    else { return }
+    didSubmitCheckInCompletion = true
+    Task { await model.completeGuardianCheckIn(occurrenceID: occurrenceID) }
   }
 
   private func beginGuardianAlert(for outcome: ScreeningOutcome) {

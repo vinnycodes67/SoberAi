@@ -25,6 +25,9 @@ deployment target.
 - Safety Circle ride destination with a separate, two-device Guardian Mode
 - Single-use guardian invites and relationship-scoped P-256 signed requests
 - Immediate in-app help requests for live `SIGNALS_DETECTED` results
+- Guardian-proposed daily check-in times with explicit screened-person acceptance or decline
+- Optional “away from Home” condition using a one-time, foreground-only location check; the Home coordinate stays in this-device-only Keychain storage
+- Local daily reminders and completion-only Guardian status; neither the location nor screening outcome is shared
 - Exactly three screened-person help states: requesting help, guardian confirmed, or contact someone now
 - Stable alert event IDs persisted before submission, Durable Object coordination, replay rejection, coalescing, and revocation
 - A founder-only Research Center with explicit consent, contextual confounders, local session count, JSON export, and delete-all controls
@@ -73,6 +76,10 @@ claiming that push or SMS is already configured.
 5. Keep the Guardian screen open during founder testing; it reconciles every
    three seconds. A concerning live result creates the minimal request and the
    guardian can tap **I'm helping**.
+6. On the Guardian installation, choose a daily time and send the check-in plan
+   for approval. On the screened person's installation, review and accept or
+   decline it. An away-from-Home plan also asks the person to save Home while
+   physically there; that coordinate never leaves their phone.
 
 For two physical devices, deploy the Worker and change
 `SOBER_GUARDIAN_API_URL` in `project.yml` to its HTTPS origin before regenerating
@@ -119,9 +126,11 @@ xcodebuild \
 - Research context is self-reported. The app has no supervised labels, breath-reference hardware integration, controlled-study ground truth, or model-training pipeline yet.
 - Raw camera frames are not persisted by app code, but the prototype privacy copy still requires legal review before any external distribution.
 - Guardian Mode is founder-only. It currently uses signed in-app polling; APNs, notification deep links, phone verification, App Attest, and the 30-second SMS fallback remain blocked work.
+- Scheduled check-ins use ordinary local notifications, which can be delayed or hidden by system notification settings and Focus. The away-from-Home condition is evaluated only when the person opens Sober and taps to check location; there is no continuous or background location tracking.
+- A missed or overdue check-in means only that no completion was recorded. It must never be displayed or communicated as evidence of impairment.
 - A guardian confirmation is real only after the backend accepts the guardian device's signed acknowledgment. The UI makes no delivery/open claim from transport state.
 - The device signing key and minimal pending event receipt are stored in this-device-only Keychain storage. This founder build does not provide account recovery or multi-device continuity.
-- Ride links open the provider; production destination and location handling remain to be implemented.
+- Ride links open the provider; production ride handoff still needs device testing.
 
 Read [Founder Review](Docs/FOUNDER_REVIEW.md) before deciding what to build next.
 The visual and motion rules live in [DESIGN.md](DESIGN.md).

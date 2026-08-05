@@ -18,8 +18,12 @@ struct HomeView: View {
         VStack(spacing: 14) {
           hero
             .soberEntrance(order: 0)
+          if showsScheduledCheckIn {
+            scheduledCheckInCard
+              .soberEntrance(order: 1)
+          }
           baselineCard
-            .soberEntrance(order: 1)
+            .soberEntrance(order: showsScheduledCheckIn ? 2 : 1)
           nightOutCard
             .soberEntrance(order: 2)
           guardianCard
@@ -75,6 +79,135 @@ struct HomeView: View {
       ResearchModeView()
         .environmentObject(model)
         .preferredColorScheme(.dark)
+    }
+    .task(id: model.guardianSession?.relationshipID) {
+      if model.guardianSession != nil { await model.refreshGuardian() }
+      while !Task.isCancelled {
+        model.refreshGuardianCheckInEvaluation()
+        try? await Task.sleep(for: .seconds(30))
+      }
+    }
+  }
+
+  private var showsScheduledCheckIn: Bool {
+    model.guardianSession?.role == .person && model.guardianCheckInPlan?.state == .active
+  }
+
+  private var scheduledCheckInCard: some View {
+    SoberCard {
+      VStack(alignment: .leading, spacing: 13) {
+        HStack(alignment: .top, spacing: 12) {
+          ZStack {
+            Circle().fill(checkInTint.opacity(0.15))
+            Image(systemName: checkInIcon)
+              .foregroundStyle(checkInTint)
+          }
+          .frame(width: 46, height: 46)
+
+          VStack(alignment: .leading, spacing: 4) {
+            Text(checkInTitle)
+              .font(.headline)
+            Text(checkInDetail)
+              .font(.subheadline)
+              .foregroundStyle(Palette.textSecondary)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+
+        switch model.guardianCheckInEvaluation {
+        case let .due(occurrence):
+          Button {
+            launch = ScreeningLaunch(
+              mode: .check,
+              scenario: .live,
+              guardianCheckInOccurrenceID: occurrence.id
+            )
+          } label: {
+            Label("Take scheduled Sober test", systemImage: "play.fill")
+          }
+          .buttonStyle(PrimaryActionButtonStyle(tint: Palette.warning))
+
+        case .needsLocation, .locationUncertain:
+          Button {
+            Task { await model.evaluateGuardianCheckInLocation() }
+          } label: {
+            Label("Check whether I’m at Home", systemImage: "location.fill.viewfinder")
+          }
+          .buttonStyle(PrimaryActionButtonStyle())
+          .disabled(model.guardianIsWorking)
+
+        case .needsHome:
+          Button {
+            showingGuardian = true
+          } label: {
+            Label("Save private Home location", systemImage: "house.and.flag.fill")
+          }
+          .buttonStyle(PrimaryActionButtonStyle())
+
+        case .upcoming, .completed, .waivedAtHome, .inactive:
+          EmptyView()
+        }
+
+        if model.guardianCheckInPlan?.condition == .awayFromHome {
+          Text("Sober checks location once, only after your tap. Your guardian never receives it.")
+            .font(.caption)
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+  }
+
+  private var checkInTitle: String {
+    switch model.guardianCheckInEvaluation {
+    case let .upcoming(occurrence):
+      "Scheduled for \(occurrence.dueAt.formatted(date: .omitted, time: .shortened))"
+    case let .due(occurrence):
+      Date() > occurrence.graceEndsAt ? "Scheduled check-in overdue" : "Scheduled check-in ready"
+    case .needsHome: "Home location needed"
+    case .needsLocation: "Is tonight’s check-in required?"
+    case .locationUncertain: "Location needs another look"
+    case .completed: "Today’s check-in completed"
+    case .waivedAtHome: "No check-in needed at Home"
+    case .inactive: "Scheduled check-in"
+    }
+  }
+
+  private var checkInDetail: String {
+    switch model.guardianCheckInEvaluation {
+    case .upcoming:
+      "You accepted this daily reminder in Guardian Mode."
+    case .due:
+      "Complete the same private live test. Only completion—not the result—is shown to your guardian."
+    case .needsHome:
+      "Stand at Home and save that location before Sober can evaluate this condition."
+    case .needsLocation:
+      "Tap below for a one-time on-device distance check."
+    case .locationUncertain:
+      "The last location was too close to the 200-meter boundary to decide. Move into open sky and retry."
+    case .completed:
+      "Your guardian can see that it was completed, but not the outcome or any test data."
+    case .waivedAtHome:
+      "The on-device check placed you within 200 meters of your saved Home."
+    case .inactive:
+      "Open Guardian Mode to review the plan."
+    }
+  }
+
+  private var checkInIcon: String {
+    switch model.guardianCheckInEvaluation {
+    case .completed: "checkmark.circle.fill"
+    case .waivedAtHome: "house.fill"
+    case .due: "exclamationmark.circle.fill"
+    case .needsHome, .needsLocation, .locationUncertain: "location.circle.fill"
+    case .upcoming, .inactive: "calendar.badge.clock"
+    }
+  }
+
+  private var checkInTint: Color {
+    switch model.guardianCheckInEvaluation {
+    case .due, .needsHome: Palette.warning
+    case .completed, .waivedAtHome: Palette.primary
+    case .needsLocation, .locationUncertain, .upcoming, .inactive: Palette.item0
     }
   }
 

@@ -19,6 +19,7 @@ targets:
       properties:
         CFBundleDisplayName: Sober
         NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
+        NSLocationWhenInUseUsageDescription: Sober uses your location once, after your tap, to check whether you are within 200 meters of the Home location saved privately on this iPhone.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         SoberGuardianAPIURL: "$(SOBER_GUARDIAN_API_URL)"

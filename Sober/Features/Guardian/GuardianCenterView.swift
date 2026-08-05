@@ -1,9 +1,9 @@
 import SwiftUI
 import UIKit
 
-// 0.5s: relationship status first; if help is pending, one dominant “I’m helping” action.
-// User: either inviting one trusted person or responding to that person's request.
-// Emotional intent: calm, immediate, and accountable without exposing test details.
+// 0.5s: relationship status first; then one calm, consent-gated check-in plan.
+// User: a guardian proposing a daily time, or the screened person deciding whether to accept it.
+// Emotional intent: supported and in control, never silently watched or accused.
 struct GuardianCenterView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
@@ -11,6 +11,10 @@ struct GuardianCenterView: View {
   @State private var senderConsent = false
   @State private var guardianConsent = false
   @State private var showingRevokeConfirmation = false
+  @State private var checkInTime = Calendar.current.date(
+    bySettingHour: 22, minute: 0, second: 0, of: Date()
+  ) ?? Date()
+  @State private var checkInCondition: GuardianCheckInCondition = .awayFromHome
 
   var body: some View {
     NavigationStack {
@@ -134,6 +138,209 @@ struct GuardianCenterView: View {
   }
 
   @ViewBuilder
+  private func checkInSection(_ session: GuardianSession) -> some View {
+    if session.role == .guardian {
+      guardianCheckInComposer
+    } else if let plan = model.guardianCheckInPlan {
+      personCheckInCard(plan)
+    } else {
+      SoberCard {
+        VStack(alignment: .leading, spacing: 8) {
+          Label("No scheduled check-in", systemImage: "calendar.badge.clock")
+            .font(.headline)
+          Text("Your guardian can propose a time. Nothing starts until you review and accept it.")
+            .font(.subheadline)
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+  }
+
+  private var guardianCheckInComposer: some View {
+    SoberCard {
+      VStack(alignment: .leading, spacing: 15) {
+        Label("Propose a daily check-in", systemImage: "calendar.badge.clock")
+          .font(.headline)
+          .foregroundStyle(Palette.item0)
+
+        Text("Choose a time and condition. The other person must accept before reminders begin.")
+          .font(.subheadline)
+          .foregroundStyle(Palette.textSecondary)
+
+        DatePicker("Check-in time", selection: $checkInTime, displayedComponents: .hourAndMinute)
+          .font(.subheadline.weight(.medium))
+
+        Picker("When it applies", selection: $checkInCondition) {
+          ForEach(GuardianCheckInCondition.allCases, id: \.self) { condition in
+            Text(condition.title).tag(condition)
+          }
+        }
+        .pickerStyle(.menu)
+        .tint(Palette.primary)
+
+        if checkInCondition == .awayFromHome {
+          Label(
+            "Sober asks for a one-time location check when they open the app. You never see their location.",
+            systemImage: "location.fill.viewfinder"
+          )
+          .font(.caption)
+          .foregroundStyle(Palette.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+        }
+
+        if let plan = model.guardianCheckInPlan {
+          Divider().overlay(Palette.secondary.opacity(0.2))
+          checkInStatus(plan)
+        }
+
+        Button {
+          Task {
+            await model.proposeGuardianCheckIn(at: checkInTime, condition: checkInCondition)
+          }
+        } label: {
+          Label(
+            model.guardianCheckInPlan == nil ? "Send for approval" : "Propose updated plan",
+            systemImage: "paperplane.fill"
+          )
+        }
+        .buttonStyle(PrimaryActionButtonStyle())
+        .disabled(model.guardianIsWorking)
+
+        Text("A missed check-in means only ‘not completed.’ It never means impaired.")
+          .font(.caption)
+          .foregroundStyle(Palette.textSecondary)
+      }
+    }
+  }
+
+  private func personCheckInCard(_ plan: GuardianCheckInPlanSnapshot) -> some View {
+    SoberCard {
+      VStack(alignment: .leading, spacing: 14) {
+        Label(personCheckInTitle(plan), systemImage: personCheckInIcon(plan))
+          .font(.headline)
+          .foregroundStyle(plan.state == .pendingPersonConsent ? Palette.warning : Palette.primary)
+
+        checkInPlanSummary(plan)
+
+        if plan.state == .pendingPersonConsent {
+          Text("This is a request, not an active rule. Review it and choose for yourself.")
+            .font(.subheadline)
+            .foregroundStyle(Palette.textSecondary)
+
+          if plan.condition == .awayFromHome {
+            Label(
+              "Your Home coordinate stays encrypted on this iPhone. Your guardian receives no location or distance.",
+              systemImage: "hand.raised.fill"
+            )
+            .font(.caption)
+            .foregroundStyle(Palette.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+              Task { await model.updateGuardianHome() }
+            } label: {
+              Label(
+                model.guardianHomeIsConfigured ? "Replace Home with this location" : "Save this location as Home",
+                systemImage: "house.and.flag.fill"
+              )
+            }
+            .buttonStyle(SecondaryActionButtonStyle(tint: Palette.item0))
+
+            Text("Only tap this while you are physically at the place you call Home.")
+              .font(.caption)
+              .foregroundStyle(Palette.warning)
+          }
+
+          Button {
+            Task { await model.acceptGuardianCheckInPlan() }
+          } label: {
+            Label("Accept check-in plan", systemImage: "checkmark.circle.fill")
+          }
+          .buttonStyle(PrimaryActionButtonStyle())
+          .disabled(
+            model.guardianIsWorking
+              || (plan.condition == .awayFromHome && !model.guardianHomeIsConfigured)
+          )
+
+          Button("Decline", role: .destructive) {
+            Task { await model.declineGuardianCheckInPlan() }
+          }
+          .font(.subheadline.weight(.semibold))
+        } else if plan.state == .active {
+          checkInStatus(plan)
+
+          if plan.condition == .awayFromHome {
+            Button {
+              Task { await model.updateGuardianHome() }
+            } label: {
+              Label("Update private Home location", systemImage: "house.and.flag")
+            }
+            .buttonStyle(SecondaryActionButtonStyle(tint: Palette.item0))
+          }
+
+          Button("Turn off scheduled check-ins", role: .destructive) {
+            Task { await model.declineGuardianCheckInPlan() }
+          }
+          .font(.subheadline.weight(.semibold))
+        } else {
+          Text("Scheduled check-ins are off. Your guardian can propose a new plan, which you can review again.")
+            .font(.subheadline)
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+  }
+
+  private func checkInPlanSummary(_ plan: GuardianCheckInPlanSnapshot) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Label("Daily at \(plan.displayTime)", systemImage: "clock.fill")
+      Label(plan.condition.title, systemImage: plan.condition == .always ? "calendar" : "house.fill")
+      Text("\(plan.timeZoneIdentifier) · \(plan.graceMinutes)-minute grace period")
+        .font(.caption)
+        .foregroundStyle(Palette.textSecondary)
+    }
+    .font(.subheadline.weight(.medium))
+  }
+
+  private func checkInStatus(_ plan: GuardianCheckInPlanSnapshot) -> some View {
+    VStack(alignment: .leading, spacing: 5) {
+      Text(checkInStateText(plan))
+        .font(.subheadline.weight(.semibold))
+      if plan.lastCompletion != nil {
+        Text("The latest scheduled check-in was completed. Its result was not shared.")
+          .font(.caption)
+          .foregroundStyle(Palette.textSecondary)
+      }
+    }
+  }
+
+  private func personCheckInTitle(_ plan: GuardianCheckInPlanSnapshot) -> String {
+    switch plan.state {
+    case .pendingPersonConsent: "Check-in plan awaiting your choice"
+    case .active: "Scheduled check-in active"
+    case .declined: "Scheduled check-ins are off"
+    case .unknown: "Check-in status unavailable"
+    }
+  }
+
+  private func personCheckInIcon(_ plan: GuardianCheckInPlanSnapshot) -> String {
+    switch plan.state {
+    case .pendingPersonConsent: "person.crop.circle.badge.questionmark"
+    case .active: "calendar.badge.checkmark"
+    case .declined, .unknown: "calendar.badge.minus"
+    }
+  }
+
+  private func checkInStateText(_ plan: GuardianCheckInPlanSnapshot) -> String {
+    switch plan.state {
+    case .pendingPersonConsent: "Waiting for the screened person to approve"
+    case .active: "Accepted and active"
+    case .declined: "Declined or turned off by the screened person"
+    case .unknown: "Status unavailable"
+    }
+  }
+
+  @ViewBuilder
   private func relationshipContent(_ session: GuardianSession) -> some View {
     if session.role == .guardian,
       let alert = model.guardianActiveAlert,
@@ -197,6 +404,10 @@ struct GuardianCenterView: View {
         Button("Disconnect", role: .destructive) { showingRevokeConfirmation = true }
           .font(.subheadline.weight(.semibold))
       }
+    }
+
+    if model.guardianRelationshipIsActive {
+      checkInSection(session)
     }
 
     if session.role == .guardian,

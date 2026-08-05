@@ -167,6 +167,17 @@ struct ScreeningLaunch: Identifiable, Sendable {
   let id = UUID()
   let mode: ScreeningMode
   let scenario: FounderScenario
+  let guardianCheckInOccurrenceID: String?
+
+  init(
+    mode: ScreeningMode,
+    scenario: FounderScenario,
+    guardianCheckInOccurrenceID: String? = nil
+  ) {
+    self.mode = mode
+    self.scenario = scenario
+    self.guardianCheckInOccurrenceID = guardianCheckInOccurrenceID
+  }
 }
 
 struct SafetyPlan: Codable, Equatable, Sendable {

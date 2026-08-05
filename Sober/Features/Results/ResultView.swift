@@ -398,9 +398,13 @@ struct InterventionCard: View {
 
   private func messageContact() {
     let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    let message = "Can you help me get home? I’m choosing not to drive."
+    let message = Self.messageBody(homeLabel: safetyPlan.destinationDisplayName)
     let body = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? message
-    if let url = URL(string: "sms:\(digits)&body=\(body)") { openURL(url) }
+    if let url = URL(string: "sms:\(digits)?body=\(body)") { openURL(url) }
+  }
+
+  nonisolated static func messageBody(homeLabel: String) -> String {
+    "Can you help me get to \(homeLabel)? I’m choosing not to drive."
   }
 }
 

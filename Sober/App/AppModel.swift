@@ -24,6 +24,9 @@ final class AppModel: ObservableObject {
   @Published private(set) var guardianSession: GuardianSession?
   @Published private(set) var guardianRelationship: GuardianRelationshipSnapshot?
   @Published private(set) var guardianActiveAlert: GuardianAlertSnapshot?
+  @Published private(set) var guardianCheckInPlan: GuardianCheckInPlanSnapshot?
+  @Published private(set) var guardianCheckInEvaluation: GuardianCheckInEvaluation = .inactive
+  @Published private(set) var guardianHomeAnchor: GuardianHomeAnchor?
   @Published private(set) var guardianAlertState: GuardianAlertPresentationState = .notRequired
   @Published private(set) var guardianError: String?
   @Published private(set) var guardianIsWorking = false
@@ -50,18 +53,27 @@ final class AppModel: ObservableObject {
   private let researchStore: ResearchSessionStore
   private let guardianStore: any GuardianSessionStoring
   private let guardianAPI: GuardianAPIClient
+  private let guardianHomeStore: any GuardianHomeStoring
+  private let guardianLocation: any GuardianLocationProviding
+  private let guardianCheckInScheduler: any GuardianCheckInScheduling
   private let baselineEngine = BaselineProfileEngine()
 
   init(
     defaults: UserDefaults = .standard,
     researchStore: ResearchSessionStore = ResearchSessionStore(),
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
-    guardianAPI: GuardianAPIClient = GuardianAPIClient()
+    guardianAPI: GuardianAPIClient = GuardianAPIClient(),
+    guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
+    guardianLocation: any GuardianLocationProviding = GuardianLocationService(),
+    guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler()
   ) {
     self.defaults = defaults
     self.researchStore = researchStore
     self.guardianStore = guardianStore
     self.guardianAPI = guardianAPI
+    self.guardianHomeStore = guardianHomeStore
+    self.guardianLocation = guardianLocation
+    self.guardianCheckInScheduler = guardianCheckInScheduler
     hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarding)
     let storedBaselineSessions = defaults.integer(forKey: Keys.baselines)
     let storedFounderPreview = defaults.bool(forKey: Keys.founderPreview)
@@ -102,6 +114,7 @@ final class AppModel: ObservableObject {
     }
 
     guardianSession = try? guardianStore.load()
+    guardianHomeAnchor = try? guardianHomeStore.load()
 
     Task {
       await reloadResearchData()
@@ -165,6 +178,9 @@ final class AppModel: ObservableObject {
       else { return }
       guardianRelationship = envelope.relationship
       guardianActiveAlert = envelope.activeAlert
+      guardianCheckInPlan = envelope.checkInPlan
+      refreshGuardianCheckInEvaluation()
+      await retryPendingGuardianCheckInCompletion()
       if let alert = envelope.activeAlert {
         applyGuardianAlert(alert)
       }
@@ -254,6 +270,187 @@ final class AppModel: ObservableObject {
     }
   }
 
+  var guardianHomeIsConfigured: Bool { guardianHomeAnchor != nil }
+
+  func proposeGuardianCheckIn(
+    at time: Date,
+    condition: GuardianCheckInCondition,
+    graceMinutes: Int = 15
+  ) async {
+    guard let session = guardianSession, session.role == .guardian,
+      guardianRelationshipIsActive
+    else { return }
+    let components = Calendar.current.dateComponents([.hour, .minute], from: time)
+    let localTime = String(format: "%02d:%02d", components.hour ?? 0, components.minute ?? 0)
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      let envelope = try await guardianAPI.proposeCheckInPlan(
+        session: session,
+        localTime: localTime,
+        timeZoneIdentifier: TimeZone.current.identifier,
+        condition: condition,
+        graceMinutes: graceMinutes
+      )
+      guardianCheckInPlan = envelope.checkInPlan
+      refreshGuardianCheckInEvaluation()
+    } catch {
+      guardianError = error.localizedDescription
+    }
+  }
+
+  func acceptGuardianCheckInPlan() async {
+    guard let session = guardianSession, session.role == .person,
+      let plan = guardianCheckInPlan,
+      plan.state == .pendingPersonConsent
+    else { return }
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      if plan.condition == .awayFromHome, guardianHomeAnchor == nil {
+        try await captureGuardianHome()
+      }
+      let envelope = try await guardianAPI.decideCheckInPlan(
+        session: session,
+        version: plan.version,
+        decision: "accept"
+      )
+      guardianCheckInPlan = envelope.checkInPlan
+      let notificationsEnabled = try await guardianCheckInScheduler.schedule(plan: envelope.checkInPlan)
+      if !notificationsEnabled {
+        guardianError = "Check-in accepted. Enable Sober notifications in Settings for the reminder."
+      }
+      refreshGuardianCheckInEvaluation()
+    } catch {
+      guardianError = error.localizedDescription
+    }
+  }
+
+  func declineGuardianCheckInPlan() async {
+    guard let session = guardianSession, session.role == .person,
+      let plan = guardianCheckInPlan,
+      plan.state == .pendingPersonConsent || plan.state == .active
+    else { return }
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      let envelope = try await guardianAPI.decideCheckInPlan(
+        session: session,
+        version: plan.version,
+        decision: "decline"
+      )
+      guardianCheckInPlan = envelope.checkInPlan
+      await guardianCheckInScheduler.cancel()
+      refreshGuardianCheckInEvaluation()
+    } catch {
+      guardianError = error.localizedDescription
+    }
+  }
+
+  func updateGuardianHome() async {
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      try await captureGuardianHome()
+      refreshGuardianCheckInEvaluation()
+    } catch {
+      guardianError = error.localizedDescription
+    }
+  }
+
+  func evaluateGuardianCheckInLocation() async {
+    guard let anchor = guardianHomeAnchor else {
+      refreshGuardianCheckInEvaluation()
+      return
+    }
+    guardianIsWorking = true
+    guardianError = nil
+    defer { guardianIsWorking = false }
+    do {
+      let coordinate = try await guardianLocation.currentCoordinate()
+      let distance = anchor.distance(to: coordinate)
+      guardianCheckInEvaluation = GuardianCheckInDueEvaluator.evaluate(
+        plan: guardianCheckInPlan,
+        homeIsConfigured: true,
+        distanceFromHomeMeters: distance,
+        locationAccuracyMeters: coordinate.horizontalAccuracy
+      )
+    } catch {
+      guardianError = error.localizedDescription
+    }
+  }
+
+  func refreshGuardianCheckInEvaluation(now: Date = Date()) {
+    guardianCheckInEvaluation = GuardianCheckInDueEvaluator.evaluate(
+      plan: guardianCheckInPlan,
+      now: now,
+      homeIsConfigured: guardianHomeAnchor != nil
+    )
+  }
+
+  func completeGuardianCheckIn(occurrenceID: String, at date: Date = Date()) async {
+    guard let session = guardianSession, session.role == .person else { return }
+    defaults.set(occurrenceID, forKey: Keys.pendingGuardianCheckInCompletionID)
+    defaults.set(date, forKey: Keys.pendingGuardianCheckInCompletionDate)
+    do {
+      let envelope = try await guardianAPI.completeCheckIn(
+        session: session,
+        occurrenceID: occurrenceID,
+        completedAt: date
+      )
+      guardianCheckInPlan = envelope.checkInPlan
+      refreshGuardianCheckInEvaluation(now: date)
+      clearPendingGuardianCheckInCompletion()
+      guardianError = nil
+    } catch {
+      guardianError = "The check finished, but its completion hasn’t synced yet. Keep Sober open and try Refresh."
+    }
+  }
+
+  private func retryPendingGuardianCheckInCompletion() async {
+    guard let occurrenceID = defaults.string(forKey: Keys.pendingGuardianCheckInCompletionID),
+      let completedAt = defaults.object(forKey: Keys.pendingGuardianCheckInCompletionDate) as? Date,
+      let session = guardianSession,
+      session.role == .person,
+      guardianCheckInPlan?.state == .active
+    else { return }
+    do {
+      let envelope = try await guardianAPI.completeCheckIn(
+        session: session,
+        occurrenceID: occurrenceID,
+        completedAt: completedAt
+      )
+      guardianCheckInPlan = envelope.checkInPlan
+      refreshGuardianCheckInEvaluation()
+      clearPendingGuardianCheckInCompletion()
+    } catch {
+      // Keep the exact idempotent occurrence for the next foreground refresh.
+    }
+  }
+
+  private func clearPendingGuardianCheckInCompletion() {
+    defaults.removeObject(forKey: Keys.pendingGuardianCheckInCompletionID)
+    defaults.removeObject(forKey: Keys.pendingGuardianCheckInCompletionDate)
+  }
+
+  private func captureGuardianHome() async throws {
+    let coordinate = try await guardianLocation.currentCoordinate()
+    guard coordinate.horizontalAccuracy >= 0, coordinate.horizontalAccuracy <= 100 else {
+      throw GuardianLocationError.preciseLocationRequired
+    }
+    let anchor = GuardianHomeAnchor(
+      latitude: coordinate.latitude,
+      longitude: coordinate.longitude,
+      savedAt: Date()
+    )
+    try guardianHomeStore.save(anchor)
+    guardianHomeAnchor = anchor
+  }
+
   func revokeGuardianRelationship() async {
     guard let session = guardianSession else { return }
     guardianIsWorking = true
@@ -264,14 +461,24 @@ final class AppModel: ObservableObject {
       guardianSession = nil
       guardianRelationship = nil
       guardianActiveAlert = nil
+      guardianCheckInPlan = nil
+      guardianCheckInEvaluation = .inactive
       guardianAlertState = .notRequired
+      await guardianCheckInScheduler.cancel()
+      try? guardianHomeStore.delete()
+      guardianHomeAnchor = nil
       guardianError = nil
     } catch GuardianAPIError.relationshipUnavailable {
       try? guardianStore.delete()
       guardianSession = nil
       guardianRelationship = nil
       guardianActiveAlert = nil
+      guardianCheckInPlan = nil
+      guardianCheckInEvaluation = .inactive
       guardianAlertState = .notRequired
+      await guardianCheckInScheduler.cancel()
+      try? guardianHomeStore.delete()
+      guardianHomeAnchor = nil
       guardianError = nil
     } catch {
       guardianError = error.localizedDescription
@@ -493,12 +700,18 @@ final class AppModel: ObservableObject {
     defaults.removeObject(forKey: Keys.consentDate)
     defaults.removeObject(forKey: Keys.researchConsent)
     defaults.removeObject(forKey: Keys.researchPreferences)
+    clearPendingGuardianCheckInCompletion()
     try? guardianStore.delete()
+    try? guardianHomeStore.delete()
     guardianSession = nil
     guardianRelationship = nil
     guardianActiveAlert = nil
+    guardianCheckInPlan = nil
+    guardianCheckInEvaluation = .inactive
+    guardianHomeAnchor = nil
     guardianAlertState = .notRequired
     guardianError = nil
+    Task { await guardianCheckInScheduler.cancel() }
     Task { await deleteAllResearchData() }
   }
 
@@ -519,5 +732,7 @@ final class AppModel: ObservableObject {
     static let researchConsent = "sober.research.consent"
     static let researchPreferences = "sober.research.preferences"
     static let userProfile = "sober.user.profile"
+    static let pendingGuardianCheckInCompletionID = "sober.guardian.check-in.pending-id"
+    static let pendingGuardianCheckInCompletionDate = "sober.guardian.check-in.pending-date"
   }
 }
