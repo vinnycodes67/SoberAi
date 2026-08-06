@@ -2,12 +2,14 @@ import SwiftUI
 
 struct SafetyPlanView: View {
   @Binding var plan: SafetyPlan
+  /// False when this is a tab destination rather than a presented sheet —
+  /// there is nothing to dismiss, so the Done button must not appear.
+  var showsDoneButton = true
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
-    NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: Space.md) {
           ScreenHeader(
             eyebrow: "Safety Circle",
             title: "Line up your way home.",
@@ -17,18 +19,18 @@ struct SafetyPlanView: View {
 
           SoberCard {
             Toggle(isOn: $plan.isActive) {
-              VStack(alignment: .leading, spacing: 3) {
-                Text("Safety Circle").font(.headline)
+              VStack(alignment: .leading, spacing: Space.xxs) {
+                Text("Safety Circle").font(SoberType.body)
                 Text(plan.isActive ? "Ride and contact plan active" : "Safety Circle paused")
-                  .font(.caption)
+                  .font(SoberType.footnote)
                   .foregroundStyle(Palette.textSecondary)
               }
             }
-            .tint(Palette.primary)
+            .tint(Palette.accent)
           }
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Space.md) {
               fieldLabel("Contact")
               TextField("Name", text: $plan.contactName)
                 .textContentType(.name)
@@ -41,7 +43,7 @@ struct SafetyPlanView: View {
           }
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Space.md) {
               fieldLabel("Ride home")
               Picker("Preferred ride", selection: $plan.preferredRide) {
                 Text("Uber").tag("Uber")
@@ -56,43 +58,37 @@ struct SafetyPlanView: View {
           }
 
           Text(
-            "Ride booking, calling, and messaging all require your tap — nothing here happens automatically."
+            "Ride booking, calling, and messaging all require your tap. Nothing here happens automatically."
           )
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
-          .padding(.horizontal, 4)
+          .padding(.horizontal, Space.xxs)
         }
         .soberEntrance()
-        .padding(22)
+        .padding(Space.lg)
       }
       .soberBackground()
       .navigationTitle("Safety Circle")
       .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .confirmationAction) {
-          Button("Done") { dismiss() }
-        }
-      }
-    }
   }
 
   private func fieldLabel(_ text: String) -> some View {
     Text(text.uppercased())
-      .font(.caption.weight(.semibold))
+      .font(SoberType.footnoteStrong)
       .tracking(1.1)
-      .foregroundStyle(Palette.primary)
+      .foregroundStyle(Palette.accent)
   }
 }
 
 struct SoberTextFieldStyle: TextFieldStyle {
   func _body(configuration: TextField<Self._Label>) -> some View {
     configuration
-      .padding(.horizontal, 14)
+      .padding(.horizontal, Space.sm)
       .frame(minHeight: 48)
-      .background(Palette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
       .overlay {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-          .stroke(Palette.secondary.opacity(0.25), lineWidth: 1)
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+          .stroke(Palette.line, lineWidth: 1)
       }
   }
 }

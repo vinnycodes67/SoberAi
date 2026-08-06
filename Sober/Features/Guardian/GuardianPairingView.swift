@@ -16,14 +16,14 @@ struct GuardianPairingInviteView: View {
         eyebrow: "Guardian Mode",
         title: "Have your parent scan this.",
         detail:
-          "This code pairs their phone with yours. They'll see your name, and you'll see theirs — pairing is always visible to both of you."
+          "This code pairs their phone with yours. They'll see your name, and you'll see theirs. Pairing is always visible to both of you."
       )
 
       switch pairing.status {
       case .working:
         ProgressView("Creating invite…")
           .frame(maxWidth: .infinity)
-          .padding(.vertical, 40)
+          .padding(.vertical, Space.xl)
       case .awaitingAcceptance(let url):
         qrCard(url: url)
       case .paired(let info):
@@ -40,35 +40,35 @@ struct GuardianPairingInviteView: View {
   }
 
   private func qrCard(url: URL) -> some View {
-    VStack(spacing: 18) {
+    VStack(spacing: Space.md) {
       if let image = pairing.qrImage(for: url) {
         Image(uiImage: image)
           .interpolation(.none)
           .resizable()
           .frame(width: 230, height: 230)
           .background(Color.white)
-          .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+          .clipShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
       }
       Text("Waiting for your parent to scan…")
-        .font(.subheadline)
+        .font(SoberType.subheadline)
         .foregroundStyle(Palette.textSecondary)
       ProgressView()
     }
     .frame(maxWidth: .infinity)
-    .padding(.vertical, 12)
+    .padding(.vertical, Space.sm)
   }
 
   private func pairedCard(info: GuardianPairingInfo) -> some View {
     SoberCard {
-      HStack(spacing: 14) {
+      HStack(spacing: Space.sm) {
         Image(systemName: "checkmark.circle.fill")
-          .foregroundStyle(Palette.primary)
-          .font(.title2)
-        VStack(alignment: .leading, spacing: 4) {
+          .foregroundStyle(Palette.accent)
+          .font(SoberType.title)
+        VStack(alignment: .leading, spacing: Space.xxs) {
           Text("Paired with \(info.participantName)")
-            .font(.headline)
+            .font(SoberType.body)
           Text("They'll only see whether you completed a check, never a score.")
-            .font(.caption)
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.textSecondary)
         }
       }
@@ -76,9 +76,9 @@ struct GuardianPairingInviteView: View {
   }
 
   private func failedCard(message: String) -> some View {
-    VStack(spacing: 14) {
+    VStack(spacing: Space.sm) {
       Text(message)
-        .font(.subheadline)
+        .font(SoberType.subheadline)
         .foregroundStyle(Palette.textSecondary)
         .multilineTextAlignment(.center)
       Button("Try again") {
@@ -121,7 +121,7 @@ struct GuardianPairingScanView: View {
       case .working:
         ProgressView("Pairing…")
           .frame(maxWidth: .infinity)
-          .padding(.vertical, 40)
+          .padding(.vertical, Space.xl)
       case .paired(let info):
         pairedCard(info: info)
       case .failed(let message):
@@ -138,22 +138,22 @@ struct GuardianPairingScanView: View {
           }
         }
         .frame(height: 320)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
       }
     }
   }
 
   private func pairedCard(info: GuardianPairingInfo) -> some View {
     SoberCard {
-      HStack(spacing: 14) {
+      HStack(spacing: Space.sm) {
         Image(systemName: "checkmark.circle.fill")
-          .foregroundStyle(Palette.primary)
-          .font(.title2)
-        VStack(alignment: .leading, spacing: 4) {
+          .foregroundStyle(Palette.accent)
+          .font(SoberType.title)
+        VStack(alignment: .leading, spacing: Space.xxs) {
           Text("Paired with \(info.participantName)")
-            .font(.headline)
+            .font(SoberType.body)
           Text("You'll be notified if they haven't checked in before driving.")
-            .font(.caption)
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.textSecondary)
         }
       }
@@ -161,9 +161,9 @@ struct GuardianPairingScanView: View {
   }
 
   private func failedCard(message: String) -> some View {
-    VStack(spacing: 14) {
+    VStack(spacing: Space.sm) {
       Text(message)
-        .font(.subheadline)
+        .font(SoberType.subheadline)
         .foregroundStyle(Palette.textSecondary)
         .multilineTextAlignment(.center)
       Button("Scan again") {

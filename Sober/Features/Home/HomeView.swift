@@ -1,436 +1,433 @@
 import SwiftUI
 
-// 0.5s: the signal halo floats above one decisive action.
-// User: about to leave a social setting and wants a low-friction pause.
-// Primary goal: begin a private check or get home without driving.
+/// The app shell: four sections under a floating glass bar.
 struct HomeView: View {
   @EnvironmentObject private var model: AppModel
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var launch: ScreeningLaunch?
-  @State private var showingPlan = false
-  @State private var showingAbout = false
-  @State private var showingResearch = false
-  @State private var showingGuardian = false
+  @State private var tab: SoberTab = .home
 
   var body: some View {
-    NavigationStack {
-      ScrollView {
-        VStack(spacing: 14) {
-          hero
-            .soberEntrance(order: 0)
-          baselineCard
-            .soberEntrance(order: 1)
-          nightOutCard
-            .soberEntrance(order: 2)
-          guardianCard
-            .soberEntrance(order: 2)
-
-          #if DEBUG
-          if model.isFounderPreview {
-            founderPreviewCard
-              .soberEntrance(order: 3)
-            researchCenterCard
-              .soberEntrance(order: 4)
-          }
-          #endif
-
-          evidenceNote
-            .soberEntrance(order: model.isFounderPreview ? 5 : 3)
-        }
-        .padding(.horizontal, 18)
-        .padding(.bottom, 30)
-      }
-      .soberBackground()
-      .toolbar {
-        ToolbarItem(placement: .principal) {
-          SoberWordmark()
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-          Button {
-            showingAbout = true
-          } label: {
-            Image(systemName: "info.circle")
-          }
-          .accessibilityLabel("About this prototype")
+    ZStack(alignment: .bottom) {
+      Group {
+        switch tab {
+        case .home:
+          HomeDashboardView(selectTab: { tab = $0 })
+        case .history:
+          NavigationStack { HistoryView() }
+        case .circle:
+          NavigationStack { SafetyPlanView(plan: $model.safetyPlan, showsDoneButton: false) }
+        case .settings:
+          SettingsTabView()
         }
       }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+      SoberTabBar(selection: $tab)
+        .padding(.bottom, Space.xs)
+    }
+    .background(Palette.background.ignoresSafeArea())
+  }
+}
+
+/// Home.
+///
+/// Reads top to bottom as: where you stand, the thing to do, the way out if
+/// you need it, what your normal looks like, and what happened lately.
+/// Everything on the screen is either a fact about this person or an action
+/// they can take. Nothing is filler.
+struct HomeDashboardView: View {
+  var selectTab: (SoberTab) -> Void = { _ in }
+
+  @EnvironmentObject private var model: AppModel
+  @Environment(\.openURL) private var openURL
+  @State private var launch: ScreeningLaunch?
+  @State private var selectedSession: ResearchSessionEnvelope?
+  @State private var showingBaseline = false
+
+  private var checks: [ResearchSessionEnvelope] {
+    model.researchSessions
+      .filter { $0.context.sessionKind == .screeningCheck }
+      .sorted { $0.startedAt > $1.startedAt }
+  }
+
+  private var lastCheck: ResearchSessionEnvelope? { checks.first }
+  private var recentChecks: [ResearchSessionEnvelope] { Array(checks.prefix(3)) }
+
+  /// Checks taken in the last 30 days. A count, never a trend.
+  private var checksThisMonth: Int {
+    let cutoff = Date().addingTimeInterval(-30 * 86_400)
+    return checks.filter { $0.startedAt > cutoff }.count
+  }
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: Space.xl) {
+        statusCard.appear(0)
+        startButton.appear(1)
+
+        if isSafetyCircleReady {
+          getHome.appear(2)
+        }
+
+        baselineStrip.appear(3)
+
+        if !recentChecks.isEmpty {
+          recent.appear(4)
+        }
+      }
+      .padding(.horizontal, Space.margin)
+      .padding(.top, Space.xs)
+      // Matches the top inset plus the floating bar, so the page is evenly
+      // framed rather than sitting high in the screen.
+      .padding(.bottom, 116)
+    }
+    .scrollIndicators(.hidden)
+    .pageBackground()
+    .safeAreaInset(edge: .top) {
+      HStack {
+        Text("Sober")
+          .font(SoberType.headline)
+          .foregroundStyle(Palette.textPrimary)
+        Spacer()
+        if checksThisMonth > 0 {
+          Text("\(checksThisMonth) this month")
+            .font(SoberType.footnote)
+            .foregroundStyle(Palette.textMuted)
+        }
+      }
+      .padding(.horizontal, Space.margin)
+      .padding(.bottom, Space.xs)
+      .headerScrim()
     }
     .fullScreenCover(item: $launch) { configuration in
-      ScreeningFlowView(configuration: configuration)
-        .environmentObject(model)
+      ScreeningFlowView(configuration: configuration).environmentObject(model)
     }
-    .sheet(isPresented: $showingPlan) {
-      SafetyPlanView(plan: $model.safetyPlan)
-        .preferredColorScheme(.dark)
+    .sheet(item: $selectedSession) { session in
+      PastResultView(session: session, safetyPlan: model.safetyPlan)
     }
-    .sheet(isPresented: $showingAbout) {
-      AboutPrototypeView()
-        .environmentObject(model)
-        .preferredColorScheme(.dark)
-    }
-    .sheet(isPresented: $showingResearch) {
-      ResearchModeView()
-        .environmentObject(model)
-        .preferredColorScheme(.dark)
-    }
-    .sheet(isPresented: $showingGuardian) {
-      GuardianSetupView()
-        .environmentObject(model)
-        .preferredColorScheme(.dark)
+    .sheet(isPresented: $showingBaseline) {
+      BaselineDetailView().environmentObject(model)
     }
   }
 
-  private var hero: some View {
-    VStack(spacing: 14) {
-      if model.isFounderPreview {
-        PrototypeBadge()
-          .padding(.top, 10)
+  // MARK: - Status
+  //
+  // The one card that answers "where do I stand" without interpretation.
+
+  private var statusCard: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack(spacing: Space.xs) {
+        Circle()
+          .fill(statusTint)
+          .frame(width: 7, height: 7)
+        Text(kicker)
+          .font(SoberType.footnoteStrong)
+          .foregroundStyle(statusTint)
       }
 
-      SignalHalo(size: 226)
-        .padding(.top, model.isFounderPreview ? 0 : 22)
+      Text(headline)
+        .font(SoberType.hero)
+        .heroTracking()
+        .foregroundStyle(Palette.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, Space.xs)
 
-      VStack(spacing: 7) {
-        Text(heroTitle)
-          .font(.system(.largeTitle, design: .serif, weight: .semibold))
-          .tracking(-1.1)
-          .multilineTextAlignment(.center)
-        Text(heroDetail)
-        .font(.subheadline)
+      Text(supporting)
+        .font(SoberType.callout)
         .foregroundStyle(Palette.textSecondary)
-        .multilineTextAlignment(.center)
-      }
+        .readingLine()
+        .padding(.top, Space.sm)
 
-      Button(heroButtonTitle) {
-        if model.baselineReady && !isSafetyCircleReady {
-          showingPlan = true
-        } else {
-          launch = ScreeningLaunch(
-            mode: model.baselineReady ? .check : .baseline,
-            scenario: .live
-          )
+      if !model.baselineReady {
+        baselineProgress.padding(.top, Space.lg)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(Space.lg)
+    .background(
+      RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+        .fill(Palette.surface)
+    )
+    .overlay(
+      // The one specular edge in the app. It sits on the hero card only,
+      // which is what keeps it reading as emphasis rather than texture.
+      RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+        .strokeBorder(
+          LinearGradient(
+            colors: [Color.white.opacity(0.10), Color.white.opacity(0.02)],
+            startPoint: .top,
+            endPoint: .bottom
+          ),
+          lineWidth: 0.5
+        )
+    )
+  }
+
+  private var baselineProgress: some View {
+    VStack(alignment: .leading, spacing: Space.xs) {
+      HStack(spacing: Space.xxs + 1) {
+        ForEach(0..<5, id: \.self) { index in
+          Capsule()
+            .fill(index < model.baselineSessions ? Palette.accent : Palette.surfaceRaised)
+            .frame(height: 4)
         }
       }
-      .buttonStyle(PrimaryActionButtonStyle())
-      .padding(.top, 6)
+      Text("\(model.baselineSessions) of 5 baseline sessions recorded")
+        .font(SoberType.footnote)
+        .foregroundStyle(Palette.textMuted)
     }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(model.baselineSessions) of 5 baseline sessions recorded")
   }
 
-  /// A live check requires somewhere to turn if it comes back concerning —
-  /// the plan must be active and name a contact the manual call/message
-  /// buttons on the result screen can reach.
   private var isSafetyCircleReady: Bool {
     model.safetyPlan.isActive && model.safetyPlan.hasContact
   }
 
-  private var heroTitle: String {
+  private var kicker: String {
+    if !model.baselineReady { return "Getting set up" }
+    if !isSafetyCircleReady { return "One thing left" }
+    return lastCheck == nil ? "Ready" : "Last check"
+  }
+
+  private var statusTint: Color {
+    guard model.baselineReady, isSafetyCircleReady else { return Palette.accent }
+    return lastCheck?.resultState == .signalsDetected ? Palette.accent : Palette.textMuted
+  }
+
+  private var headline: String {
     if !model.baselineReady { return "Learn your steady." }
-    if !isSafetyCircleReady { return "Connect your Safety Circle." }
-    return "Pause. Check in."
+    if !isSafetyCircleReady { return "Name someone to call." }
+    guard let state = lastCheck?.resultState else { return "Ready when you are." }
+    switch state {
+    case .signalsDetected: return "Signals detected."
+    case .inconclusive: return "No clear read."
+    case .noSignalsDetected: return "Nothing unusual."
+    }
   }
 
-  private var heroDetail: String {
-    if !model.baselineReady { return "Five high-quality sober sessions create your research baseline." }
+  private var supporting: String {
+    if !model.baselineReady {
+      return
+        "A few short sessions while you're sober teach the app what your normal looks like. Every check after that is compared against it."
+    }
     if !isSafetyCircleReady {
-      return "A live check starts once you've named someone to call or message."
+      return "A check only starts once there's somewhere to turn if it comes back concerning."
     }
-    return "About two minutes. Call or message your Safety Circle contact from the result screen."
+    guard let lastCheck else {
+      return "A check takes about two minutes and stays on this iPhone."
+    }
+    return "\(relativeTime(lastCheck.startedAt).capitalizedFirst). A check takes about two minutes."
   }
 
-  private var heroButtonTitle: String {
-    if !model.baselineReady { return "Record sober baseline" }
-    if !isSafetyCircleReady { return "Set up your Safety Circle" }
-    return "Start a check"
+  private func relativeTime(_ date: Date) -> String {
+    let seconds = Int(Date().timeIntervalSince(date))
+    if seconds < 3600 { return "\(max(seconds / 60, 1)) minutes ago" }
+    if seconds < 86_400 {
+      let hours = seconds / 3600
+      return hours == 1 ? "an hour ago" : "\(hours) hours ago"
+    }
+    let days = seconds / 86_400
+    return days == 1 ? "yesterday" : "\(days) days ago"
   }
 
-  private var baselineCard: some View {
-    SoberCard {
-      VStack(alignment: .leading, spacing: 14) {
-        HStack {
-          VStack(alignment: .leading, spacing: 3) {
-            Text("Personal baseline")
-              .font(.headline)
-            Text(
-              model.baselineReady
-                ? "Starter baseline ready" : "Complete only while sober and rested"
-            )
-            .font(.caption)
-            .foregroundStyle(Palette.textSecondary)
-          }
-          Spacer()
-          Text("\(model.baselineSessions)/5")
-            .font(.title2.monospacedDigit().weight(.semibold))
-            .foregroundStyle(Palette.primary)
-            .contentTransition(.numericText())
-            .animation(reduceMotion ? nil : SoberMotion.progress, value: model.baselineSessions)
-        }
+  // MARK: - Action
 
-        HStack(spacing: 8) {
-          ForEach(0..<5, id: \.self) { index in
-            Capsule()
-              .fill(
-                index < model.baselineSessions ? Palette.primary : Palette.secondary.opacity(0.22)
-              )
-              .frame(height: 8)
-              .scaleEffect(x: index < model.baselineSessions ? 1 : 0.84, anchor: .leading)
-              .animation(
-                reduceMotion ? nil : SoberMotion.progress.delay(Double(index) * 0.035),
-                value: model.baselineSessions
-              )
-          }
-        }
+  private var startButton: some View {
+    Button(actionTitle) {
+      if model.baselineReady && !isSafetyCircleReady {
+        selectTab(.circle)
+      } else {
+        launch = ScreeningLaunch(
+          mode: model.baselineReady ? .check : .baseline, scenario: .live)
+      }
+    }
+    .buttonStyle(PrimaryButtonStyle())
+  }
 
-        Text(
-          "Five sessions unlock this research build. A defensible production baseline still needs a larger validated protocol, likely 10–20 sessions."
+  private var actionTitle: String {
+    if !model.baselineReady { return "Record a baseline session" }
+    if !isSafetyCircleReady { return "Set up Safety Circle" }
+    return "Start check"
+  }
+
+  // MARK: - Get home
+  //
+  // The safety net, reachable without running a check first. Someone who has
+  // already decided not to drive should not have to take a test to get a car.
+
+  private var getHome: some View {
+    Section_("Get home") {
+      HStack(spacing: Space.sm) {
+        quickAction(
+          title: model.safetyPlan.contactName,
+          subtitle: "Call",
+          symbol: "phone.fill",
+          url: URL(string: "tel://\(model.safetyPlan.normalizedContactPhone)")
         )
-        .font(.caption)
-        .foregroundStyle(Palette.textSecondary)
-        .fixedSize(horizontal: false, vertical: true)
+        quickAction(
+          title: model.safetyPlan.preferredRide,
+          subtitle: "Ride",
+          symbol: "car.fill",
+          url: rideURL
+        )
       }
     }
   }
 
-  private var nightOutCard: some View {
+  /// Opens the provider. Destination and location handling remain
+  /// unimplemented; see the prototype limits in the README.
+  private var rideURL: URL? {
+    model.safetyPlan.preferredRide.lowercased().contains("lyft")
+      ? URL(string: "https://www.lyft.com/rider")
+      : URL(string: "https://m.uber.com/ul/")
+  }
+
+  private func quickAction(
+    title: String, subtitle: String, symbol: String, url: URL?
+  ) -> some View {
     Button {
-      showingPlan = true
+      if let url { openURL(url) }
     } label: {
-      SoberCard {
-        HStack(spacing: 14) {
-          ZStack {
-            Circle()
-              .fill(Palette.item0.opacity(0.16))
-            Image(systemName: model.safetyPlan.isActive ? "moon.stars.fill" : "moon.stars")
-              .foregroundStyle(Palette.item0)
-          }
-          .frame(width: 50, height: 50)
-
-          VStack(alignment: .leading, spacing: 4) {
-            Text("Safety Circle")
-              .font(.headline)
-              .foregroundStyle(Palette.textPrimary)
-            Text(
-              model.safetyPlan.isActive
-                ? safetyCircleSummary
-                : "Choose your ride and parent while clear-headed"
-            )
-            .font(.subheadline)
-            .foregroundStyle(Palette.textSecondary)
-            .multilineTextAlignment(.leading)
-          }
-          Spacer()
-          Image(systemName: "chevron.right")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(Palette.textSecondary)
-        }
-      }
-    }
-    .buttonStyle(SoberCardButtonStyle())
-    .accessibilityHint("Configure your ride and designated contact")
-  }
-
-  private var guardianCard: some View {
-    Button {
-      showingGuardian = true
-    } label: {
-      SoberCard {
-        HStack(spacing: 14) {
-          ZStack {
-            Circle()
-              .fill(Palette.item1.opacity(0.16))
-            Image(systemName: "person.2.wave.2.fill")
-              .foregroundStyle(Palette.item1)
-          }
-          .frame(width: 50, height: 50)
-
-          VStack(alignment: .leading, spacing: 4) {
-            Text("Guardian Mode")
-              .font(.headline)
-              .foregroundStyle(Palette.textPrimary)
-            Text(guardianSummary)
-              .font(.subheadline)
-              .foregroundStyle(Palette.textSecondary)
-              .multilineTextAlignment(.leading)
-          }
-          Spacer()
-          Image(systemName: "chevron.right")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(Palette.textSecondary)
-        }
-      }
-    }
-    .buttonStyle(SoberCardButtonStyle())
-    .accessibilityHint("Set up a mutual driving check-in with a paired teen or parent")
-  }
-
-  private var guardianSummary: String {
-    switch model.guardianRole {
-    case .none: "Off — pair a teen and parent phone for driving check-ins"
-    case .teen: "Set up as a teen driver"
-    case .parent: "Set up as a parent"
-    }
-  }
-
-  private var safetyCircleSummary: String {
-    guard model.safetyPlan.hasContact else {
-      return "Add a contact to call or message from a result"
-    }
-    return "\(model.safetyPlan.preferredRide) + \(model.safetyPlan.contactName) are ready"
-  }
-
-  private var founderPreviewCard: some View {
-    SoberCard {
-      VStack(alignment: .leading, spacing: 13) {
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Review every safety state")
-            .font(.headline)
-          Text(
-            "These paths use clearly labeled sample data so the team can inspect copy and intervention behavior."
-          )
-          .font(.subheadline)
+      VStack(alignment: .leading, spacing: Space.sm) {
+        Image(systemName: symbol)
+          .font(.system(size: 16, weight: .medium))
           .foregroundStyle(Palette.textSecondary)
-        }
-
-        ForEach([FounderScenario.signals, .inconclusive, .noSignals]) { scenario in
-          Button {
-            launch = ScreeningLaunch(mode: .check, scenario: scenario)
-          } label: {
-            HStack {
-              Circle()
-                .fill(scenarioColor(scenario))
-                .frame(width: 8, height: 8)
-              Text(scenario.rawValue)
-                .font(.subheadline.weight(.semibold))
-              Spacer()
-              Image(systemName: "arrow.up.right")
-                .font(.caption.weight(.bold))
-            }
+        VStack(alignment: .leading, spacing: 1) {
+          Text(subtitle)
+            .font(SoberType.footnote)
+            .foregroundStyle(Palette.textMuted)
+          Text(title)
+            .font(SoberType.headline)
             .foregroundStyle(Palette.textPrimary)
-            .padding(.vertical, 3)
-          }
-          .buttonStyle(.plain)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
         }
       }
-    }
-  }
-
-  private var researchCenterCard: some View {
-    Button {
-      showingResearch = true
-    } label: {
-      SoberCard {
-        HStack(spacing: 14) {
-          ZStack {
-            Circle().fill(Palette.item2.opacity(0.16))
-            Image(systemName: "waveform.path.ecg.rectangle.fill")
-              .foregroundStyle(Palette.item2)
-          }
-          .frame(width: 50, height: 50)
-
-          VStack(alignment: .leading, spacing: 4) {
-            Text("Research Center")
-              .font(.headline)
-              .foregroundStyle(Palette.textPrimary)
-            Text("Consent, context, \(model.researchSessions.count) sessions, export, and deletion")
-              .font(.subheadline)
-              .foregroundStyle(Palette.textSecondary)
-              .multilineTextAlignment(.leading)
-          }
-          Spacer()
-          Image(systemName: "chevron.right")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(Palette.textSecondary)
-        }
-      }
-    }
-    .buttonStyle(SoberCardButtonStyle())
-    .accessibilityHint("Open local research data controls")
-  }
-
-  private var evidenceNote: some View {
-    HStack(alignment: .top, spacing: 10) {
-      Image(systemName: "exclamationmark.shield")
-        .foregroundStyle(Palette.warning)
-      Text(
-        "This MVP demonstrates product behavior. It has not been clinically validated and must not be used to decide whether to drive."
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(Space.md)
+      .background(
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+          .fill(Palette.surface)
       )
-      .font(.caption)
-      .foregroundStyle(Palette.textSecondary)
-      .fixedSize(horizontal: false, vertical: true)
     }
-    .padding(.horizontal, 8)
-    .padding(.top, 4)
+    .buttonStyle(PlainPressStyle())
+    .accessibilityElement(children: .combine)
   }
 
-  private func scenarioColor(_ scenario: FounderScenario) -> Color {
-    switch scenario {
-    case .signals: Palette.error
-    case .inconclusive: Palette.warning
-    case .noSignals, .live: Palette.primary
+  // MARK: - Baseline
+  //
+  // A compact read of the portrait, captioned. The full graphic lives on its
+  // own screen; here it is a summary with a way in.
+
+  private var baselineStrip: some View {
+    Section_("Your steady", action: ("Details", { showingBaseline = true })) {
+      Button {
+        showingBaseline = true
+      } label: {
+        VStack(alignment: .leading, spacing: Space.sm) {
+          HStack(spacing: 5) {
+            ForEach(PortraitTrack.all) { track in
+              trackPip(for: track)
+            }
+          }
+          Text(baselineCaption)
+            .font(SoberType.footnote)
+            .foregroundStyle(Palette.textMuted)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Space.md)
+        .background(
+          RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+            .fill(Palette.surface)
+        )
+      }
+      .buttonStyle(PlainPressStyle())
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel("Your steady")
+      .accessibilityValue(baselineCaption)
+    }
+  }
+
+  private func trackPip(for track: PortraitTrack) -> some View {
+    let risk = lastCheck?.signalRisks?[track.id]
+    let outside = (risk ?? 0) >= SignalDetail.concernThreshold
+    return Capsule()
+      .fill(
+        !model.baselineReady
+          ? Palette.surfaceRaised
+          : (outside ? Palette.accent : Palette.withinRange.opacity(0.55))
+      )
+      .frame(height: 6)
+  }
+
+  private var baselineCaption: String {
+    guard model.baselineReady else {
+      return "Five sober sessions build your range. Tap to see how it works."
+    }
+    guard let risks = lastCheck?.signalRisks else {
+      return "Five measures, each with your own usual range."
+    }
+    let outside = risks.values.filter { $0 >= SignalDetail.concernThreshold }.count
+    if outside == 0 { return "All five measures sat inside your usual range." }
+    return outside == 1
+      ? "One measure sat outside your usual range."
+      : "\(outside) measures sat outside your usual range."
+  }
+
+  // MARK: - Recent
+
+  private var recent: some View {
+    Section_("Recent", action: ("All", { selectTab(.history) })) {
+      Rows {
+        ForEach(Array(recentChecks.enumerated()), id: \.element.id) { index, session in
+          if index > 0 { Separator() }
+          Button {
+            selectedSession = session
+          } label: {
+            HStack(spacing: Space.sm) {
+              Circle()
+                .fill(color(for: session.resultState))
+                .frame(width: 7, height: 7)
+              Text(session.resultState?.title ?? "Result not recorded")
+                .font(SoberType.body)
+                .foregroundStyle(Palette.textPrimary)
+              Spacer(minLength: Space.xs)
+              Text(shortTime(session.startedAt))
+                .font(SoberType.footnote)
+                .foregroundStyle(Palette.textMuted)
+            }
+            .frame(minHeight: Hit.minimum)
+            .padding(.vertical, Space.xs)
+            .contentShape(Rectangle())
+          }
+          .buttonStyle(PlainPressStyle())
+          .accessibilityElement(children: .combine)
+        }
+      }
+    }
+  }
+
+  private func shortTime(_ date: Date) -> String {
+    let seconds = Int(Date().timeIntervalSince(date))
+    if seconds < 86_400 { return date.formatted(date: .omitted, time: .shortened) }
+    if seconds < 604_800 { return date.formatted(.dateTime.weekday(.abbreviated)) }
+    return date.formatted(.dateTime.month(.abbreviated).day())
+  }
+
+  private func color(for state: ScreeningResultState?) -> Color {
+    switch state {
+    case .signalsDetected: Palette.accent
+    case .inconclusive: Palette.unmeasured
+    case .noSignalsDetected: Palette.withinRange
+    case nil: Palette.textMuted
     }
   }
 }
 
-struct AboutPrototypeView: View {
-  @EnvironmentObject private var model: AppModel
-  @Environment(\.dismiss) private var dismiss
-  @State private var showingReset = false
-
-  var body: some View {
-    NavigationStack {
-      ScrollView {
-        VStack(alignment: .leading, spacing: 22) {
-          SignalHalo(size: 130, isActive: false)
-            .frame(maxWidth: .infinity)
-
-          ScreenHeader(
-            eyebrow: "Sober 0.2",
-            title: "A founder-review build.",
-            detail:
-              "The app demonstrates an ethically constrained screening and intervention flow—not a validated impairment detector."
-          )
-
-          SoberCard {
-            VStack(alignment: .leading, spacing: 14) {
-              aboutRow("No safe-to-drive state", "checkmark.shield")
-              aboutRow("Self-report hard gate", "hand.raised")
-              aboutRow("Quality-gated results", "waveform.badge.magnifyingglass")
-              aboutRow("Ride and contact on every result", "car.side")
-              aboutRow("Guardian Mode driving check-ins, opt-in and mutual", "person.2.wave.2")
-              aboutRow("No raw biometric uploads", "network.slash")
-            }
-          }
-
-          Button("Reset prototype") {
-            showingReset = true
-          }
-          .foregroundStyle(Palette.textSecondary)
-          .frame(maxWidth: .infinity)
-        }
-        .padding(22)
-      }
-      .soberBackground()
-      .toolbar {
-        ToolbarItem(placement: .confirmationAction) {
-          Button("Done") { dismiss() }
-        }
-      }
-      .alert("Reset the prototype and delete research data?", isPresented: $showingReset) {
-        Button("Cancel", role: .cancel) {}
-        Button("Reset and delete", role: .destructive) {
-          dismiss()
-          model.resetPrototype()
-        }
-      } message: {
-        Text(
-          "This clears onboarding, your Safety Circle, and consent, and permanently deletes all \(model.researchSessions.count) stored research session\(model.researchSessions.count == 1 ? "" : "s") and your measured baseline. Export first if you need the data. This cannot be undone."
-        )
-      }
-    }
-  }
-
-  private func aboutRow(_ title: String, _ icon: String) -> some View {
-    Label(title, systemImage: icon)
-      .font(.subheadline.weight(.medium))
-      .foregroundStyle(Palette.textPrimary)
+extension String {
+  fileprivate var capitalizedFirst: String {
+    guard let first else { return self }
+    return first.uppercased() + dropFirst()
   }
 }

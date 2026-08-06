@@ -6,7 +6,7 @@ enum SelfReport: String, CaseIterable, Sendable {
   case unsure
 }
 
-enum ScreeningResultState: String, Sendable {
+enum ScreeningResultState: String, Codable, Sendable {
   case signalsDetected = "SIGNALS_DETECTED"
   case inconclusive = "INCONCLUSIVE"
   case noSignalsDetected = "NO_SIGNALS_DETECTED"
@@ -81,6 +81,17 @@ struct SignalDetail: Identifiable, Equatable, Sendable {
   let label: String
   let value: String
   let concern: Bool
+  /// How far this one measure sits from the person's own baseline, where 0
+  /// is at or below their usual and 1 is roughly three of their own standard
+  /// deviations above it. `nil` when the task did not run.
+  ///
+  /// This is per-signal only. The composite `riskScore` is never surfaced as
+  /// a figure anywhere in the UI, because a single number describing a
+  /// person is the score this product refuses to produce.
+  var risk: Double? = nil
+
+  /// The point on that scale where a signal starts being called out.
+  static let concernThreshold = 0.55
 }
 
 struct ScreeningOutcome: Equatable, Sendable {
@@ -88,6 +99,15 @@ struct ScreeningOutcome: Equatable, Sendable {
   let qualityScore: Double
   let riskScore: Double
   let details: [SignalDetail]
+
+  /// Per-signal positions, for persisting alongside the session. Signals that
+  /// could not be measured are omitted rather than stored as zero, so a
+  /// missing reading is never mistaken later for a reading of nothing.
+  var signalRisks: [String: Double] {
+    details.reduce(into: [:]) { result, detail in
+      if let risk = detail.risk { result[detail.id] = risk }
+    }
+  }
 }
 
 enum BaselineCompletionReason: Sendable {

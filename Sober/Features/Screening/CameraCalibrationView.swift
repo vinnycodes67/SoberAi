@@ -26,36 +26,36 @@ struct CameraCalibrationView: View {
           unsupportedPreview
         }
 
-        HStack(spacing: 8) {
+        HStack(spacing: Space.xs) {
           Circle()
-            .fill(service.quality.isUsable ? Palette.primary : Palette.warning)
+            .fill(service.quality.isUsable ? Palette.textPrimary : Palette.accent)
             .frame(width: 8, height: 8)
           Text(service.status.label)
-            .font(.caption.weight(.semibold))
+            .font(SoberType.footnoteStrong)
           Spacer()
           Text(service.quality.isUsable ? "READY" : "ADJUST")
-            .font(.caption2.monospaced().weight(.bold))
+            .font(SoberType.caption)
             .tracking(1)
         }
         .foregroundStyle(Palette.textPrimary)
-        .padding(12)
+        .padding(Space.sm)
         .soberGlassCapsule(
-          tint: service.quality.isUsable ? Palette.primary : Palette.warning
+          tint: service.quality.isUsable ? Palette.textPrimary : Palette.accent
         )
-        .padding(14)
+        .padding(Space.sm)
       }
       .frame(height: 360)
-      .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
       .overlay {
-        RoundedRectangle(cornerRadius: 26, style: .continuous)
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
           .stroke(
-            service.quality.isUsable ? Palette.primary.opacity(0.8) : Palette.secondary.opacity(0.28),
+            service.quality.isUsable ? Palette.textMuted : Palette.line,
             lineWidth: service.quality.isUsable ? 2 : 1
           )
       }
       .animation(reduceMotion ? nil : SoberMotion.progress, value: service.quality.isUsable)
 
-      LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+      LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Space.xs) {
         qualityTile("Face", icon: "faceid", ready: service.quality.facePresent)
         qualityTile("Centered", icon: "viewfinder", ready: service.quality.centered)
         qualityTile("Distance", icon: "arrow.up.left.and.arrow.down.right", ready: service.quality.distanceAcceptable)
@@ -70,7 +70,7 @@ struct CameraCalibrationView: View {
 
       if !service.quality.isUsable {
         Label(service.quality.primaryGuidance, systemImage: "exclamationmark.triangle.fill")
-          .font(.caption.weight(.medium))
+          .font(SoberType.footnoteStrong)
           .foregroundStyle(Palette.warning)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -80,21 +80,21 @@ struct CameraCalibrationView: View {
         onContinue()
       }
       .buttonStyle(
-        PrimaryActionButtonStyle(tint: hasHeldReady ? Palette.primary : Palette.warning)
+        PrimaryActionButtonStyle(tint: Palette.accent)
       )
       .disabled(isBlocked)
       .opacity(isBlocked ? 0.42 : 1)
 
       if isPermissionDenied, let settingsURL = URL(string: UIApplication.openSettingsURLString) {
         Link("Open Settings to allow camera access", destination: settingsURL)
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(Palette.primary)
+          .font(SoberType.body)
+          .foregroundStyle(Palette.accent)
           .frame(maxWidth: .infinity, alignment: .center)
       }
 
       if canOnlyContinueWithLimitedCapture {
         Text("A live check can continue, but its result will be inconclusive without usable camera capture.")
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
           .multilineTextAlignment(.center)
       }
@@ -138,38 +138,38 @@ struct CameraCalibrationView: View {
 
   private var unsupportedPreview: some View {
     ZStack {
-      Palette.cardBackground
-      VStack(spacing: 16) {
+      Palette.raised
+      VStack(spacing: Space.md) {
         Image(systemName: "camera.fill")
           .font(.system(size: 42))
           .foregroundStyle(Palette.textSecondary)
         Text("Live face preview unavailable")
-          .font(.headline)
+          .font(SoberType.body)
         Text("Founder result previews remain available from the home screen.")
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
           .multilineTextAlignment(.center)
-          .padding(.horizontal, 30)
+          .padding(.horizontal, Space.xl)
       }
     }
   }
 
   private func qualityTile(_ title: String, icon: String, ready: Bool) -> some View {
-    HStack(spacing: 9) {
+    HStack(spacing: Space.xs) {
       Image(systemName: ready ? "checkmark.circle.fill" : icon)
-        .foregroundStyle(ready ? Palette.primary : Palette.textSecondary)
+        .foregroundStyle(ready ? Palette.textPrimary : Palette.textMuted)
         .frame(width: 20)
         .contentTransition(.symbolEffect(.replace))
       Text(title)
-        .font(.caption.weight(.semibold))
+        .font(SoberType.footnoteStrong)
       Spacer(minLength: 0)
     }
-    .padding(.horizontal, 12)
+    .padding(.horizontal, Space.sm)
     .frame(minHeight: 44)
-    .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+    .background(Palette.raised, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
     .overlay {
-      RoundedRectangle(cornerRadius: 13, style: .continuous)
-        .stroke((ready ? Palette.primary : Palette.secondary).opacity(0.3), lineWidth: 1)
+      RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+        .stroke(Palette.separator, lineWidth: 1)
     }
     .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: ready)
   }

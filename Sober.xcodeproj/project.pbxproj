@@ -7,8 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		07B2F2E984760CFD89EC3E64 /* GuardianPairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934397EFAFBD4962C3072987 /* GuardianPairingView.swift */; };
 		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
+		0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */; };
+		11F4364CEC050CA5830345C7 /* StateMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470E4DCBBD67C6611649433D /* StateMark.swift */; };
+		138CB59E8A7463500A3E5FF0 /* GuardianScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5228D8CA11A25BDAD16547 /* GuardianScheduleView.swift */; };
 		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
+		30462B565C04A73F9764178F /* GeneralSans-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = EC966CDB2949144E8B1C59BE /* GeneralSans-Medium.otf */; };
+		356461C9568AEFD47153C093 /* GeneralSans-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 27E7EAFE82D121B0FC4D1C6A /* GeneralSans-Bold.otf */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		3F6DC813101ECF9A30552ABC /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
@@ -18,35 +24,47 @@
 		4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */; };
 		4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */; };
 		5108275C9415E69F6D8708FF /* ScreeningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */; };
+		53EDAA90909B0DBD787BB513 /* SoberType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB5750E1B9FD372D63C16BF /* SoberType.swift */; };
 		554AD224071C5C26118571A6 /* OcularModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9001A9459892F746005CE25 /* OcularModels.swift */; };
-		555EA5EDEA5A17AB2EFE72D3 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
 		5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
+		5B1982D47D729FBE34E55A0B /* GeneralSans-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = C15F6C5AF11090F4C31B0979 /* GeneralSans-LICENSE.txt */; };
+		5DE539DA5789B501CCC3BE8C /* LegacyComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC89200A5BDF6BC36FB072A /* LegacyComponents.swift */; };
 		630520EC9D9955E4D2C300B3 /* ResearchSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */; };
+		6AA8A94B439AB5273C1D0097 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C562984AD4EE5F0087499CBB /* HistoryView.swift */; };
 		6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */; };
+		6DC7CBAE584A9D8FADFA6BD8 /* TabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D924BB4911DD1E829640DBDE /* TabBar.swift */; };
+		7027CDE35084D1BD84799971 /* GuardianPairingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CABAE702EFA17707262479A6 /* GuardianPairingService.swift */; };
 		75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */; };
+		778CF042B4E3088D27699393 /* Satoshi-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */; };
 		77950C028EA8BD14C1C02927 /* ResearchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281945014B1C95CFDF4E271C /* ResearchPreferences.swift */; };
+		78326A4562F43107FCE1F5A1 /* BaselinePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4521673BD143EB2C25A2B98 /* BaselinePortrait.swift */; };
+		81F2ED9B492F63C660105A93 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E24D82A20ABB60F1A6A718E /* SetupView.swift */; };
 		857568F4B503E22D9B628C11 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
+		88125E5621BA0AAD9FCB9CB8 /* GuardianModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5DFFBB5AA2CB6D7749ACE9E /* GuardianModels.swift */; };
+		8A08B680669A11CEEE1EDFFC /* SoberDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA01DA636DE643830078FDA /* SoberDesign.swift */; };
 		8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */; };
+		8E17097B3DC62B003DBC7CBC /* GeneralSans-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 12AA036D1F01FFA20854B1BB /* GeneralSans-Regular.otf */; };
 		906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
+		976B919C85CED8AD2AD43FDC /* GuardianSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D7F553BF37A0751D9FDA7B /* GuardianSetupView.swift */; };
+		A2F8C966BA73A49124598DFE /* GuardianCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA87DF23EC1ED7003F84CFCB /* GuardianCoordinator.swift */; };
+		A387A68777B1062D6BE7F02B /* BaselineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BEBFA030E0CA7FCADF1CA8D /* BaselineDetailView.swift */; };
+		A3E8C06D4FE29FF0D70C0214 /* DrivingDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E9E3F93FB26FDBE250F527 /* DrivingDetectionService.swift */; };
 		A8F1BE46F1E94207CAC11427 /* TaskViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */; };
 		AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
+		B02AF5E71ED033A20B47DFA7 /* Satoshi-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */; };
 		B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
+		BD924C265FB5EABC82799B00 /* Satoshi-Black.otf in Resources */ = {isa = PBXBuildFile; fileRef = 48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */; };
+		C20DFEC7378189BB52BE4274 /* Satoshi-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */; };
 		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
+		DC731FE6D6419D46F67174AC /* GeneralSans-Semibold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 25CAE6A1E94811A4E7E3B3FC /* GeneralSans-Semibold.otf */; };
+		E686B010896F7FF513912081 /* PupillometryTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A29C931E495C2E4717792E /* PupillometryTaskView.swift */; };
 		E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */; };
+		EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */; };
 		EC8E5A96E6EB532342042E02 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B2F1096488EAE1C4259DBC /* ResultView.swift */; };
+		F77E317BE2F6FBC1569044BC /* GuardianModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFA1229DE96599FC93A9EE1E /* GuardianModelsTests.swift */; };
 		FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */; };
-		0037191371A8B3B1A738AAE4 /* GuardianModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F5ED9EBC510409586CF228 /* GuardianModelsTests.swift */; };
-		020EE7C0125E9E44DEB8D172 /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345D6D96D6EA040AC39AA80 /* PupilCaptureService.swift */; };
-		089DE84C36F7C1E2EA9F079D /* DrivingDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB71C271E03E56EF135F0B1 /* DrivingDetectionService.swift */; };
-		1A2CF60215F40F8096CA2617 /* GuardianSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCC6D45BD56591E22E73965 /* GuardianSetupView.swift */; };
-		64C42336795A151EBEDF835C /* GuardianModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFE3CFA0B762C45BCF63639 /* GuardianModels.swift */; };
-		6C5EF945B7E8D7AE62232519 /* GuardianScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943CA7A60B3CFBAA1CBD5924 /* GuardianScheduleView.swift */; };
-		8142FC615D0C6A914B1A1440 /* GuardianPairingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 237B325B8F8C7D2E1E4C6B8E /* GuardianPairingService.swift */; };
-		BA8C901B8261804FBD038C69 /* GuardianCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07FEDC7D99A27BA58E2C453 /* GuardianCoordinator.swift */; };
-		D17AB03DD45D68F8CBD75EE4 /* GuardianPairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4279AC8F415EE3CB2F04A6CB /* GuardianPairingView.swift */; };
-		ECC214B060CBF1019CDE3D49 /* PupillometryTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8970CEFEFC776B369EC3E28 /* PupillometryTaskView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,54 +82,70 @@
 		0B77BB710C5315F758F0D499 /* ResearchModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModeView.swift; sourceTree = "<group>"; };
 		0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceCameraPreview.swift; sourceTree = "<group>"; };
 		0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberApp.swift; sourceTree = "<group>"; };
+		12AA036D1F01FFA20854B1BB /* GeneralSans-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeneralSans-Regular.otf"; sourceTree = "<group>"; };
 		12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanView.swift; sourceTree = "<group>"; };
 		13A596808C5944580D9A323B /* CameraCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCalibrationView.swift; sourceTree = "<group>"; };
 		1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningModels.swift; sourceTree = "<group>"; };
 		17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularAndTaskTests.swift; sourceTree = "<group>"; };
 		1CC25F72A27335610F808FA8 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		23942604D2736802062223EA /* SignalHalo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalHalo.swift; sourceTree = "<group>"; };
 		25B2F1096488EAE1C4259DBC /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
+		25CAE6A1E94811A4E7E3B3FC /* GeneralSans-Semibold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeneralSans-Semibold.otf"; sourceTree = "<group>"; };
+		27E7EAFE82D121B0FC4D1C6A /* GeneralSans-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeneralSans-Bold.otf"; sourceTree = "<group>"; };
 		281945014B1C95CFDF4E271C /* ResearchPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchPreferences.swift; sourceTree = "<group>"; };
+		2E24D82A20ABB60F1A6A718E /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		470E4DCBBD67C6611649433D /* StateMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateMark.swift; sourceTree = "<group>"; };
+		48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Black.otf"; sourceTree = "<group>"; };
+		4FC89200A5BDF6BC36FB072A /* LegacyComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyComponents.swift; sourceTree = "<group>"; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
 		64D21C92E2C87F13E3587EA3 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
+		68A29C931E495C2E4717792E /* PupillometryTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupillometryTaskView.swift; sourceTree = "<group>"; };
+		68E9E3F93FB26FDBE250F527 /* DrivingDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingDetectionService.swift; sourceTree = "<group>"; };
+		6EB5750E1B9FD372D63C16BF /* SoberType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberType.swift; sourceTree = "<group>"; };
 		6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskViews.swift; sourceTree = "<group>"; };
+		7B5228D8CA11A25BDAD16547 /* GuardianScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianScheduleView.swift; sourceTree = "<group>"; };
 		7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularTaskView.swift; sourceTree = "<group>"; };
 		804D0A298DBB719A4493299F /* ResearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModels.swift; sourceTree = "<group>"; };
+		934397EFAFBD4962C3072987 /* GuardianPairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianPairingView.swift; sourceTree = "<group>"; };
+		93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Satoshi-LICENSE.txt"; sourceTree = "<group>"; };
+		9BEBFA030E0CA7FCADF1CA8D /* BaselineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineDetailView.swift; sourceTree = "<group>"; };
 		A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningFlowView.swift; sourceTree = "<group>"; };
 		A283843C5F8155F2ABF81000 /* SoberTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SoberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceTrackingService.swift; sourceTree = "<group>"; };
 		A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewRegressionTests.swift; sourceTree = "<group>"; };
+		C15F6C5AF11090F4C31B0979 /* GeneralSans-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "GeneralSans-LICENSE.txt"; sourceTree = "<group>"; };
+		C562984AD4EE5F0087499CBB /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		C5D7F553BF37A0751D9FDA7B /* GuardianSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianSetupView.swift; sourceTree = "<group>"; };
+		C5DFFBB5AA2CB6D7749ACE9E /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
 		C9001A9459892F746005CE25 /* OcularModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularModels.swift; sourceTree = "<group>"; };
+		CABAE702EFA17707262479A6 /* GuardianPairingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianPairingService.swift; sourceTree = "<group>"; };
+		D924BB4911DD1E829640DBDE /* TabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBar.swift; sourceTree = "<group>"; };
+		DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Bold.otf"; sourceTree = "<group>"; };
+		DA87DF23EC1ED7003F84CFCB /* GuardianCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCoordinator.swift; sourceTree = "<group>"; };
+		DDA01DA636DE643830078FDA /* SoberDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberDesign.swift; sourceTree = "<group>"; };
 		DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDataTests.swift; sourceTree = "<group>"; };
 		DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineProfileEngine.swift; sourceTree = "<group>"; };
 		E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularSignalAnalyzer.swift; sourceTree = "<group>"; };
 		E5D0277C1F1057B474837F2C /* Sober.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sober.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		EC966CDB2949144E8B1C59BE /* GeneralSans-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "GeneralSans-Medium.otf"; sourceTree = "<group>"; };
+		EFA1229DE96599FC93A9EE1E /* GuardianModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModelsTests.swift; sourceTree = "<group>"; };
 		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Regular.otf"; sourceTree = "<group>"; };
+		F4521673BD143EB2C25A2B98 /* BaselinePortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselinePortrait.swift; sourceTree = "<group>"; };
 		F69FF16FB9F7B0082399E074 /* SoberComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberComponents.swift; sourceTree = "<group>"; };
+		F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupilCaptureService.swift; sourceTree = "<group>"; };
 		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
-		21BEC03B68BE93F61D7D702A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		237B325B8F8C7D2E1E4C6B8E /* GuardianPairingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianPairingService.swift; sourceTree = "<group>"; };
-		2BB71C271E03E56EF135F0B1 /* DrivingDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingDetectionService.swift; sourceTree = "<group>"; };
-		35F5ED9EBC510409586CF228 /* GuardianModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModelsTests.swift; sourceTree = "<group>"; };
-		4279AC8F415EE3CB2F04A6CB /* GuardianPairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianPairingView.swift; sourceTree = "<group>"; };
-		5502374DAAE101713EDC1B55 /* Sober.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sober.entitlements; sourceTree = "<group>"; };
-		6345D6D96D6EA040AC39AA80 /* PupilCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupilCaptureService.swift; sourceTree = "<group>"; };
-		6EFE3CFA0B762C45BCF63639 /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
-		943CA7A60B3CFBAA1CBD5924 /* GuardianScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianScheduleView.swift; sourceTree = "<group>"; };
-		D8970CEFEFC776B369EC3E28 /* PupillometryTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupillometryTaskView.swift; sourceTree = "<group>"; };
-		E07FEDC7D99A27BA58E2C453 /* GuardianCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCoordinator.swift; sourceTree = "<group>"; };
-		FFCC6D45BD56591E22E73965 /* GuardianSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianSetupView.swift; sourceTree = "<group>"; };
+		FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Medium.otf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		0264280DC0D78C25EF0D94FB /* SoberTests */ = {
 			isa = PBXGroup;
 			children = (
-				35F5ED9EBC510409586CF228 /* GuardianModelsTests.swift */,
 				3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */,
+				EFA1229DE96599FC93A9EE1E /* GuardianModelsTests.swift */,
 				17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */,
 				DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */,
 				A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */,
@@ -131,9 +165,9 @@
 		0D931F194DF9B61C0FE41CFF /* Screening */ = {
 			isa = PBXGroup;
 			children = (
-				D8970CEFEFC776B369EC3E28 /* PupillometryTaskView.swift */,
 				13A596808C5944580D9A323B /* CameraCalibrationView.swift */,
 				7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */,
+				68A29C931E495C2E4717792E /* PupillometryTaskView.swift */,
 				A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */,
 				6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */,
 			);
@@ -148,10 +182,20 @@
 			path = Results;
 			sourceTree = "<group>";
 		};
+		22807C5DF1F324A876862C24 /* Baseline */ = {
+			isa = PBXGroup;
+			children = (
+				9BEBFA030E0CA7FCADF1CA8D /* BaselineDetailView.swift */,
+			);
+			path = Baseline;
+			sourceTree = "<group>";
+		};
 		26FAADC19274E05E861374DF /* Design */ = {
 			isa = PBXGroup;
 			children = (
 				FA3ABA407F78E17298DEA2FD /* Palette.swift */,
+				DDA01DA636DE643830078FDA /* SoberDesign.swift */,
+				6EB5750E1B9FD372D63C16BF /* SoberType.swift */,
 			);
 			path = Design;
 			sourceTree = "<group>";
@@ -173,6 +217,7 @@
 				26FAADC19274E05E861374DF /* Design */,
 				44992AC65B20E716710B920F /* Features */,
 				FCE724912A8F91BCD131718A /* Models */,
+				CF199D20615C689ACDD35182 /* Resources */,
 				E3A38A79683D8E6226C0B9D2 /* Services */,
 			);
 			path = Sober;
@@ -181,25 +226,57 @@
 		44992AC65B20E716710B920F /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				0611941F9057F5F78E777768 /* Guardian */,
+				22807C5DF1F324A876862C24 /* Baseline */,
+				50C581A359890CCA1B38A143 /* Guardian */,
+				8C18EE38BAA0C715DC2EC779 /* History */,
 				CE3468B3451787117E4877BE /* Home */,
 				98960DCB1EE83BC3C464228A /* Onboarding */,
 				CD2CD37750A1FFEE5BC32AEF /* Plan */,
 				0A1D53C05D7DB542D8368F35 /* Research */,
 				1FABC51C5F600CB258190FC0 /* Results */,
 				0D931F194DF9B61C0FE41CFF /* Screening */,
+				765DFFEBC1F9632F17B27DD0 /* Setup */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		50C581A359890CCA1B38A143 /* Guardian */ = {
+			isa = PBXGroup;
+			children = (
+				934397EFAFBD4962C3072987 /* GuardianPairingView.swift */,
+				7B5228D8CA11A25BDAD16547 /* GuardianScheduleView.swift */,
+				C5D7F553BF37A0751D9FDA7B /* GuardianSetupView.swift */,
+			);
+			path = Guardian;
 			sourceTree = "<group>";
 		};
 		6979467F7B883BBAC8250E17 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				F4521673BD143EB2C25A2B98 /* BaselinePortrait.swift */,
 				0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */,
-				23942604D2736802062223EA /* SignalHalo.swift */,
+				4FC89200A5BDF6BC36FB072A /* LegacyComponents.swift */,
 				F69FF16FB9F7B0082399E074 /* SoberComponents.swift */,
+				470E4DCBBD67C6611649433D /* StateMark.swift */,
+				D924BB4911DD1E829640DBDE /* TabBar.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		765DFFEBC1F9632F17B27DD0 /* Setup */ = {
+			isa = PBXGroup;
+			children = (
+				2E24D82A20ABB60F1A6A718E /* SetupView.swift */,
+			);
+			path = Setup;
+			sourceTree = "<group>";
+		};
+		8C18EE38BAA0C715DC2EC779 /* History */ = {
+			isa = PBXGroup;
+			children = (
+				C562984AD4EE5F0087499CBB /* HistoryView.swift */,
+			);
+			path = History;
 			sourceTree = "<group>";
 		};
 		8D71CAD5044A7688E9ABFDCA /* Products */ = {
@@ -222,8 +299,6 @@
 		B5546AEA9AF05100D39C8E97 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				5502374DAAE101713EDC1B55 /* Sober.entitlements */,
-				21BEC03B68BE93F61D7D702A /* Info.plist */,
 				F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */,
 				0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */,
 			);
@@ -246,16 +321,41 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
+		CF199D20615C689ACDD35182 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				DDD0C5D73633CBC696CD7E6F /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		DDD0C5D73633CBC696CD7E6F /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				27E7EAFE82D121B0FC4D1C6A /* GeneralSans-Bold.otf */,
+				C15F6C5AF11090F4C31B0979 /* GeneralSans-LICENSE.txt */,
+				EC966CDB2949144E8B1C59BE /* GeneralSans-Medium.otf */,
+				12AA036D1F01FFA20854B1BB /* GeneralSans-Regular.otf */,
+				25CAE6A1E94811A4E7E3B3FC /* GeneralSans-Semibold.otf */,
+				48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */,
+				DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */,
+				93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */,
+				FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */,
+				F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		E3A38A79683D8E6226C0B9D2 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				E07FEDC7D99A27BA58E2C453 /* GuardianCoordinator.swift */,
-				237B325B8F8C7D2E1E4C6B8E /* GuardianPairingService.swift */,
-				2BB71C271E03E56EF135F0B1 /* DrivingDetectionService.swift */,
-				6345D6D96D6EA040AC39AA80 /* PupilCaptureService.swift */,
 				DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */,
+				68E9E3F93FB26FDBE250F527 /* DrivingDetectionService.swift */,
 				A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */,
+				DA87DF23EC1ED7003F84CFCB /* GuardianCoordinator.swift */,
+				CABAE702EFA17707262479A6 /* GuardianPairingService.swift */,
 				E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */,
+				F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */,
 				008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */,
 				544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */,
 			);
@@ -265,7 +365,7 @@
 		FCE724912A8F91BCD131718A /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				6EFE3CFA0B762C45BCF63639 /* GuardianModels.swift */,
+				C5DFFBB5AA2CB6D7749ACE9E /* GuardianModels.swift */,
 				C9001A9459892F746005CE25 /* OcularModels.swift */,
 				804D0A298DBB719A4493299F /* ResearchModels.swift */,
 				281945014B1C95CFDF4E271C /* ResearchPreferences.swift */,
@@ -273,16 +373,6 @@
 				64D21C92E2C87F13E3587EA3 /* TaskModels.swift */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		0611941F9057F5F78E777768 /* Guardian */ = {
-			isa = PBXGroup;
-			children = (
-				4279AC8F415EE3CB2F04A6CB /* GuardianPairingView.swift */,
-				943CA7A60B3CFBAA1CBD5924 /* GuardianScheduleView.swift */,
-				FFCC6D45BD56591E22E73965 /* GuardianSetupView.swift */,
-			);
-			path = Guardian;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -311,6 +401,7 @@
 			buildConfigurationList = 893B8341BFCD744CE5C81135 /* Build configuration list for PBXNativeTarget "Sober" */;
 			buildPhases = (
 				AF3A0054D273C9A624B9BFCB /* Sources */,
+				0D6C6CF1F73AAE938B18C4F1 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -354,13 +445,33 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		0D6C6CF1F73AAE938B18C4F1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				356461C9568AEFD47153C093 /* GeneralSans-Bold.otf in Resources */,
+				5B1982D47D729FBE34E55A0B /* GeneralSans-LICENSE.txt in Resources */,
+				30462B565C04A73F9764178F /* GeneralSans-Medium.otf in Resources */,
+				8E17097B3DC62B003DBC7CBC /* GeneralSans-Regular.otf in Resources */,
+				DC731FE6D6419D46F67174AC /* GeneralSans-Semibold.otf in Resources */,
+				BD924C265FB5EABC82799B00 /* Satoshi-Black.otf in Resources */,
+				778CF042B4E3088D27699393 /* Satoshi-Bold.otf in Resources */,
+				C20DFEC7378189BB52BE4274 /* Satoshi-LICENSE.txt in Resources */,
+				EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */,
+				B02AF5E71ED033A20B47DFA7 /* Satoshi-Regular.otf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		AB4AD64EDF509BD6CA2DDFD8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0037191371A8B3B1A738AAE4 /* GuardianModelsTests.swift in Sources */,
 				E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */,
+				F77E317BE2F6FBC1569044BC /* GuardianModelsTests.swift in Sources */,
 				FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */,
 				45A9CFA18E73738D0779B36E /* ResearchDataTests.swift in Sources */,
 				8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */,
@@ -372,26 +483,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1A2CF60215F40F8096CA2617 /* GuardianSetupView.swift in Sources */,
-				6C5EF945B7E8D7AE62232519 /* GuardianScheduleView.swift in Sources */,
-				D17AB03DD45D68F8CBD75EE4 /* GuardianPairingView.swift in Sources */,
-				BA8C901B8261804FBD038C69 /* GuardianCoordinator.swift in Sources */,
-				8142FC615D0C6A914B1A1440 /* GuardianPairingService.swift in Sources */,
-				089DE84C36F7C1E2EA9F079D /* DrivingDetectionService.swift in Sources */,
-				64C42336795A151EBEDF835C /* GuardianModels.swift in Sources */,
-				ECC214B060CBF1019CDE3D49 /* PupillometryTaskView.swift in Sources */,
-				020EE7C0125E9E44DEB8D172 /* PupilCaptureService.swift in Sources */,
 				857568F4B503E22D9B628C11 /* AppModel.swift in Sources */,
+				A387A68777B1062D6BE7F02B /* BaselineDetailView.swift in Sources */,
+				78326A4562F43107FCE1F5A1 /* BaselinePortrait.swift in Sources */,
 				439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
+				A3E8C06D4FE29FF0D70C0214 /* DrivingDetectionService.swift in Sources */,
 				75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */,
 				2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */,
+				A2F8C966BA73A49124598DFE /* GuardianCoordinator.swift in Sources */,
+				88125E5621BA0AAD9FCB9CB8 /* GuardianModels.swift in Sources */,
+				7027CDE35084D1BD84799971 /* GuardianPairingService.swift in Sources */,
+				07B2F2E984760CFD89EC3E64 /* GuardianPairingView.swift in Sources */,
+				138CB59E8A7463500A3E5FF0 /* GuardianScheduleView.swift in Sources */,
+				976B919C85CED8AD2AD43FDC /* GuardianSetupView.swift in Sources */,
+				6AA8A94B439AB5273C1D0097 /* HistoryView.swift in Sources */,
 				906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */,
+				5DE539DA5789B501CCC3BE8C /* LegacyComponents.swift in Sources */,
 				554AD224071C5C26118571A6 /* OcularModels.swift in Sources */,
 				D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */,
 				3F6DC813101ECF9A30552ABC /* OcularTaskView.swift in Sources */,
 				6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */,
 				3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */,
+				0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */,
+				E686B010896F7FF513912081 /* PupillometryTaskView.swift in Sources */,
 				B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */,
 				48E4C17B7146DC42773D76D5 /* ResearchModels.swift in Sources */,
 				77950C028EA8BD14C1C02927 /* ResearchPreferences.swift in Sources */,
@@ -401,9 +516,13 @@
 				C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */,
 				4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */,
 				5108275C9415E69F6D8708FF /* ScreeningModels.swift in Sources */,
-				555EA5EDEA5A17AB2EFE72D3 /* SignalHalo.swift in Sources */,
+				81F2ED9B492F63C660105A93 /* SetupView.swift in Sources */,
 				0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */,
 				5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */,
+				8A08B680669A11CEEE1EDFFC /* SoberDesign.swift in Sources */,
+				53EDAA90909B0DBD787BB513 /* SoberType.swift in Sources */,
+				11F4364CEC050CA5830345C7 /* StateMark.swift in Sources */,
+				6DC7CBAE584A9D8FADFA6BD8 /* TabBar.swift in Sources */,
 				EC8E5A96E6EB532342042E02 /* TaskModels.swift in Sources */,
 				A8F1BE46F1E94207CAC11427 /* TaskViews.swift in Sources */,
 			);
@@ -461,7 +580,6 @@
 				CODE_SIGN_ENTITLEMENTS = Sober/Sober.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 2;
-				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -601,7 +719,6 @@
 				CODE_SIGN_ENTITLEMENTS = Sober/Sober.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 2;
-				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

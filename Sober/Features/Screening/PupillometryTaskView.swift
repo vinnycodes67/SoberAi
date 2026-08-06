@@ -44,7 +44,7 @@ struct PupillometryTaskView: View {
   }
 
   private var introContent: some View {
-    VStack(alignment: .leading, spacing: 20) {
+    VStack(alignment: .leading, spacing: Space.md) {
       ScreenHeader(
         eyebrow: "Guided light check",
         title: "Watch the screen brighten three times.",
@@ -53,13 +53,13 @@ struct PupillometryTaskView: View {
       )
 
       SoberCard {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Space.sm) {
           Image(systemName: "exclamationmark.triangle.fill")
             .foregroundStyle(Palette.warning)
           Text(
             "This step briefly brightens the screen three times. Skip it if you have photosensitive epilepsy or a seizure disorder."
           )
-          .font(.subheadline.weight(.medium))
+          .font(SoberType.body)
           .fixedSize(horizontal: false, vertical: true)
         }
       }
@@ -72,14 +72,14 @@ struct PupillometryTaskView: View {
       Button("Skip this step") {
         onComplete(nil)
       }
-      .font(.subheadline.weight(.semibold))
+      .font(SoberType.body)
       .foregroundStyle(Palette.textSecondary)
       .frame(maxWidth: .infinity, alignment: .center)
     }
   }
 
   private var trialContent: some View {
-    VStack(spacing: 26) {
+    VStack(spacing: Space.lg) {
       Spacer()
 
       ZStack {
@@ -91,21 +91,21 @@ struct PupillometryTaskView: View {
       }
       .frame(height: 120)
 
-      VStack(spacing: 8) {
+      VStack(spacing: Space.xs) {
         Text("Trial \(min(trialIndex + 1, Self.brightnessLevels.count)) of \(Self.brightnessLevels.count)")
-          .font(.caption.weight(.semibold))
+          .font(SoberType.footnoteStrong)
           .foregroundStyle(phase == .flashing ? .black.opacity(0.55) : Palette.textSecondary)
         Text(phaseLabel)
-          .font(.title3.weight(.medium))
+          .font(SoberType.footnoteStrong)
           .foregroundStyle(phase == .flashing ? .black : Palette.textPrimary)
           .multilineTextAlignment(.center)
         if phase == .darkAdapting {
           Text("\(countdown)s")
-            .font(.system(.title, design: .rounded, weight: .semibold).monospacedDigit())
+            .font(SoberType.figure(28))
             .foregroundStyle(Palette.textPrimary)
         }
       }
-      .padding(.horizontal, 30)
+      .padding(.horizontal, Space.xl)
 
       Spacer()
     }

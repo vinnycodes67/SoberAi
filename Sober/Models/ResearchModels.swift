@@ -347,6 +347,16 @@ struct ResearchSessionEnvelope: Codable, Equatable, Identifiable, Sendable {
   let ocularQuality: ResearchOcularQuality?
   let breathReference: BreathReferenceMetadata?
   let protocolVariant: OcularProtocolVariant
+  /// The three-state result this session produced. Optional because
+  /// records written before the History view existed did not carry it —
+  /// those rows show as `nil` rather than being backfilled with a guess.
+  let resultState: ScreeningResultState?
+  /// Where each measure sat against this person's own range, keyed by
+  /// signal id, on the same 0...1 scale the engine uses. Stored so the
+  /// baseline portrait can draw a past check without re-scoring it against
+  /// a baseline that may since have moved, which would show someone a
+  /// result they were never given.
+  let signalRisks: [String: Double]?
 
   var id: ResearchSessionID { sessionID }
 
@@ -364,6 +374,8 @@ struct ResearchSessionEnvelope: Codable, Equatable, Identifiable, Sendable {
     case ocularQuality
     case breathReference
     case protocolVariant
+    case resultState
+    case signalRisks
   }
 
   init(
@@ -379,7 +391,9 @@ struct ResearchSessionEnvelope: Codable, Equatable, Identifiable, Sendable {
     ocularSummary: GazeCaptureSummary? = nil,
     ocularQuality: ResearchOcularQuality? = nil,
     breathReference: BreathReferenceMetadata? = nil,
-    protocolVariant: OcularProtocolVariant = .full
+    protocolVariant: OcularProtocolVariant = .full,
+    resultState: ScreeningResultState? = nil,
+    signalRisks: [String: Double]? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.participantID = participantID
@@ -394,6 +408,8 @@ struct ResearchSessionEnvelope: Codable, Equatable, Identifiable, Sendable {
     self.ocularQuality = ocularQuality
     self.breathReference = breathReference
     self.protocolVariant = protocolVariant
+    self.resultState = resultState
+    self.signalRisks = signalRisks
   }
 
   init(from decoder: Decoder) throws {
@@ -413,6 +429,8 @@ struct ResearchSessionEnvelope: Codable, Equatable, Identifiable, Sendable {
     // Records created before measured protocol variants were introduced used
     // the full visual protocol. Preserve that meaning when importing them.
     protocolVariant = try values.decodeIfPresent(OcularProtocolVariant.self, forKey: .protocolVariant) ?? .full
+    resultState = try values.decodeIfPresent(ScreeningResultState.self, forKey: .resultState)
+    signalRisks = try values.decodeIfPresent([String: Double].self, forKey: .signalRisks)
   }
 }
 

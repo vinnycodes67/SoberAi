@@ -1,420 +1,454 @@
 import SwiftUI
 
-enum SoberMotion {
-  static let press = Animation.spring(duration: 0.24, bounce: 0.08)
-  static let progress = Animation.spring(duration: 0.42, bounce: 0.10)
-  static let screen = Animation.spring(duration: 0.56, bounce: 0.06)
+// MARK: - Buttons
+//
+// Five roles, one size system. Every button in the app is one of these; a
+// screen with two primaries has no primary.
 
-  static func entrance(order: Int) -> Animation {
-    screen.delay(min(Double(order) * 0.055, 0.28))
+/// The single most important action on a screen. Filled accent, full width.
+struct PrimaryButtonStyle: ButtonStyle {
+  @Environment(\.isEnabled) private var isEnabled
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .font(SoberType.headline)
+      .frame(maxWidth: .infinity)
+      .frame(minHeight: Hit.primary)
+      .foregroundStyle(Palette.onAccent)
+      .background(
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+          .fill(Palette.accent)
+      )
+      .opacity(isEnabled ? (configuration.isPressed ? 0.86 : 1) : 0.4)
+      .animation(reduceMotion ? nil : Motion.quick, value: configuration.isPressed)
   }
 }
 
-struct SoberWordmark: View {
-  var body: some View {
-    Text("sober.")
-      .font(.system(.title2, design: .serif, weight: .semibold))
-      .tracking(-0.7)
+/// A supporting action. Filled surface, no border.
+struct SecondaryButtonStyle: ButtonStyle {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .font(SoberType.headline)
+      .frame(maxWidth: .infinity)
+      .frame(minHeight: Hit.control)
       .foregroundStyle(Palette.textPrimary)
-      .accessibilityAddTraits(.isHeader)
+      .background(
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+          .fill(configuration.isPressed ? Palette.surfaceSecondary : Palette.surface)
+      )
+      .animation(reduceMotion ? nil : Motion.quick, value: configuration.isPressed)
   }
 }
 
-struct SoberCard<Content: View>: View {
-  @ViewBuilder let content: Content
+/// A low-emphasis action. Text only.
+struct TertiaryButtonStyle: ButtonStyle {
+  var tint: Color = Palette.accentText
 
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .font(SoberType.headline)
+      .frame(minHeight: Hit.minimum)
+      .foregroundStyle(tint)
+      .opacity(configuration.isPressed ? 0.6 : 1)
+      .animation(reduceMotion ? nil : Motion.quick, value: configuration.isPressed)
+  }
+}
+
+/// Deleting, resetting, anything unrecoverable.
+struct DestructiveButtonStyle: ButtonStyle {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .font(SoberType.headline)
+      .frame(maxWidth: .infinity)
+      .frame(minHeight: Hit.control)
+      .foregroundStyle(Palette.critical)
+      .opacity(configuration.isPressed ? 0.6 : 1)
+      .animation(reduceMotion ? nil : Motion.quick, value: configuration.isPressed)
+  }
+}
+
+/// Whole-row and custom-shaped controls.
+struct PlainPressStyle: ButtonStyle {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .opacity(configuration.isPressed ? 0.55 : 1)
+      .animation(reduceMotion ? nil : Motion.quick, value: configuration.isPressed)
+  }
+}
+
+// MARK: - Structure
+
+/// A group heading over content, drawing nothing itself.
+///
+/// This is the default container in the app. A framed card is the exception:
+/// a page of identical rounded boxes is the clearest sign that no one decided
+/// what mattered.
+struct Section_<Content: View>: View {
+  let title: String?
+  var action: (label: String, perform: () -> Void)?
+  @ViewBuilder var content: Content
+
+  init(
+    _ title: String? = nil,
+    action: (label: String, perform: () -> Void)? = nil,
+    @ViewBuilder content: () -> Content
+  ) {
+    self.title = title
+    self.action = action
+    self.content = content()
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: Space.sm) {
+      if title != nil || action != nil {
+        HStack(alignment: .firstTextBaseline) {
+          if let title {
+            Eyebrow(title)
+              .accessibilityAddTraits(.isHeader)
+          }
+          Spacer(minLength: Space.xs)
+          if let action {
+            Button(action.label, action: action.perform)
+              .font(SoberType.footnoteStrong)
+              .foregroundStyle(Palette.accentText)
+          }
+        }
+      }
+      content
+    }
+  }
+}
+
+/// A hairline. Almost invisible by design.
+struct Separator: View {
+  var body: some View {
+    Rectangle().fill(Palette.separator).frame(height: 0.5)
+  }
+}
+
+/// A card. A soft surface with generous padding and a large radius. No
+/// border, no shadow: elevation is communicated by the fill alone.
+struct Card<Content: View>: View {
+  var padding: CGFloat = Space.lg
+  @ViewBuilder var content: Content
 
   var body: some View {
     content
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(18)
-      .background {
-        cardBackground
-      }
-      .overlay {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-          .stroke(
-            LinearGradient(
-              colors: [
-                Palette.textPrimary.opacity(0.14),
-                Palette.secondary.opacity(0.08),
-                Palette.primary.opacity(0.14),
-              ],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            ),
-            lineWidth: 1
-          )
-      }
-      .shadow(color: Color.black.opacity(0.20), radius: 18, y: 10)
-  }
-
-  @ViewBuilder
-  private var cardBackground: some View {
-    let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
-    if reduceTransparency {
-      shape.fill(Palette.cardBackground)
-    } else {
-      shape
-        .fill(.thinMaterial)
-        .overlay {
-          shape.fill(Palette.cardBackground.opacity(0.70))
-        }
-    }
+      .padding(padding)
+      .background(
+        RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+          .fill(Palette.surface)
+      )
   }
 }
 
-struct PrimaryActionButtonStyle: ButtonStyle {
-  var tint: Color = Palette.primary
+/// A list of rows separated by hairlines, sitting directly on the page.
+struct Rows<Content: View>: View {
+  @ViewBuilder var content: Content
 
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-  @ViewBuilder
-  func makeBody(configuration: Configuration) -> some View {
-    if #available(iOS 26.0, *) {
-      label(configuration)
-        .glassEffect(
-          .regular.tint(tint).interactive(),
-          in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-        )
-    } else {
-      label(configuration)
-        .background {
-          let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
-          if reduceTransparency {
-            shape.fill(tint)
-          } else {
-            shape
-              .fill(.ultraThinMaterial)
-              .overlay {
-                shape.fill(tint.opacity(0.88))
-              }
-          }
-        }
-        .overlay {
-          RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .stroke(Palette.textPrimary.opacity(0.16), lineWidth: 1)
-        }
-        .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.976)
-        .brightness(configuration.isPressed ? -0.06 : 0)
-        .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
-    }
-  }
-
-  private func label(_ configuration: Configuration) -> some View {
-    configuration.label
-      .font(.headline)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: 54)
-      .foregroundStyle(Palette.textPrimary)
-      .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-  }
-}
-
-struct SecondaryActionButtonStyle: ButtonStyle {
-  var tint: Color = Palette.primary
-
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-  @ViewBuilder
-  func makeBody(configuration: Configuration) -> some View {
-    if #available(iOS 26.0, *) {
-      label(configuration)
-        .glassEffect(
-          .regular.interactive(),
-          in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-        )
-    } else {
-      label(configuration)
-        .background {
-          RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(
-              reduceTransparency
-                ? Palette.cardBackground : tint.opacity(configuration.isPressed ? 0.16 : 0.08)
-            )
-        }
-        .overlay {
-          RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .stroke(tint.opacity(0.46), lineWidth: 1)
-        }
-        .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.978)
-        .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
-    }
-  }
-
-  private func label(_ configuration: Configuration) -> some View {
-    configuration.label
-      .font(.headline)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: 52)
-      .foregroundStyle(tint)
-      .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-  }
-}
-
-struct SoberCardButtonStyle: ButtonStyle {
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.986)
-      .brightness(configuration.isPressed ? 0.035 : 0)
-      .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
-  }
-}
-
-struct SoberGlassControlGroup<Content: View>: View {
-  let spacing: CGFloat
-  @ViewBuilder let content: Content
-
-  init(spacing: CGFloat = 12, @ViewBuilder content: () -> Content) {
-    self.spacing = spacing
-    self.content = content()
-  }
-
-  @ViewBuilder
   var body: some View {
-    if #available(iOS 26.0, *) {
-      GlassEffectContainer(spacing: spacing) {
-        content
+    VStack(spacing: 0) { content }
+  }
+}
+
+/// A row: title, optional secondary line, optional accessory.
+struct Row<Trailing: View>: View {
+  let title: String
+  var detail: String?
+  var showsChevron = true
+  @ViewBuilder var trailing: Trailing
+  var action: (() -> Void)?
+
+  init(
+    _ title: String,
+    detail: String? = nil,
+    showsChevron: Bool = true,
+    @ViewBuilder trailing: () -> Trailing = { EmptyView() },
+    action: (() -> Void)? = nil
+  ) {
+    self.title = title
+    self.detail = detail
+    self.showsChevron = showsChevron
+    self.trailing = trailing()
+    self.action = action
+  }
+
+  var body: some View {
+    let content = HStack(spacing: Space.sm) {
+      VStack(alignment: .leading, spacing: Space.xxs) {
+        Text(title)
+          .font(SoberType.body)
+          .foregroundStyle(Palette.textPrimary)
+        if let detail {
+          Text(detail)
+            .font(SoberType.subheadline)
+            .foregroundStyle(Palette.textMuted)
+            .fixedSize(horizontal: false, vertical: true)
+        }
       }
+      Spacer(minLength: Space.xs)
+      trailing
+      if showsChevron {
+        Image(systemName: "chevron.right")
+          .font(.system(size: 13, weight: .medium))
+          .foregroundStyle(Palette.textMuted.opacity(0.6))
+      }
+    }
+    .frame(minHeight: Hit.minimum)
+    .padding(.vertical, Space.sm)
+    .contentShape(Rectangle())
+
+    if let action {
+      Button(action: action) { content }.buttonStyle(PlainPressStyle())
     } else {
       content
     }
   }
 }
 
-struct StepProgress: View {
-  let current: Int
+/// A label and value on one line.
+struct ValueRow: View {
+  let label: String
+  let value: String
+  var tint: Color = Palette.textPrimary
+
+  var body: some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text(label)
+        .font(SoberType.body)
+        .foregroundStyle(Palette.textSecondary)
+      Spacer(minLength: Space.sm)
+      Text(value)
+        .font(SoberType.body)
+        .monospacedDigit()
+        .foregroundStyle(tint)
+    }
+    .frame(minHeight: Hit.minimum)
+    .accessibilityElement(children: .combine)
+  }
+}
+
+// MARK: - States
+
+/// An empty state: a sentence and, where there is one, a way out of it.
+struct EmptyStateView: View {
+  let title: String
+  let message: String
+  var action: (label: String, perform: () -> Void)?
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: Space.sm) {
+      Text(title)
+        .font(SoberType.title)
+        .titleTracking()
+        .foregroundStyle(Palette.textPrimary)
+      Text(message)
+        .font(SoberType.body)
+        .foregroundStyle(Palette.textSecondary)
+        .readingLine()
+      if let action {
+        Button(action.label, action: action.perform)
+          .buttonStyle(TertiaryButtonStyle())
+          .padding(.top, Space.xs)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.vertical, Space.xxl)
+  }
+}
+
+/// The app's loading state. A label, and nothing else moving.
+struct LoadingStateView: View {
+  let message: String
+
+  var body: some View {
+    HStack(spacing: Space.sm) {
+      ProgressView().controlSize(.small)
+      Text(message)
+        .font(SoberType.subheadline)
+        .foregroundStyle(Palette.textSecondary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .accessibilityElement(children: .combine)
+  }
+}
+
+/// A quiet state marker.
+struct Badge: View {
+  let text: String
+  var tint: Color = Palette.textMuted
+
+  var body: some View {
+    Text(text)
+      .font(SoberType.footnote)
+      .foregroundStyle(tint)
+      .padding(.horizontal, Space.sm)
+      .padding(.vertical, Space.xxs + 1)
+      .background(
+        RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
+          .fill(tint.opacity(0.12))
+      )
+  }
+}
+
+// MARK: - Measurement
+//
+// The one place the app draws a number rather than printing it.
+
+/// Where a single measure sits against the person's own usual range.
+///
+/// The band is their baseline; the marker is tonight. This is the product's
+/// claim made visible: every row compares someone only to themselves, and no
+/// row summarises the others. The composite risk score is never drawn.
+struct DeviationRow: View {
+  let detail: SignalDetail
+
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: Space.sm) {
+      HStack(alignment: .firstTextBaseline) {
+        Text(detail.label)
+          .font(SoberType.body)
+          .foregroundStyle(Palette.textPrimary)
+        Spacer(minLength: Space.sm)
+        Text(detail.value)
+          .font(SoberType.footnoteStrong)
+          .monospacedDigit()
+          .foregroundStyle(detail.concern ? Palette.critical : Palette.textSecondary)
+      }
+
+      if let risk = detail.risk {
+        track(risk: risk)
+      } else {
+        Text("Not measured")
+          .font(SoberType.footnote)
+          .foregroundStyle(Palette.textMuted)
+      }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(detail.label)
+    .accessibilityValue(
+      detail.risk == nil
+        ? "\(detail.value), not measured"
+        : "\(detail.value), \(detail.concern ? "outside" : "within") your usual range"
+    )
+  }
+
+  private func track(risk: Double) -> some View {
+    GeometryReader { proxy in
+      let width = proxy.size.width
+      let clamped = min(max(risk, 0), 1)
+      // Everything below the concern threshold is, by the engine's own
+      // definition, this person's usual range.
+      let band = width * SignalDetail.concernThreshold
+
+      ZStack(alignment: .leading) {
+        Capsule().fill(Palette.separator).frame(height: 2)
+        Capsule().fill(Palette.textMuted.opacity(0.5)).frame(width: band, height: 2)
+        Circle()
+          .fill(detail.concern ? Palette.critical : Palette.accent)
+          .frame(width: 8, height: 8)
+          .offset(x: max(min(clamped * width, width - 8), 0))
+          .animation(reduceMotion ? nil : Motion.standard, value: clamped)
+      }
+      .frame(height: 8)
+    }
+    .frame(height: 8)
+  }
+}
+
+/// Explains the band once per group, never per row.
+struct DeviationLegend: View {
+  var body: some View {
+    HStack(spacing: Space.md) {
+      HStack(spacing: Space.xs) {
+        Capsule().fill(Palette.textMuted.opacity(0.5)).frame(width: 14, height: 2)
+        Text("Your usual range")
+      }
+      HStack(spacing: Space.xs) {
+        Circle().fill(Palette.accent).frame(width: 7, height: 7)
+        Text("Tonight")
+      }
+      Spacer(minLength: 0)
+    }
+    .font(SoberType.footnote)
+    .foregroundStyle(Palette.textMuted)
+  }
+}
+
+/// Segmented progress.
+struct StepMeter: View {
+  let filled: Int
   let total: Int
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    HStack(spacing: 6) {
+    HStack(spacing: Space.xxs + 1) {
       ForEach(0..<total, id: \.self) { index in
         Capsule()
-          .fill(index <= current ? Palette.primary : Palette.secondary.opacity(0.24))
-          .frame(height: 4)
-          .scaleEffect(x: index <= current ? 1 : 0.82, anchor: .leading)
-          .animation(
-            reduceMotion ? nil : SoberMotion.progress.delay(Double(index) * 0.025),
-            value: current
-          )
+          .fill(index < filled ? Palette.accent : Palette.separator)
+          .frame(height: 2)
+          .animation(reduceMotion ? nil : Motion.standard, value: filled)
       }
     }
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("Step \(current + 1) of \(total)")
+    .accessibilityLabel("\(filled) of \(total) complete")
   }
 }
 
-struct ScreenHeader: View {
-  let eyebrow: String
-  let title: String
-  let detail: String
+// MARK: - Page
 
-  var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      Text(eyebrow.uppercased())
-        .font(.caption.weight(.semibold))
-        .tracking(1.4)
-        .foregroundStyle(Palette.primary)
-      Text(title)
-        .font(.system(.largeTitle, design: .serif, weight: .semibold))
-        .tracking(-1.1)
-        .foregroundStyle(Palette.textPrimary)
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityAddTraits(.isHeader)
-      Text(detail)
-        .font(.body)
-        .foregroundStyle(Palette.textSecondary)
-        .fixedSize(horizontal: false, vertical: true)
+extension View {
+  func pageBackground() -> some View {
+    background(Palette.background.ignoresSafeArea())
+  }
+
+  /// Fades content out under a pinned header rather than cutting it.
+  func headerScrim() -> some View {
+    background {
+      LinearGradient(
+        colors: [Palette.background, Palette.background, Palette.background.opacity(0)],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+      .ignoresSafeArea(edges: .top)
+      .allowsHitTesting(false)
     }
   }
-}
 
-struct PrototypeBadge: View {
-  var body: some View {
-    Text("FOUNDER PROTOTYPE")
-      .font(.caption2.weight(.bold))
-      .tracking(1.2)
-      .foregroundStyle(Palette.warning)
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
-      .background(Palette.warning.opacity(0.1), in: Capsule())
-      .overlay { Capsule().stroke(Palette.warning.opacity(0.34), lineWidth: 1) }
+  func appear(_ order: Int = 0) -> some View {
+    modifier(AppearModifier(order: order))
   }
 }
 
-private struct SoberEntranceModifier: ViewModifier {
+private struct AppearModifier: ViewModifier {
   let order: Int
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var isVisible = false
+  @State private var visible = false
 
   func body(content: Content) -> some View {
     content
-      .opacity(isVisible ? 1 : 0)
-      .offset(y: reduceMotion || isVisible ? 0 : 10)
-      .scaleEffect(reduceMotion || isVisible ? 1 : 0.992, anchor: .top)
+      .opacity(visible ? 1 : 0)
       .onAppear {
-        guard !isVisible else { return }
+        guard !visible else { return }
         if reduceMotion {
-          isVisible = true
+          visible = true
         } else {
-          withAnimation(SoberMotion.entrance(order: order)) {
-            isVisible = true
-          }
+          withAnimation(Motion.entrance(order)) { visible = true }
         }
       }
-  }
-}
-
-private struct SoberGlassCircleModifier: ViewModifier {
-  let tint: Color?
-
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-  @ViewBuilder
-  func body(content: Content) -> some View {
-    if #available(iOS 26.0, *) {
-      if let tint {
-        content.glassEffect(.regular.tint(tint).interactive(), in: Circle())
-      } else {
-        content.glassEffect(.regular.interactive(), in: Circle())
-      }
-    } else {
-      content
-        .background {
-          Circle()
-            .fill(reduceTransparency ? Palette.cardBackground : Palette.cardBackground.opacity(0.68))
-            .background(.ultraThinMaterial, in: Circle())
-        }
-        .overlay {
-          Circle().stroke(Palette.textPrimary.opacity(0.16), lineWidth: 1)
-        }
-    }
-  }
-}
-
-private struct SoberGlassCapsuleModifier: ViewModifier {
-  let tint: Color?
-
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-  @ViewBuilder
-  func body(content: Content) -> some View {
-    if #available(iOS 26.0, *) {
-      if let tint {
-        content.glassEffect(.regular.tint(tint), in: Capsule())
-      } else {
-        content.glassEffect(.regular, in: Capsule())
-      }
-    } else {
-      content
-        .background {
-          Capsule()
-            .fill(reduceTransparency ? Palette.cardBackground : Palette.cardBackground.opacity(0.66))
-            .background(.ultraThinMaterial, in: Capsule())
-        }
-        .overlay {
-          Capsule().stroke(Palette.textPrimary.opacity(0.16), lineWidth: 1)
-        }
-    }
-  }
-}
-
-private struct SoberAmbientBackground: View {
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-  @Environment(\.scenePhase) private var scenePhase
-
-  var body: some View {
-    TimelineView(
-      .animation(
-        minimumInterval: 1.0 / 18.0,
-        paused: reduceMotion || reduceTransparency || scenePhase != .active
-      )
-    ) { timeline in
-      GeometryReader { proxy in
-        let phase = reduceMotion || reduceTransparency
-          ? 0.0 : timeline.date.timeIntervalSinceReferenceDate
-        let width = proxy.size.width
-        let height = proxy.size.height
-
-        ZStack {
-          Palette.backgroundGradient
-
-          ambientOrb(
-            color: Palette.primary,
-            diameter: max(width * 1.08, 360),
-            x: width * (0.18 + sin(phase / 11) * 0.07),
-            y: height * (0.12 + cos(phase / 13) * 0.035),
-            opacity: reduceTransparency ? 0 : 0.16
-          )
-
-          ambientOrb(
-            color: Palette.item3,
-            diameter: max(width * 0.92, 310),
-            x: width * (0.88 + cos(phase / 14) * 0.06),
-            y: height * (0.74 + sin(phase / 12) * 0.045),
-            opacity: reduceTransparency ? 0 : 0.10
-          )
-
-          LinearGradient(
-            colors: [Color.clear, Palette.surface.opacity(0.42)],
-            startPoint: .top,
-            endPoint: .bottom
-          )
-        }
-      }
-    }
-    .allowsHitTesting(false)
-    .accessibilityHidden(true)
-  }
-
-  private func ambientOrb(
-    color: Color,
-    diameter: CGFloat,
-    x: CGFloat,
-    y: CGFloat,
-    opacity: Double
-  ) -> some View {
-    Circle()
-      .fill(
-        RadialGradient(
-          colors: [color.opacity(opacity), color.opacity(opacity * 0.34), Color.clear],
-          center: .center,
-          startRadius: 0,
-          endRadius: diameter / 2
-        )
-      )
-      .frame(width: diameter, height: diameter)
-      .position(x: x, y: y)
-      .blur(radius: 24)
-  }
-}
-
-extension View {
-  func soberBackground() -> some View {
-    background {
-      SoberAmbientBackground()
-        .ignoresSafeArea()
-    }
-  }
-
-  func soberEntrance(order: Int = 0) -> some View {
-    modifier(SoberEntranceModifier(order: order))
-  }
-
-  func soberGlassCircle(tint: Color? = nil) -> some View {
-    modifier(SoberGlassCircleModifier(tint: tint))
-  }
-
-  func soberGlassCapsule(tint: Color? = nil) -> some View {
-    modifier(SoberGlassCapsuleModifier(tint: tint))
   }
 }

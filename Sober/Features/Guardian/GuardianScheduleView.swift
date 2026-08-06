@@ -10,7 +10,7 @@ struct GuardianScheduleView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: Space.lg) {
           ScreenHeader(
             eyebrow: "Guardian Mode",
             title: "When should we watch?",
@@ -19,9 +19,9 @@ struct GuardianScheduleView: View {
           )
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 14) {
-              Text("Active nights").font(.headline)
-              HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.sm) {
+              Text("Active nights").font(SoberType.body)
+              HStack(spacing: Space.xs) {
                 ForEach(Weekday.allCases, id: \.self) { day in
                   dayToggle(day)
                 }
@@ -30,8 +30,8 @@ struct GuardianScheduleView: View {
           }
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 14) {
-              Text("Start time").font(.headline)
+            VStack(alignment: .leading, spacing: Space.sm) {
+              Text("Start time").font(SoberType.body)
               DatePicker(
                 "Start time",
                 selection: startTimeBinding,
@@ -44,12 +44,12 @@ struct GuardianScheduleView: View {
           }
 
           Text(
-            "If the phone is off or left at home during the window, we can't detect anything — no alert is sent in that case."
+            "If the phone is off or left at home during the window, we can't detect anything, so no alert is sent in that case."
           )
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
         }
-        .padding(22)
+        .padding(Space.lg)
       }
       .soberBackground()
       .toolbar {
@@ -70,10 +70,10 @@ struct GuardianScheduleView: View {
       }
     } label: {
       Text(day.shortLabel)
-        .font(.caption.weight(.semibold))
+        .font(SoberType.footnoteStrong)
         .frame(width: 42, height: 42)
         .background(
-          isOn ? Palette.primary : Palette.secondary.opacity(0.18),
+          isOn ? Palette.accent : Palette.line,
           in: Circle()
         )
         .foregroundStyle(isOn ? Palette.textPrimary : Palette.textSecondary)

@@ -10,7 +10,7 @@ struct ResearchModeView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: Space.md) {
           ScreenHeader(
             eyebrow: "Research Center",
             title: "Build evidence, not confidence theater.",
@@ -25,12 +25,12 @@ struct ResearchModeView: View {
 
           if let error = model.researchDataError {
             Label(error, systemImage: "exclamationmark.triangle.fill")
-              .font(.caption)
+              .font(SoberType.footnote)
               .foregroundStyle(Palette.warning)
               .fixedSize(horizontal: false, vertical: true)
           }
         }
-        .padding(22)
+        .padding(Space.lg)
       }
       .soberBackground()
       .navigationTitle("Research Mode")
@@ -57,25 +57,25 @@ struct ResearchModeView: View {
 
   private var consentCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 14) {
+      VStack(alignment: .leading, spacing: Space.sm) {
         Toggle(isOn: $model.researchConsent) {
-          VStack(alignment: .leading, spacing: 4) {
+          VStack(alignment: .leading, spacing: Space.xxs) {
             Text("Record checks for research")
-              .font(.headline)
+              .font(SoberType.body)
             Text("Store completed check sessions locally for export and future offline analysis")
-              .font(.caption)
+              .font(SoberType.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
         }
-        .tint(Palette.primary)
+        .tint(Palette.accent)
 
-        Divider().overlay(Palette.secondary.opacity(0.2))
+        Divider().overlay(Palette.line)
 
         Label(
           "Baseline sessions are stored locally for your personal reference. If you enable research later, earlier baselines are included in the export; this switch also adds ordinary checks.",
           systemImage: "lock.iphone"
         )
-        .font(.caption)
+        .font(SoberType.footnote)
         .foregroundStyle(Palette.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
       }
@@ -84,43 +84,43 @@ struct ResearchModeView: View {
 
   private var baselineCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 14) {
+      VStack(alignment: .leading, spacing: Space.sm) {
         HStack {
-          VStack(alignment: .leading, spacing: 3) {
+          VStack(alignment: .leading, spacing: Space.xxs) {
             Text("Measured sober baseline")
-              .font(.headline)
+              .font(SoberType.body)
             Text("Only complete sessions with camera quality ≥72% count")
-              .font(.caption)
+              .font(SoberType.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
           Spacer()
           Text("\(eligibleBaselineCount)/5")
-            .font(.title2.monospacedDigit().weight(.semibold))
-            .foregroundStyle(Palette.primary)
+            .font(SoberType.figure(24))
+            .foregroundStyle(Palette.accent)
         }
 
-        HStack(spacing: 7) {
+        HStack(spacing: Space.xs) {
           ForEach(0..<5, id: \.self) { index in
             Capsule()
-              .fill(index < eligibleBaselineCount ? Palette.primary : Palette.secondary.opacity(0.22))
+              .fill(index < eligibleBaselineCount ? Palette.accent : Palette.line)
               .frame(height: 7)
           }
         }
 
         if let profile = model.baselineProfile, profile.excludedSessionCount > 0 {
           Text("\(profile.excludedSessionCount) session\(profile.excludedSessionCount == 1 ? " was" : "s were") excluded for incomplete or low-quality capture.")
-            .font(.caption)
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.warning)
         }
 
         let fullCount = model.baselineVariantBreakdown[.full]?.eligibleSessionCount ?? 0
         let reducedCount = model.baselineVariantBreakdown[.reducedMotion]?.eligibleSessionCount ?? 0
         Text("Full-protocol baseline: \(fullCount)/5 • Reduced-motion baseline: \(reducedCount)/5")
-          .font(.caption)
-          .foregroundStyle(Palette.primary)
+          .font(SoberType.footnote)
+          .foregroundStyle(Palette.accent)
 
         Text("Median and median absolute deviation are calculated locally. These values are research features and do not change the prototype scorer.")
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -129,12 +129,12 @@ struct ResearchModeView: View {
 
   private var contextCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 16) {
-        VStack(alignment: .leading, spacing: 4) {
+      VStack(alignment: .leading, spacing: Space.md) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
           Text("Session context")
-            .font(.headline)
+            .font(SoberType.body)
           Text("These factors can change performance without alcohol.")
-            .font(.caption)
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.textSecondary)
         }
 
@@ -144,11 +144,11 @@ struct ResearchModeView: View {
             Spacer()
             Text("\(model.researchPreferences.sleepHours, specifier: "%.1f") h")
               .monospacedDigit()
-              .foregroundStyle(Palette.primary)
+              .foregroundStyle(Palette.accent)
           }
         }
 
-        Divider().overlay(Palette.secondary.opacity(0.2))
+        Divider().overlay(Palette.line)
         contextToggle("Caffeine within 6 hours", isOn: $model.researchPreferences.caffeineWithinSixHours)
         contextToggle("Medication may affect performance", isOn: $model.researchPreferences.medicationMayAffectPerformance)
         contextToggle("Illness or injury may affect performance", isOn: $model.researchPreferences.illnessOrInjuryMayAffectPerformance)
@@ -166,22 +166,22 @@ struct ResearchModeView: View {
 
   private var dataCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 14) {
+      VStack(alignment: .leading, spacing: Space.sm) {
         HStack {
-          VStack(alignment: .leading, spacing: 3) {
+          VStack(alignment: .leading, spacing: Space.xxs) {
             Text("Local dataset")
-              .font(.headline)
+              .font(SoberType.body)
             Text("\(model.researchSessions.count) versioned session\(model.researchSessions.count == 1 ? "" : "s")")
-              .font(.caption)
+              .font(SoberType.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
           Spacer()
           Image(systemName: "externaldrive.fill")
-            .foregroundStyle(Palette.primary)
+            .foregroundStyle(Palette.accent)
         }
 
         Text("Participant key: \(shortParticipantID)")
-          .font(.caption.monospaced())
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
 
         if let exportURL {
@@ -227,7 +227,7 @@ struct ResearchModeView: View {
 
   private func contextToggle(_ title: String, isOn: Binding<Bool>) -> some View {
     Toggle(title, isOn: isOn)
-      .font(.subheadline)
-      .tint(Palette.primary)
+      .font(SoberType.subheadline)
+      .tint(Palette.accent)
   }
 }

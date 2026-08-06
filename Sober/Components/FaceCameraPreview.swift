@@ -39,11 +39,11 @@ struct FaceGuideOverlay: View {
 
       Ellipse()
         .stroke(
-          isReady ? Palette.primary : Palette.warning,
+          isReady ? Palette.accent : Palette.warning,
           style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: isReady ? [] : [8, 8])
         )
         .frame(width: 210, height: 280)
-        .shadow(color: (isReady ? Palette.primary : Palette.warning).opacity(0.42), radius: 16)
+        .shadow(color: (isReady ? Palette.accent : Palette.warning).opacity(0.42), radius: 16)
     }
     .allowsHitTesting(false)
     .accessibilityHidden(true)

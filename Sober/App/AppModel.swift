@@ -208,7 +208,9 @@ final class AppModel: ObservableObject {
     metrics: ScreeningMetrics,
     reactionSummary: ChoiceReactionSummary?,
     ocularSummary: GazeCaptureSummary?,
-    startedAt: Date
+    startedAt: Date,
+    resultState: ScreeningResultState? = nil,
+    signalRisks: [String: Double]? = nil
   ) async {
     guard mode == .baseline || researchConsent else { return }
 
@@ -265,7 +267,9 @@ final class AppModel: ObservableObject {
       ocularSummary: ocularSummary,
       ocularQuality: ocularQuality,
       breathReference: nil,
-      protocolVariant: ocularSummary?.protocolVariant ?? .full
+      protocolVariant: ocularSummary?.protocolVariant ?? .full,
+      resultState: resultState,
+      signalRisks: signalRisks
     )
 
     do {

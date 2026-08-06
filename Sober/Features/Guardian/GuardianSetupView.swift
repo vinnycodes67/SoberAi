@@ -4,6 +4,9 @@ import SwiftUI
 /// Circle and Research Center are reached — not part of onboarding, since
 /// Guardian Mode is an independent, opt-in system alongside them.
 struct GuardianSetupView: View {
+  /// False when this is a tab destination rather than a presented sheet —
+  /// there is nothing to dismiss, so the Done button must not appear.
+  var showsDoneButton = true
   @EnvironmentObject private var model: AppModel
   @EnvironmentObject private var guardianCoordinator: GuardianCoordinator
   @Environment(\.dismiss) private var dismiss
@@ -11,14 +14,13 @@ struct GuardianSetupView: View {
   @State private var showingSchedule = false
 
   var body: some View {
-    NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: Space.md) {
           ScreenHeader(
             eyebrow: "Guardian Mode",
             title: "A check-in, not a monitor.",
             detail:
-              "Pairing is mutual and visible on both phones. The other person only ever sees whether a check happened before driving — never a score, never camera or pupil data."
+              "Pairing is mutual and visible on both phones. The other person only ever sees whether a check happened before driving, never a score, never camera or pupil data."
           )
 
           roleCard
@@ -29,21 +31,14 @@ struct GuardianSetupView: View {
             parentSection
           }
         }
-        .padding(22)
+        .padding(Space.lg)
       }
       .soberBackground()
-      .toolbar {
-        ToolbarItem(placement: .confirmationAction) {
-          Button("Done") { dismiss() }
-        }
-      }
       .sheet(isPresented: $showingPairing) {
         pairingSheet
-          .preferredColorScheme(.dark)
       }
       .sheet(isPresented: $showingSchedule) {
         GuardianScheduleView(schedule: $model.drivingSchedule)
-          .preferredColorScheme(.dark)
       }
       .onChange(of: model.guardianRole) { _, role in
         if role == .teen {
@@ -54,13 +49,14 @@ struct GuardianSetupView: View {
           guardianCoordinator.stopTeenMonitoring()
         }
       }
-    }
+      .navigationTitle("Guardian Mode")
+      .navigationBarTitleDisplayMode(.inline)
   }
 
   private var roleCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 14) {
-        Text("This phone is").font(.headline)
+      VStack(alignment: .leading, spacing: Space.sm) {
+        Text("This phone is").font(SoberType.body)
         Picker("Role", selection: $model.guardianRole) {
           Text("Not set up").tag(GuardianRole.none)
           Text("A teen driver").tag(GuardianRole.teen)
@@ -68,7 +64,7 @@ struct GuardianSetupView: View {
         }
         .pickerStyle(.segmented)
         Text(roleDetail)
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
       }
     }
@@ -107,25 +103,25 @@ struct GuardianSetupView: View {
   private var pairingStatusCard: some View {
     Button { showingPairing = true } label: {
       SoberCard {
-        HStack(spacing: 14) {
+        HStack(spacing: Space.sm) {
           ZStack {
-            Circle().fill(Palette.item1.opacity(0.16))
+            Circle().fill(Palette.surfaceRaised)
             Image(systemName: pairingIcon)
-              .foregroundStyle(Palette.item1)
+              .foregroundStyle(Palette.textSecondary)
           }
           .frame(width: 50, height: 50)
-          VStack(alignment: .leading, spacing: 4) {
+          VStack(alignment: .leading, spacing: Space.xxs) {
             Text("Pairing")
-              .font(.headline)
+              .font(SoberType.body)
               .foregroundStyle(Palette.textPrimary)
             Text(pairingSummary)
-              .font(.subheadline)
+              .font(SoberType.subheadline)
               .foregroundStyle(Palette.textSecondary)
               .multilineTextAlignment(.leading)
           }
           Spacer()
           Image(systemName: "chevron.right")
-            .font(.caption.weight(.bold))
+            .font(SoberType.footnoteStrong)
             .foregroundStyle(Palette.textSecondary)
         }
       }
@@ -141,7 +137,7 @@ struct GuardianSetupView: View {
   private var pairingSummary: String {
     switch guardianCoordinator.pairing.status {
     case .paired(let info): "Paired with \(info.participantName)"
-    case .awaitingAcceptance: "Invite ready — waiting for a scan"
+    case .awaitingAcceptance: "Invite ready, waiting for a scan"
     case .working: "Setting up…"
     case .failed(let message): message
     case .notPaired: "Not paired yet"
@@ -165,23 +161,23 @@ struct GuardianSetupView: View {
 
   private var windowStatusCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 8) {
-        Text("Tonight's window").font(.headline)
+      VStack(alignment: .leading, spacing: Space.xs) {
+        Text("Tonight's window").font(SoberType.body)
         if let window = model.drivingSchedule.window(containing: Date()) {
           let state = model.guardianCheckWindowState(for: window.id)
           Text(state.isSatisfied ? "Check completed for tonight." : "Check not completed yet.")
-            .font(.subheadline)
+            .font(SoberType.subheadline)
             .foregroundStyle(state.isSatisfied ? Palette.textSecondary : Palette.warning)
           if let retestAt = state.retestAvailableAt, Date() < retestAt {
             Text(
               "One retest available at \(retestAt.formatted(date: .omitted, time: .shortened))."
             )
-            .font(.caption)
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.textSecondary)
           }
         } else {
           Text("No active window right now.")
-            .font(.subheadline)
+            .font(SoberType.subheadline)
             .foregroundStyle(Palette.textSecondary)
         }
       }
@@ -191,24 +187,24 @@ struct GuardianSetupView: View {
   private var scheduleCard: some View {
     Button { showingSchedule = true } label: {
       SoberCard {
-        HStack(spacing: 14) {
+        HStack(spacing: Space.sm) {
           ZStack {
-            Circle().fill(Palette.item2.opacity(0.16))
+            Circle().fill(Palette.surfaceRaised)
             Image(systemName: "calendar.badge.clock")
-              .foregroundStyle(Palette.item2)
+              .foregroundStyle(Palette.textSecondary)
           }
           .frame(width: 50, height: 50)
-          VStack(alignment: .leading, spacing: 4) {
+          VStack(alignment: .leading, spacing: Space.xxs) {
             Text("Driving schedule")
-              .font(.headline)
+              .font(SoberType.body)
               .foregroundStyle(Palette.textPrimary)
             Text(scheduleSummary)
-              .font(.subheadline)
+              .font(SoberType.subheadline)
               .foregroundStyle(Palette.textSecondary)
           }
           Spacer()
           Image(systemName: "chevron.right")
-            .font(.caption.weight(.bold))
+            .font(SoberType.footnoteStrong)
             .foregroundStyle(Palette.textSecondary)
         }
       }
@@ -233,9 +229,9 @@ struct GuardianSetupView: View {
 
   private var recentEventsCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: Space.sm) {
         HStack {
-          Text("Recent check-ins").font(.headline)
+          Text("Recent check-ins").font(SoberType.body)
           Spacer()
           Button {
             Task { await guardianCoordinator.refreshParentEvents() }
@@ -246,20 +242,20 @@ struct GuardianSetupView: View {
         }
         if guardianCoordinator.parentEvents.isEmpty {
           Text("No check-ins recorded yet.")
-            .font(.subheadline)
+            .font(SoberType.subheadline)
             .foregroundStyle(Palette.textSecondary)
         } else {
           ForEach(Array(guardianCoordinator.parentEvents.prefix(6).enumerated()), id: \.offset) {
             _, event in
             HStack {
               Circle()
-                .fill(event.outcome == .completed ? Palette.primary : Palette.error)
+                .fill(event.outcome == .completed ? Palette.textMuted : Palette.accent)
                 .frame(width: 7, height: 7)
               Text(event.outcome == .completed ? "Completed" : "Missed")
-                .font(.subheadline)
+                .font(SoberType.subheadline)
               Spacer()
               Text(event.occurredAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.caption)
+                .font(SoberType.footnote)
                 .foregroundStyle(Palette.textSecondary)
             }
           }

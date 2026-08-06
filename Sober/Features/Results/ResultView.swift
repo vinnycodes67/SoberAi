@@ -3,13 +3,16 @@ import UIKit
 
 // There is intentionally no green, checkmark, "pass", "clear", or dismiss X.
 // The screen's primary content is the safety message plus a route home.
-// 0.5s: the result halo and a ride/contact card dominate the screen.
+// 0.5s: the verdict in words, then the way home.
 // User: someone who just received a concerning result and needs a fast way to get help.
 // Emotional intent: protected and accountable, never punished or surveilled.
 struct ResultView: View {
   let outcome: ScreeningOutcome
   let safetyPlan: SafetyPlan
   let isSample: Bool
+  /// What the person declared about tonight, echoed read-only so a signal
+  /// can be read in context. Never used in scoring — only shown.
+  var context: ResearchPreferences? = nil
   let onDone: () -> Void
 
   @Environment(\.openURL) private var openURL
@@ -19,40 +22,17 @@ struct ResultView: View {
 
   var body: some View {
     ScrollView {
-      VStack(spacing: 18) {
-        if isSample {
-          PrototypeBadge()
-          Text("Sample result—no live measurement was used")
-            .font(.caption)
-            .foregroundStyle(Palette.textSecondary)
-        }
-
-        SignalHalo(tone: stateColor, size: 164, isActive: outcome.state != .noSignalsDetected)
-          .soberEntrance(order: 0)
-
-        VStack(spacing: 9) {
-          Text(outcome.state.rawValue.replacingOccurrences(of: "_", with: " "))
-            .font(.caption.weight(.bold))
-            .tracking(1.3)
-            .foregroundStyle(stateColor)
-          Text(outcome.state.title)
-            .font(.system(.largeTitle, design: .serif, weight: .semibold))
-            .tracking(-1.0)
-            .multilineTextAlignment(.center)
-          Text(outcome.state.message)
-            .font(.title3.weight(.medium))
-            .multilineTextAlignment(.center)
-            .foregroundStyle(Palette.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .soberEntrance(order: 1)
-
-        signalBreakdown
-          .soberEntrance(order: 2)
+      VStack(alignment: .leading, spacing: Space.xl) {
+        verdict
+          .appear(0)
         InterventionCard(safetyPlan: safetyPlan)
-          .soberEntrance(order: 3)
+          .appear(1)
+        signalBreakdown
+          .appear(2)
+        contextSection
+          .appear(3)
         acknowledgementCard
-          .soberEntrance(order: 4)
+          .appear(4)
 
         Button("Return home", action: onDone)
           .buttonStyle(SecondaryActionButtonStyle(tint: Palette.textSecondary))
@@ -61,13 +41,13 @@ struct ResultView: View {
           .accessibilityValue(returnHomeAccessibilityValue)
           .accessibilityHint(
             canLeave ? "Closes this result" : "Read and acknowledge the safety message first")
-          .soberEntrance(order: 5)
+          .appear(5)
       }
-      .padding(.horizontal, 18)
-      .padding(.top, 16)
-      .padding(.bottom, 30)
+      .padding(.horizontal, Space.margin)
+      .padding(.top, Space.xxl)
+      .padding(.bottom, Space.xl)
     }
-    .soberBackground()
+    .pageBackground()
     .task {
       while secondsRemaining > 0 {
         try? await Task.sleep(for: .seconds(1))
@@ -97,56 +77,161 @@ struct ResultView: View {
     }
   }
 
-  private var signalBreakdown: some View {
-    SoberCard {
-      VStack(alignment: .leading, spacing: 14) {
-        HStack {
-          Text("Signal summary")
-            .font(.headline)
-          Spacer()
-          Text("QUALITY \(Int(outcome.qualityScore * 100))%")
-            .font(.caption2.monospacedDigit().weight(.bold))
-            .tracking(0.8)
-            .foregroundStyle(outcome.qualityScore >= 0.72 ? Palette.primary : Palette.warning)
-        }
 
-        ForEach(outcome.details) { detail in
-          HStack {
-            Circle()
-              .fill(detail.concern ? stateColor : Palette.secondary.opacity(0.55))
-              .frame(width: 7, height: 7)
-            Text(detail.label)
-              .font(.subheadline)
-            Spacer()
-            Text(detail.value)
-              .font(.subheadline.monospacedDigit().weight(.medium))
-              .foregroundStyle(Palette.textSecondary)
-          }
-        }
+  /// The verdict, stated in words. A colored rule carries the state rather
+  /// than a badge or a glyph, so the sentence itself stays the loudest thing
+  /// on the screen.
+  private var verdict: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      if isSample {
+        PrototypeBadge()
+          .padding(.bottom, Space.sm)
+      }
 
-        Text("Prototype scores show what contributed; they are not clinical measurements.")
-          .font(.caption)
-          .foregroundStyle(Palette.textSecondary)
+      HStack(alignment: .top, spacing: Space.md) {
+        Rectangle()
+          .fill(stateColor)
+          .frame(width: 3)
+          .frame(maxHeight: .infinity)
+
+        VStack(alignment: .leading, spacing: Space.sm) {
+          Text(outcome.state.title)
+            .font(SoberType.hero)
+            .heroTracking()
+            .foregroundStyle(Palette.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+          Text(outcome.state.message)
+            .font(SoberType.body)
+            .foregroundStyle(Palette.textSecondary)
+            .readingLine()
+        }
+      }
+      .fixedSize(horizontal: false, vertical: true)
+
+      movedCount
+        .padding(.top, Space.xl)
+
+      if isSample {
+        Text("Sample result. No live measurement was used.")
+          .font(SoberType.footnote)
+          .foregroundStyle(Palette.textTertiary)
+          .padding(.top, Space.md)
+      }
+    }
+  }
+
+  /// Self-reported context, shown read-only. This is why a signal might be
+  /// present for reasons other than alcohol — the app states them rather
+  /// than quietly folding them into a number.
+  @ViewBuilder
+  private var contextSection: some View {
+    if let context, !contextChips(context).isEmpty {
+      SoberSection("What you flagged tonight") {
+        VStack(alignment: .leading, spacing: Space.xs) {
+          FlowChips(items: contextChips(context))
+          Text("Declared by you before this check. Not measured, and not used in scoring.")
+            .font(SoberType.footnote)
+            .foregroundStyle(Palette.textTertiary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+  }
+
+  private func contextChips(_ context: ResearchPreferences) -> [ContextChipItem] {
+    var items: [ContextChipItem] = []
+    if context.sleepHours < 6 {
+      items.append(.init(icon: "bed.double", label: "\(Int(context.sleepHours))h sleep"))
+    }
+    if context.caffeineWithinSixHours {
+      items.append(.init(icon: "cup.and.saucer", label: "Caffeine"))
+    }
+    if context.medicationMayAffectPerformance {
+      items.append(.init(icon: "pills", label: "Medication"))
+    }
+    if context.illnessOrInjuryMayAffectPerformance {
+      items.append(.init(icon: "cross.case", label: "Illness or injury"))
+    }
+    if context.strenuousExerciseWithinTwoHours {
+      items.append(.init(icon: "figure.run", label: "Exercise"))
+    }
+    switch context.visionCorrection {
+    case .glasses: items.append(.init(icon: "eyeglasses", label: "Glasses"))
+    case .contactLenses: items.append(.init(icon: "eye", label: "Contacts"))
+    case .none, .unknown: break
+    }
+    return items
+  }
+
+  /// Each measure plotted against the person's own usual range. This is the
+  /// product's central claim drawn rather than asserted: every row compares
+  /// them only to themselves, and no row is a summary of the others.
+  /// The evidence, drawn as the portrait rather than as a fresh chart. A
+  /// person has been looking at this shape every time they opened the app, so
+  /// the comparison needs no introduction at the worst possible moment.
+  /// How many measures moved, set large.
+  ///
+  /// This is a count, not a score: it says how many of five readings fell
+  /// outside this person's own range, and nothing about the person. The
+  /// distinction matters, and it is why the denominator is always shown.
+  private var movedCount: some View {
+    let moved = outcome.details.filter(\.concern).count
+    let total = outcome.details.count
+
+    return HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
+      Text("\(moved)")
+        .font(SoberType.figureLarge)
+        .heroTracking()
+        .foregroundStyle(moved > 0 ? Palette.accent : Palette.textPrimary)
+        .contentTransition(.numericText())
+      VStack(alignment: .leading, spacing: 2) {
+        Text("of \(total)")
+          .font(SoberType.title)
+          .foregroundStyle(Palette.textMuted)
+        Text(moved == 1 ? "measure outside\nyour usual range" : "measures outside\nyour usual range")
+          .font(SoberType.footnote)
+          .foregroundStyle(Palette.textMuted)
           .fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: 0)
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(moved) of \(total) measures outside your usual range")
+  }
+
+  private var signalBreakdown: some View {
+    Section_("Against your baseline") {
+      VStack(alignment: .leading, spacing: Space.md) {
+        BaselinePortrait(
+          tracks: BaselinePortrait.tracks(from: outcome.details),
+          isEstablished: true,
+          animatesOnAppear: false
+        )
+        PortraitLegend()
+        Text("Prototype measures. They show what contributed, and are not clinical readings.")
+          .font(SoberType.footnote)
+          .foregroundStyle(Palette.textMuted)
+          .readingLine()
       }
     }
   }
 
   private var acknowledgementCard: some View {
     SoberCard {
-      VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: Space.sm) {
         Toggle(isOn: $acknowledged) {
           Text("I understand this result does not mean I’m sober or safe to drive.")
-            .font(.subheadline.weight(.medium))
+            .font(SoberType.body)
             .fixedSize(horizontal: false, vertical: true)
         }
-        .tint(Palette.primary)
+        .tint(Palette.accent)
 
         if secondsRemaining > 0 {
           Text(
             "Safety message remains on screen for \(secondsRemaining) more second\(secondsRemaining == 1 ? "" : "s")."
           )
-          .font(.caption.monospacedDigit())
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
           .contentTransition(.numericText())
           .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: secondsRemaining)
@@ -163,47 +248,46 @@ struct InterventionCard: View {
   @Environment(\.openURL) private var openURL
 
   var body: some View {
-    SoberCard {
-      VStack(alignment: .leading, spacing: 13) {
-        VStack(alignment: .leading, spacing: 4) {
+    AccentCard {
+      VStack(alignment: .leading, spacing: Space.sm) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
           Text("Get home without driving")
-            .font(.title3.weight(.semibold))
-          Text("Open a ride, or call or message your Safety Circle contact directly.")
-            .font(.caption)
+            .font(SoberType.headline)
+            .foregroundStyle(Palette.textPrimary)
+          Text("Nothing sends automatically. Every action here needs your tap.")
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.textSecondary)
+            .readingLine()
         }
 
-        SoberGlassControlGroup(spacing: 10) {
-          Button {
-            openRide()
-          } label: {
-            Label("Open \(safetyPlan.preferredRide)", systemImage: "car.side.fill")
-          }
-          .buttonStyle(PrimaryActionButtonStyle())
+        Button {
+          openRide()
+        } label: {
+          Label("Open \(safetyPlan.preferredRide)", systemImage: "car.fill")
+        }
+        .buttonStyle(OnAccentButtonStyle())
 
-          if safetyPlan.hasContact {
-            HStack(spacing: 10) {
-              Button {
-                callContact()
-              } label: {
-                Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
-              }
-              .buttonStyle(CompactActionButtonStyle())
-
-              Button {
-                messageContact()
-              } label: {
-                Label("Message", systemImage: "message.fill")
-              }
-              .buttonStyle(CompactActionButtonStyle())
+        if safetyPlan.hasContact {
+          HStack(spacing: Space.xs) {
+            Button {
+              callContact()
+            } label: {
+              Label("Call \(safetyPlan.contactName)", systemImage: "phone.fill")
             }
-          }
-        }
+            .buttonStyle(OnAccentButtonStyle(filled: false))
 
-        if !safetyPlan.hasContact {
-          Text("Add a contact in your Safety Circle to call or message them from here.")
-            .font(.caption)
+            Button {
+              messageContact()
+            } label: {
+              Label("Message", systemImage: "message.fill")
+            }
+            .buttonStyle(OnAccentButtonStyle(filled: false))
+          }
+        } else {
+          Text("Add a contact in your Safety Circle to call or message from here.")
+            .font(SoberType.footnote)
             .foregroundStyle(Palette.textSecondary)
+            .readingLine()
         }
       }
     }
@@ -242,43 +326,27 @@ struct InterventionCard: View {
   }
 }
 
-private struct CompactActionButtonStyle: ButtonStyle {
+/// Buttons that sit on the accent card. `filled` is the solid white primary;
+/// unfilled is an outlined secondary that still clears contrast on purple.
+/// Buttons inside the intervention block. The filled one is matte
+/// turquoise; the others are plain panels. Nothing glows.
+private struct OnAccentButtonStyle: ButtonStyle {
+  var filled = true
+
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-  @ViewBuilder
   func makeBody(configuration: Configuration) -> some View {
-    if #available(iOS 26.0, *) {
-      label(configuration)
-        .glassEffect(
-          .regular.interactive(),
-          in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-        )
-    } else {
-      label(configuration)
-        .background(
-          reduceTransparency
-            ? Palette.cardBackground
-            : Palette.primary.opacity(configuration.isPressed ? 0.16 : 0.08),
-          in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-        )
-        .overlay {
-          RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .stroke(Palette.primary.opacity(0.34), lineWidth: 1)
-        }
-        .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.978)
-        .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
-    }
-  }
-
-  private func label(_ configuration: Configuration) -> some View {
-    configuration.label
-      .font(.subheadline.weight(.semibold))
+    let shape = RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+    return configuration.label
+      .font(SoberType.headline)
       .lineLimit(1)
       .minimumScaleFactor(0.78)
       .frame(maxWidth: .infinity)
       .frame(minHeight: 50)
-      .foregroundStyle(Palette.primary)
-      .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .foregroundStyle(filled ? Palette.ink : Palette.textPrimary)
+      .background(shape.fill(filled ? Palette.accent : Palette.panelHigh))
+      .contentShape(shape)
+      .opacity(configuration.isPressed ? 0.82 : 1)
+      .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
   }
 }

@@ -20,8 +20,8 @@ struct OcularTaskView: View {
 
       GeometryReader { proxy in
         ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
+          RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+            .fill(Palette.raised)
 
           targetGuides(in: proxy.size)
 
@@ -30,10 +30,10 @@ struct OcularTaskView: View {
               let elapsed = timeline.date.timeIntervalSince(startedAt)
               let target = OcularProtocolSchedule.target(at: elapsed, variant: activeVariant)
               Circle()
-                .fill(Palette.primary)
+                .fill(Palette.accent)
                 .frame(width: target.phase == .saccades ? 22 : 26, height: target.phase == .saccades ? 22 : 26)
                 .overlay { Circle().stroke(.white.opacity(0.6), lineWidth: 2) }
-                .shadow(color: Palette.primary.opacity(0.58), radius: 18)
+                .shadow(color: Palette.accent.opacity(0.58), radius: 18)
                 .position(
                   x: proxy.size.width * target.x,
                   y: proxy.size.height * target.y
@@ -41,7 +41,7 @@ struct OcularTaskView: View {
                 .accessibilityLabel(target.phase.title)
             }
           } else {
-            SignalHalo(size: 178, isActive: false)
+            StateMark(symbol: "eye", tint: Palette.textTertiary, size: 92)
           }
 
           VStack {
@@ -51,25 +51,25 @@ struct OcularTaskView: View {
                 ZStack {
                   FaceCameraPreview(service: service)
                   Ellipse()
-                    .stroke(service.quality.facePresent ? Palette.primary : Palette.warning, lineWidth: 1.5)
-                    .padding(8)
+                    .stroke(service.quality.facePresent ? Palette.textPrimary : Palette.accent, lineWidth: 1.5)
+                    .padding(Space.xs)
                 }
                 .frame(width: 78, height: 102)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
                 .overlay {
-                  RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Palette.secondary.opacity(0.35), lineWidth: 1)
+                  RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                    .stroke(Palette.lineStrong, lineWidth: 1)
                 }
               }
             }
             Spacer()
           }
-          .padding(12)
+          .padding(Space.sm)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
         .overlay {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+          RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+            .stroke(Palette.line, lineWidth: 1)
         }
       }
       .frame(height: 330)
@@ -78,11 +78,11 @@ struct OcularTaskView: View {
 
       if reduceMotion {
         SoberCard {
-          VStack(alignment: .leading, spacing: 10) {
+          VStack(alignment: .leading, spacing: Space.xs) {
             Label("Reduced Motion is enabled", systemImage: "figure.walk.motion")
-              .font(.headline)
+              .font(SoberType.body)
             Text("This variant uses a static hold and jump targets only. It still records a live visual sample when the camera is usable.")
-              .font(.caption)
+              .font(SoberType.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
         }
@@ -141,12 +141,12 @@ struct OcularTaskView: View {
       path.move(to: CGPoint(x: size.width * 0.5, y: size.height * 0.18))
       path.addLine(to: CGPoint(x: size.width * 0.5, y: size.height * 0.82))
     }
-    .stroke(Palette.secondary.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 8]))
+    .stroke(Palette.line, style: StrokeStyle(lineWidth: 1, dash: [4, 8]))
   }
 
   private var protocolProgress: some View {
-    VStack(spacing: 9) {
-      HStack(spacing: 7) {
+    VStack(spacing: Space.xs) {
+      HStack(spacing: Space.xs) {
         ForEach(progressPhases, id: \.self) { phase in
           Capsule()
             .fill(progressColor(for: phase))
@@ -161,7 +161,7 @@ struct OcularTaskView: View {
             .monospacedDigit()
         }
       }
-      .font(.caption.weight(.medium))
+      .font(SoberType.footnoteStrong)
       .foregroundStyle(service.quality.facePresent ? Palette.textSecondary : Palette.warning)
     }
   }
@@ -176,13 +176,13 @@ struct OcularTaskView: View {
   private var activeVariant: OcularProtocolVariant { reduceMotion ? .reducedMotion : .full }
 
   private func progressColor(for phase: OcularPhase) -> Color {
-    guard let startedAt else { return Palette.secondary.opacity(0.22) }
+    guard let startedAt else { return Palette.line }
     let current = OcularProtocolSchedule.target(at: Date().timeIntervalSince(startedAt), variant: activeVariant).phase
     let phases = progressPhases
     guard let currentIndex = phases.firstIndex(of: current),
       let phaseIndex = phases.firstIndex(of: phase)
-    else { return Palette.secondary.opacity(0.22) }
-    return phaseIndex <= currentIndex ? Palette.primary : Palette.secondary.opacity(0.22)
+    else { return Palette.line }
+    return phaseIndex <= currentIndex ? Palette.accent : Palette.line
   }
 
   private var canCapture: Bool {

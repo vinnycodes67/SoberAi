@@ -115,7 +115,8 @@ struct ScreeningFlowView: View {
             ResultView(
               outcome: outcome,
               safetyPlan: model.safetyPlan,
-              isSample: configuration.scenario != .live
+              isSample: configuration.scenario != .live,
+              context: configuration.scenario == .live ? model.researchPreferences : nil
             ) {
               dismiss()
             }
@@ -138,26 +139,25 @@ struct ScreeningFlowView: View {
             removal: .opacity.combined(with: .offset(x: -8))
           )
       )
-      .animation(reduceMotion ? nil : SoberMotion.screen, value: step)
+      .padding(.top, canExit ? 56 : 0)
+      .animation(reduceMotion ? nil : Motion.standard, value: step)
 
       if canExit {
-        HStack {
-          Spacer()
-          Button {
-            showingExitAlert = true
-          } label: {
-            Image(systemName: "xmark")
-              .font(.subheadline.weight(.bold))
-              .foregroundStyle(Palette.textSecondary)
-              .frame(width: 44, height: 44)
-              .soberGlassCircle()
-          }
-          .accessibilityLabel("Exit check")
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        closeControl
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, Space.sm)
+          .padding(.top, Space.xxs)
+      }
+
+      if let index = taskIndex {
+        taskDots(current: index)
+          .frame(maxHeight: .infinity, alignment: .bottom)
+          .padding(.bottom, Space.lg)
       }
     }
+    // The check stays dark regardless of system appearance: the ocular and
+    // light-reflex tasks control screen luminance as part of the protocol, so
+    // a light page would corrupt the capture.
     .preferredColorScheme(.dark)
     .interactiveDismissDisabled()
     .alert("Leave this check?", isPresented: $showingExitAlert) {
@@ -172,6 +172,54 @@ struct ScreeningFlowView: View {
     step != .result && step != .baselineComplete && configuration.scenario == .live
   }
 
+  /// The only chrome during a task. Low contrast, out of the way, and never
+  /// competing with the target.
+  private var closeControl: some View {
+    Button {
+      showingExitAlert = true
+    } label: {
+      Image(systemName: "xmark")
+        .font(.system(size: 15, weight: .medium))
+        .foregroundStyle(Palette.textMuted)
+        .frame(width: Hit.minimum, height: Hit.minimum)
+        .contentShape(Rectangle())
+    }
+    .accessibilityLabel("Leave check")
+  }
+
+  /// Progress, stated as quietly as it can be. Five dots at the very bottom
+  /// of the screen: glanceable, peripheral, and ignorable.
+  ///
+  /// A step counter tells someone how much longer they must endure, which is
+  /// the wrong frame for a task that asks for attention.
+  private func taskDots(current: Int) -> some View {
+    HStack(spacing: Space.xs) {
+      ForEach(1...Self.taskCount, id: \.self) { index in
+        Circle()
+          .fill(index <= current ? Palette.accent : Palette.textMuted.opacity(0.35))
+          .frame(width: 4, height: 4)
+      }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Task \(current) of \(Self.taskCount)")
+  }
+
+  private static let taskCount = 5
+
+  /// 1-based position among the five measured tasks, or `nil` for the setup
+  /// and scoring steps that bracket them.
+  private var taskIndex: Int? {
+    switch step {
+    case .reaction: 1
+    case .tracking: 2
+    case .timing: 3
+    case .gaze: 4
+    case .pupil: 5
+    case .attestation, .environment, .analyzing, .result, .baselineComplete: nil
+    }
+  }
+
+
   private func handleSelfReport(_ answer: SelfReport) {
     selfReport = answer
     guard answer == .no else {
@@ -184,7 +232,8 @@ struct ScreeningFlowView: View {
         qualityScore: 0,
         completedAllTasks: false
       )
-      presentOutcome(engine.evaluate(selfReport: answer, metrics: metrics))
+      let gateOutcome = engine.evaluate(selfReport: answer, metrics: metrics)
+      presentOutcome(gateOutcome)
       Task {
         await model.recordCompletedSession(
           mode: .check,
@@ -192,7 +241,9 @@ struct ScreeningFlowView: View {
           metrics: metrics,
           reactionSummary: nil,
           ocularSummary: nil,
-          startedAt: sessionStartedAt
+          startedAt: sessionStartedAt,
+          resultState: gateOutcome.state,
+          signalRisks: gateOutcome.signalRisks
         )
       }
       return
@@ -211,7 +262,8 @@ struct ScreeningFlowView: View {
       qualityScore: 0,
       completedAllTasks: false
     )
-    presentOutcome(engine.evaluate(selfReport: answer, metrics: metrics))
+    let routeOutcome = engine.evaluate(selfReport: answer, metrics: metrics)
+    presentOutcome(routeOutcome)
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -219,7 +271,9 @@ struct ScreeningFlowView: View {
         metrics: metrics,
         reactionSummary: nil,
         ocularSummary: nil,
-        startedAt: sessionStartedAt
+        startedAt: sessionStartedAt,
+        resultState: routeOutcome.state,
+        signalRisks: routeOutcome.signalRisks
       )
     }
   }
@@ -272,8 +326,9 @@ struct ScreeningFlowView: View {
       return
     }
 
-    presentOutcome(
-      engine.evaluate(selfReport: selfReport, metrics: metrics, personalBaseline: model.baseline))
+    let checkOutcome = engine.evaluate(
+      selfReport: selfReport, metrics: metrics, personalBaseline: model.baseline)
+    presentOutcome(checkOutcome)
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -281,7 +336,9 @@ struct ScreeningFlowView: View {
         metrics: metrics,
         reactionSummary: reactionSummary,
         ocularSummary: ocularSummary,
-        startedAt: sessionStartedAt
+        startedAt: sessionStartedAt,
+        resultState: checkOutcome.state,
+        signalRisks: checkOutcome.signalRisks
       )
     }
   }
@@ -298,26 +355,30 @@ struct ScreeningFlowView: View {
   }
 }
 
+/// The container every step of the check sits in.
+///
+/// It draws no progress of its own: the flow header above already states the
+/// task and its position, and two indicators saying the same thing is exactly
+/// the noise this screen cannot afford. Content is given generous vertical
+/// room so a task reads as one thing to do rather than a page to work down.
 struct FlowContainer<Content: View>: View {
   let progress: Int?
   @ViewBuilder let content: Content
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 24) {
-        if let progress {
-          StepProgress(current: progress, total: 6)
-            .padding(.trailing, 54)
-        }
+      VStack(alignment: .leading, spacing: Space.xl) {
         content
       }
-      .soberEntrance()
-      .padding(.horizontal, 22)
-      .padding(.top, 58)
-      .padding(.bottom, 24)
+      .appear()
+      .padding(.horizontal, Space.lg)
+      .padding(.top, Space.xl)
+      .padding(.bottom, Space.xl)
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
+    .scrollIndicators(.hidden)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .soberBackground()
+    .pageBackground()
   }
 }
 
@@ -339,10 +400,10 @@ private struct BaselineAttestationView: View {
           Text(
             "I haven’t used alcohol, cannabis, stimulants, opioids, or other impairing substances in the last 4 hours, and I feel rested."
           )
-          .font(.body.weight(.medium))
+          .font(SoberType.body)
           .fixedSize(horizontal: false, vertical: true)
         }
-        .tint(Palette.primary)
+        .tint(Palette.accent)
       }
 
       Button("Begin baseline session", action: onContinue)
@@ -351,7 +412,7 @@ private struct BaselineAttestationView: View {
         .opacity(attested ? 1 : 0.42)
 
       Text("Don’t use a baseline session to decide whether to drive.")
-        .font(.caption)
+        .font(SoberType.footnote)
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -373,7 +434,7 @@ private struct SelfReportView: View {
           "Be honest with yourself. Your answer stays on this iPhone and overrides the task result."
       )
 
-      VStack(spacing: 10) {
+      VStack(spacing: Space.xs) {
         answerButton("Yes", value: .yes)
         answerButton("I’m not sure", value: .unsure)
         answerButton("No", value: .no)
@@ -381,13 +442,13 @@ private struct SelfReportView: View {
 
       if let selection, selection != .no {
         SoberCard {
-          HStack(alignment: .top, spacing: 12) {
+          HStack(alignment: .top, spacing: Space.sm) {
             Image(systemName: "hand.raised.fill")
               .foregroundStyle(Palette.warning)
             Text(
               "We won’t run tasks to talk you out of what you already know. Safer options come next."
             )
-            .font(.subheadline.weight(.medium))
+            .font(SoberType.body)
             .fixedSize(horizontal: false, vertical: true)
           }
         }
@@ -395,11 +456,11 @@ private struct SelfReportView: View {
 
       if isVoiceOverEnabled {
         SoberCard {
-          VStack(alignment: .leading, spacing: 8) {
+          VStack(alignment: .leading, spacing: Space.xs) {
             Text("I can’t do the visual tasks")
-              .font(.headline)
+              .font(SoberType.body)
             Text("The visual tasks need sight and a steady drag. You can skip them and still get to the safer next step.")
-              .font(.subheadline)
+              .font(SoberType.subheadline)
               .foregroundStyle(Palette.textSecondary)
           }
         }
@@ -414,13 +475,13 @@ private struct SelfReportView: View {
         if let selection { onContinue(selection) }
       }
       .buttonStyle(
-        PrimaryActionButtonStyle(tint: selection == .no ? Palette.primary : Palette.warning)
+        PrimaryActionButtonStyle()
       )
       .disabled(selection == nil)
       .opacity(selection == nil ? 0.42 : 1)
 
       Text("Sober never returns a no-signals result after reported use.")
-        .font(.caption)
+        .font(SoberType.footnote)
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -431,21 +492,21 @@ private struct SelfReportView: View {
       selection = value
     } label: {
       HStack {
-        Text(title).font(.headline)
+        Text(title).font(SoberType.body)
         Spacer()
         Image(systemName: selection == value ? "checkmark.circle.fill" : "circle")
-          .foregroundStyle(selection == value ? Palette.primary : Palette.textSecondary)
+          .foregroundStyle(selection == value ? Palette.accent : Palette.textSecondary)
       }
       .foregroundStyle(Palette.textPrimary)
-      .padding(.horizontal, 18)
+      .padding(.horizontal, Space.md)
       .frame(minHeight: 58)
       .background(
-        Palette.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        Palette.raised, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
       )
       .overlay {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
           .stroke(
-            selection == value ? Palette.primary : Palette.secondary.opacity(0.2), lineWidth: 1)
+            selection == value ? Palette.accent : Palette.line, lineWidth: 1)
       }
     }
     .buttonStyle(.plain)
@@ -455,16 +516,49 @@ private struct SelfReportView: View {
 private struct AnalyzingView: View {
   let onComplete: () -> Void
 
+  private static let tasks = [
+    "Reaction", "Tracking", "Timing", "Guided gaze", "Light reflex",
+  ]
+
   var body: some View {
-    VStack(spacing: 26) {
-      SignalHalo(size: 238)
-      VStack(spacing: 8) {
+    VStack(spacing: Space.lg) {
+      ProgressRing(completed: 5, total: 5, size: 148)
+
+      VStack(spacing: Space.xs) {
         Text("Comparing your signals")
-          .font(.system(.title, design: .serif, weight: .semibold))
-        Text("Reaction · tracking · timing · guided gaze · light reflex")
-          .font(.caption)
+          .font(SoberType.title)
+          .titleTracking()
+        Text("Against your own baseline, not against anyone else's.")
+          .font(SoberType.subheadline)
           .foregroundStyle(Palette.textSecondary)
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
       }
+
+      VStack(spacing: 0) {
+        ForEach(Array(Self.tasks.enumerated()), id: \.offset) { index, task in
+          if index > 0 { SoberDivider() }
+          HStack(spacing: Space.sm) {
+            Image(systemName: "checkmark")
+              .font(.system(size: 11, weight: .bold))
+              .foregroundStyle(Palette.accentBright)
+              .frame(width: 16)
+            Text(task)
+              .font(SoberType.subheadline)
+              .foregroundStyle(Palette.textSecondary)
+            Spacer()
+          }
+          .padding(.horizontal, Space.md)
+          .padding(.vertical, Space.sm)
+        }
+      }
+      .background(
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous).fill(Palette.raised)
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous).stroke(Palette.line, lineWidth: 1)
+      )
+      .padding(.horizontal, Space.md)
     }
     .soberEntrance()
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -483,13 +577,13 @@ private struct BaselineCompleteView: View {
   let onDone: () -> Void
 
   var body: some View {
-    VStack(spacing: 24) {
+    VStack(spacing: Space.lg) {
       Spacer()
-      SignalHalo(tone: Palette.item0, size: 210, isActive: false)
+      StateMark(symbol: accepted ? "checkmark" : "minus", size: 104)
         .soberEntrance(order: 0)
-      VStack(spacing: 9) {
+      VStack(spacing: Space.xs) {
         Text(accepted ? "Baseline recorded" : completionState.title)
-          .font(.system(.largeTitle, design: .serif, weight: .semibold))
+          .font(SoberType.hero)
         Text(
           accepted
             ? (sessions >= 5
@@ -503,9 +597,9 @@ private struct BaselineCompleteView: View {
       .soberEntrance(order: 1)
       SoberCard {
         Text(
-          "This was calibration—not a driving result. It does not mean you’re sober or safe to drive."
+          "This was calibration, not a driving result. It does not mean you’re sober or safe to drive."
         )
-        .font(.subheadline.weight(.medium))
+        .font(SoberType.body)
         .fixedSize(horizontal: false, vertical: true)
       }
       .soberEntrance(order: 2)
@@ -514,7 +608,7 @@ private struct BaselineCompleteView: View {
         .buttonStyle(PrimaryActionButtonStyle())
         .soberEntrance(order: 3)
     }
-    .padding(22)
+    .padding(Space.lg)
     .soberBackground()
   }
 }

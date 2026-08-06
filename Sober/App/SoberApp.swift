@@ -13,8 +13,17 @@ struct SoberApp: App {
       RootView()
         .environmentObject(model)
         .environmentObject(guardianCoordinator)
+        // Locked dark. The app is opened at night by someone deciding
+        // whether to drive; a light page would be hostile in that moment.
+        // This also carries the appearance into system surfaces: alerts,
+        // pickers, and the keyboard.
         .preferredColorScheme(.dark)
-        .tint(Palette.primary)
+        .tint(Palette.accent)
+        // Every screen inherits the bundled face; anything that slips through
+        // without an explicit `SoberType` font still lands on General Sans
+        // rather than falling back to the system font.
+        .font(SoberType.body)
+        .foregroundStyle(Palette.textPrimary)
         .onAppear {
           guardianCoordinator.configure(model: model)
           appDelegate.guardianCoordinator = guardianCoordinator

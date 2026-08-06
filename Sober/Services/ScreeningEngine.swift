@@ -202,14 +202,16 @@ struct ScreeningEngine: Sendable {
         id: "reaction",
         label: "Reaction",
         value: "\(Int(metrics.reactionTimeMilliseconds.rounded())) ms",
-        concern: reactionRisk >= 0.55 || metrics.reactionMisses > 0
+        concern: reactionRisk >= 0.55 || metrics.reactionMisses > 0,
+        risk: reactionRisk
       ),
       trackingDetail(risk: trackingRisk, error: metrics.trackingError),
       SignalDetail(
         id: "timing",
         label: "Time estimate",
         value: "\(Int(metrics.timeEstimateError * 100))% off",
-        concern: timingRisk >= 0.55
+        concern: timingRisk >= 0.55,
+        risk: timingRisk
       ),
       gazeDetail(risk: gazeRisk, smoothness: metrics.gazeSmoothness),
       pupilDetail(risk: pupilRisk, sample: metrics.pupillometry),
@@ -227,7 +229,8 @@ struct ScreeningEngine: Sendable {
       id: "pupil",
       label: "Light reflex",
       value: "\(Int(averageAmplitude * 100))% reactive",
-      concern: risk >= 0.55
+      concern: risk >= 0.55,
+      risk: risk
     )
   }
 
@@ -240,7 +243,8 @@ struct ScreeningEngine: Sendable {
       id: "tracking",
       label: "Motor tracking",
       value: "\(Int((1 - error) * 100))% steady",
-      concern: risk >= 0.55
+      concern: risk >= 0.55,
+      risk: risk
     )
   }
 
@@ -253,7 +257,8 @@ struct ScreeningEngine: Sendable {
       id: "gaze",
       label: "Guided gaze",
       value: "\(Int((1 - smoothness) * 100))% smooth",
-      concern: risk >= 0.55
+      concern: risk >= 0.55,
+      risk: risk
     )
   }
 

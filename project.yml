@@ -17,10 +17,59 @@ targets:
         excludes:
           - Info.plist
           - Sober.entitlements
+
+    # Info.plist and the entitlements file are GENERATED from the properties
+    # below on every `xcodegen generate`. Anything hand-edited into those two
+    # files is destroyed on the next run, silently.
+    #
+    # This previously happened: the usage descriptions, background modes, and
+    # the CloudKit entitlement were wiped, which would have crashed the app on
+    # first camera access and broken Guardian Mode pairing. Declare keys here,
+    # never in the plist.
     info:
       path: Sober/Info.plist
+      properties:
+        CFBundleDisplayName: Sober
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.healthcare-fitness
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        # Required. iOS terminates the app on camera access without this.
+        NSCameraUsageDescription:
+          Sober processes eye and face landmarks on this iPhone during a check.
+          Raw frames are not saved or uploaded.
+        NSMotionUsageDescription:
+          Guardian Mode uses motion activity to notice when driving may have
+          started, entirely on this iPhone. No motion data leaves the device.
+        UIBackgroundModes:
+          - remote-notification
+          - processing
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.soberprototype.app.driving-catchup
+        # Bundled typefaces. Satoshi is the active face; General Sans is kept
+        # registered so the swap in SoberType.Face can be reverted without a
+        # project change.
+        UIAppFonts:
+          - Satoshi-Regular.otf
+          - Satoshi-Medium.otf
+          - Satoshi-Bold.otf
+          - Satoshi-Black.otf
+          - GeneralSans-Regular.otf
+          - GeneralSans-Medium.otf
+          - GeneralSans-Semibold.otf
+          - GeneralSans-Bold.otf
+
     entitlements:
       path: Sober/Sober.entitlements
+      properties:
+        aps-environment: development
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.soberprototype.app
+        com.apple.developer.icloud-services:
+          - CloudKit
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app

@@ -22,67 +22,61 @@ struct ReactionTaskView: View {
 
   var body: some View {
     FlowContainer(progress: 1) {
-      ScreenHeader(
-        eyebrow: "Divided attention",
-        title: "Match the color and shape.",
-        detail: "Wait for the cue, then choose its exact match. Early, incorrect, and missed responses are recorded."
-      )
+      Text("Match the shape you see.")
+        .font(SoberType.title)
+        .titleTracking()
+        .foregroundStyle(Palette.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
 
-      VStack(spacing: 14) {
+      VStack(spacing: Space.md) {
         ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
-            .overlay {
-              RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
-            }
+          RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+            .fill(Palette.surface)
 
           if phase == .target {
             reactionSymbol(target, size: 94)
               .shadow(color: symbolColor(target).opacity(0.42), radius: 22)
               .accessibilityLabel("Target: \(target.accessibilityLabel)")
           } else {
-            VStack(spacing: 12) {
+            VStack(spacing: Space.sm) {
               if phase == .intro {
-                Text("6 choices")
-                  .font(.system(.title, design: .rounded, weight: .semibold))
-                Text("Color + shape + timing")
-                  .font(.subheadline)
+                Text("Six rounds")
+                  .font(SoberType.body)
                   .foregroundStyle(Palette.textSecondary)
               } else if phase == .waiting {
                 Circle()
-                  .fill(Palette.secondary.opacity(0.25))
+                  .fill(Palette.line)
                   .frame(width: 12, height: 12)
-                Text("Wait…")
-                  .font(.subheadline)
-                  .foregroundStyle(Palette.textSecondary)
+                Text("Wait")
+                  .font(SoberType.body)
+                  .foregroundStyle(Palette.textMuted)
               } else {
                 Image(systemName: "checkmark")
-                  .font(.title2.weight(.bold))
-                  .foregroundStyle(Palette.primary)
+                  .font(SoberType.title)
+                  .foregroundStyle(Palette.accent)
               }
             }
           }
         }
-        .frame(height: 200)
+        .frame(height: 260)
 
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Space.xs) {
           ForEach(ChoiceReactionSymbol.allCases, id: \.rawValue) { choice in
             Button {
               choiceTapped(choice)
             } label: {
-              HStack(spacing: 10) {
+              HStack(spacing: Space.xs) {
                 reactionSymbol(choice, size: 28)
                 Text(choice.accessibilityLabel)
-                  .font(.caption.weight(.semibold))
+                  .font(SoberType.footnoteStrong)
                   .foregroundStyle(Palette.textPrimary)
                 Spacer(minLength: 0)
               }
-              .padding(.horizontal, 12)
+              .padding(.horizontal, Space.sm)
               .frame(minHeight: 54)
-              .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+              .background(Palette.raised, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
               .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
                   .stroke(symbolColor(choice).opacity(0.4), lineWidth: 1)
               }
             }
@@ -101,7 +95,7 @@ struct ReactionTaskView: View {
             .foregroundStyle(Palette.warning)
         }
       }
-      .font(.caption.monospacedDigit())
+      .font(SoberType.footnote)
       .foregroundStyle(Palette.textSecondary)
 
       if phase == .intro {
@@ -200,8 +194,11 @@ struct ReactionTaskView: View {
     }
   }
 
+  /// The task is "match the colour and shape", so these two must never
+  /// collapse to the same value. An earlier palette sweep made both branches
+  /// identical, which left the task unplayable.
   private func symbolColor(_ symbol: ChoiceReactionSymbol) -> Color {
-    symbol.colorName == "Blue" ? Palette.primary : Palette.accent
+    symbol.colorName == "Blue" ? Palette.stimulusBlue : Palette.stimulusMagenta
   }
 }
 
@@ -227,8 +224,8 @@ struct MotorTrackingTaskView: View {
         let displayPosition = fingerPosition == .zero ? start : fingerPosition
 
         ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
+          RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+            .fill(Palette.raised)
 
           Canvas { context, _ in
             var path = Path()
@@ -238,27 +235,27 @@ struct MotorTrackingTaskView: View {
             }
             context.stroke(
               path,
-              with: .color(Palette.secondary.opacity(0.42)),
+              with: .color(Palette.lineStrong),
               style: StrokeStyle(lineWidth: 18, lineCap: .round)
             )
             context.stroke(
               path,
-              with: .color(Palette.primary.opacity(0.74)),
+              with: .color(Palette.accent.opacity(0.74)),
               style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [3, 8])
             )
           }
 
           Circle()
-            .fill(Palette.primary)
+            .fill(Palette.accent)
             .frame(width: 54, height: 54)
             .overlay { Circle().stroke(Palette.textPrimary.opacity(0.5), lineWidth: 2) }
-            .shadow(color: Palette.primary.opacity(0.32), radius: 16)
+            .shadow(color: Palette.accent.opacity(0.32), radius: 16)
             .position(displayPosition)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
         .overlay {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+          RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+            .stroke(Palette.line, lineWidth: 1)
         }
         .contentShape(Rectangle())
         .gesture(
@@ -289,7 +286,7 @@ struct MotorTrackingTaskView: View {
         .accessibilityHint("Drag from the left edge to the right edge following the curved path")
         // This path cannot measure coordination, so it reports "not measured"
         // rather than a stand-in score. The check then ends as inconclusive.
-        .accessibilityAction(named: "Skip tracing — result will be inconclusive") {
+        .accessibilityAction(named: "Skip tracing, result will be inconclusive") {
           guard !finished else { return }
           finished = true
           onComplete(.notMeasured)
@@ -297,11 +294,11 @@ struct MotorTrackingTaskView: View {
       }
       .frame(height: 330)
 
-      HStack(spacing: 9) {
+      HStack(spacing: Space.xs) {
         Image(systemName: "arrow.right")
-          .foregroundStyle(Palette.primary)
+          .foregroundStyle(Palette.accent)
         Text("If you lift early, the path resets. That is expected.")
-          .font(.caption)
+          .font(SoberType.footnote)
           .foregroundStyle(Palette.textSecondary)
       }
     }
@@ -331,20 +328,20 @@ struct TimeEstimateTaskView: View {
       )
 
       ZStack {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
-          .fill(Palette.cardBackground)
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+          .fill(Palette.raised)
 
         if startedAt == nil {
-          SignalHalo(size: 220, isActive: false)
+          StateMark(symbol: "hand.tap", tint: Palette.textTertiary, size: 92)
         } else {
           TimelineView(.animation(paused: reduceMotion)) { timeline in
             let elapsed = timeline.date.timeIntervalSince(startedAt ?? timeline.date)
             ZStack {
               Circle()
-                .stroke(Palette.primary.opacity(0.12), lineWidth: 2)
+                .stroke(Palette.accent.opacity(0.12), lineWidth: 2)
                 .frame(width: reduceMotion ? 150 : 150 + sin(elapsed * 1.4) * 12)
               Circle()
-                .fill(Palette.primary)
+                .fill(Palette.accent)
                 .frame(width: 12, height: 12)
             }
           }
@@ -352,8 +349,8 @@ struct TimeEstimateTaskView: View {
       }
       .frame(height: 300)
       .overlay {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
-          .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+        RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+          .stroke(Palette.line, lineWidth: 1)
       }
 
       Button(startedAt == nil ? "Start counting" : "Stop now") {
@@ -369,7 +366,7 @@ struct TimeEstimateTaskView: View {
       .buttonStyle(PrimaryActionButtonStyle())
 
       Text("The timer stays hidden on purpose.")
-        .font(.caption)
+        .font(SoberType.footnote)
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }
