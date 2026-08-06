@@ -30,6 +30,14 @@ targets:
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
         UIUserInterfaceStyle: Dark
+        # Bundled typefaces for DesignKit. Satoshi ships under the Fontshare
+        # Free Font Licence, which permits commercial use in apps; the EULA is
+        # in Sober/Resources/Fonts.
+        UIAppFonts:
+          - Satoshi-Regular.otf
+          - Satoshi-Medium.otf
+          - Satoshi-Bold.otf
+          - Satoshi-Black.otf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app
