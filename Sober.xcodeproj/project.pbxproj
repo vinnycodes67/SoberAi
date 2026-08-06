@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08A851590CA7A6ED0ABFF445 /* DSResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6207FDAE7E7349B990EAC653 /* DSResultScreen.swift */; };
 		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
 		0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */; };
 		1D1326C4DC1C9225BADB044D /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 922CB8B49235BD85CA25CDA7 /* README.md */; };
 		1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */; };
 		2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
 		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
+		33381EAC09FDFE42F2D71F5C /* DSHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF3D4323CCCC873108E06AEC /* DSHomeScreen.swift */; };
 		37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
@@ -99,6 +101,7 @@
 		48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Black.otf"; sourceTree = "<group>"; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
 		6127949ED5CD1BF168B4251C /* DSTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTabBar.swift; sourceTree = "<group>"; };
+		6207FDAE7E7349B990EAC653 /* DSResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSResultScreen.swift; sourceTree = "<group>"; };
 		64D21C92E2C87F13E3587EA3 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
 		68A29C931E495C2E4717792E /* PupillometryTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupillometryTaskView.swift; sourceTree = "<group>"; };
@@ -116,6 +119,7 @@
 		A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewRegressionTests.swift; sourceTree = "<group>"; };
 		ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSBaselinePortrait.swift; sourceTree = "<group>"; };
 		BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRiskTests.swift; sourceTree = "<group>"; };
+		BF3D4323CCCC873108E06AEC /* DSHomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHomeScreen.swift; sourceTree = "<group>"; };
 		C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSGallery.swift; sourceTree = "<group>"; };
 		C9001A9459892F746005CE25 /* OcularModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularModels.swift; sourceTree = "<group>"; };
 		CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianAPIClient.swift; sourceTree = "<group>"; };
@@ -247,6 +251,15 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		7BA9B9C8590A9ABE6F39B865 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				BF3D4323CCCC873108E06AEC /* DSHomeScreen.swift */,
+				6207FDAE7E7349B990EAC653 /* DSResultScreen.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
 		7E4AD7A6ED7414A81BEA5E1D /* DesignKit */ = {
 			isa = PBXGroup;
 			children = (
@@ -258,6 +271,7 @@
 				6127949ED5CD1BF168B4251C /* DSTabBar.swift */,
 				F1154AF077381776EE9F825A /* DSTokens.swift */,
 				922CB8B49235BD85CA25CDA7 /* README.md */,
+				7BA9B9C8590A9ABE6F39B865 /* Screens */,
 			);
 			path = DesignKit;
 			sourceTree = "<group>";
@@ -468,7 +482,9 @@
 				AE3B1465AE2122A6E021CC4E /* DSComponents.swift in Sources */,
 				2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */,
 				37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */,
+				33381EAC09FDFE42F2D71F5C /* DSHomeScreen.swift in Sources */,
 				8C740BBAA1BAB84580CFFDAF /* DSPalette.swift in Sources */,
+				08A851590CA7A6ED0ABFF445 /* DSResultScreen.swift in Sources */,
 				D7802D3FD752061892E354A5 /* DSTabBar.swift in Sources */,
 				D8DEE00CB83D1B254F3D7A73 /* DSTokens.swift in Sources */,
 				75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */,
