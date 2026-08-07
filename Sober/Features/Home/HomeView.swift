@@ -1,8 +1,8 @@
 import SwiftUI
 
-// 0.5s: the signal halo floats above one decisive action.
-// User: about to leave a social setting and wants a low-friction pause.
-// Primary goal: begin a private check or get home without driving.
+// 0.5s: one calm readiness card, one orange action, then Map, Guardian, and Plans.
+// The feature implementations remain in their existing focused screens; this view
+// is the DesignKit navigation shell that makes every one of them reachable.
 struct HomeView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -14,52 +14,34 @@ struct HomeView: View {
   @State private var showingResearch = false
 
   var body: some View {
-    NavigationStack {
-      ScrollView {
-        VStack(spacing: 14) {
-          hero
-            .soberEntrance(order: 0)
-          if showsScheduledCheckIn {
-            scheduledCheckInCard
-              .soberEntrance(order: 1)
-          }
-          baselineCard
-            .soberEntrance(order: showsScheduledCheckIn ? 2 : 1)
-          nightOutCard
-            .soberEntrance(order: 2)
-          guardianCard
-            .soberEntrance(order: 3)
-          circleMapCard
-            .soberEntrance(order: 4)
-
-          if model.isFounderPreview {
-            founderPreviewCard
-              .soberEntrance(order: 5)
-            researchCenterCard
-              .soberEntrance(order: 6)
-          }
-
-          evidenceNote
-            .soberEntrance(order: model.isFounderPreview ? 7 : 5)
-        }
-        .padding(.horizontal, 18)
-        .padding(.bottom, 30)
+    DSIntegratedHomeScreen(
+      onStartBaseline: {
+        launch = ScreeningLaunch(mode: .baseline, scenario: .live)
+      },
+      onStartCheck: {
+        launch = ScreeningLaunch(mode: .check, scenario: .live)
+      },
+      onStartScheduledCheckIn: {
+        guard case let .due(occurrence) = model.guardianCheckInEvaluation else { return }
+        launch = ScreeningLaunch(
+          mode: .check,
+          scenario: .live,
+          guardianCheckInOccurrenceID: occurrence.id
+        )
+      },
+      onEvaluateCheckInLocation: {
+        Task { await model.evaluateGuardianCheckInLocation() }
+      },
+      onOpenMap: { showingCircleMap = true },
+      onOpenGuardian: { showingGuardian = true },
+      onOpenPlan: { showingPlan = true },
+      onOpenAbout: { showingAbout = true },
+      onOpenResearch: { showingResearch = true },
+      onOpenFounderScenario: { scenario in
+        launch = ScreeningLaunch(mode: .check, scenario: scenario)
       }
-      .soberBackground()
-      .toolbar {
-        ToolbarItem(placement: .principal) {
-          SoberWordmark()
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-          Button {
-            showingAbout = true
-          } label: {
-            Image(systemName: "info.circle")
-          }
-          .accessibilityLabel("About this prototype")
-        }
-      }
-    }
+    )
+    .preferredColorScheme(.dark)
     .fullScreenCover(item: $launch) { configuration in
       ScreeningFlowView(configuration: configuration)
         .environmentObject(model)

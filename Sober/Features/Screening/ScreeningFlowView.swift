@@ -110,7 +110,7 @@ struct ScreeningFlowView: View {
           }
         case .result:
           if let outcome {
-            ResultView(
+            DSIntegratedResultScreen(
               outcome: outcome,
               safetyPlan: model.safetyPlan,
               isSample: configuration.scenario != .live,
