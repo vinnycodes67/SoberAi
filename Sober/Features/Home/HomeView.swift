@@ -241,8 +241,8 @@ struct HomeView: View {
       }
 
       Button(heroButtonTitle) {
-        if model.baselineReady && !model.guardianRelationshipIsActive {
-          showingGuardian = true
+        if model.baselineReady && !isSafetyCircleReady {
+          showingPlan = true
         } else {
           launch = ScreeningLaunch(
             mode: model.baselineReady ? .check : .baseline,
@@ -255,23 +255,35 @@ struct HomeView: View {
     }
   }
 
+  /// A live check requires somewhere to turn if it comes back concerning
+  /// — the plan must be active and name a contact the manual call/message
+  /// buttons on the result screen can reach. Guardian Mode is a separate,
+  /// fully optional system (see AppModel.guardianRelationshipIsActive) and
+  /// must never gate the ability to run a self-check at all — Guardian
+  /// relationship creation is founder-mode-only server-side today, so
+  /// gating the core check flow on it would make live checks unreachable
+  /// for every non-founder install.
+  private var isSafetyCircleReady: Bool {
+    model.safetyPlan.isActive && model.safetyPlan.hasContact
+  }
+
   private var heroTitle: String {
     if !model.baselineReady { return "Learn your steady." }
-    if !model.guardianRelationshipIsActive { return "Connect your Guardian." }
+    if !isSafetyCircleReady { return "Connect your Safety Circle." }
     return "Pause. Check in."
   }
 
   private var heroDetail: String {
     if !model.baselineReady { return "Five high-quality sober sessions create your research baseline." }
-    if !model.guardianRelationshipIsActive {
-      return "A live check starts after one trusted person accepts your invite."
+    if !isSafetyCircleReady {
+      return "A live check starts once you've named someone to call or message."
     }
-    return "About two minutes. Concerning results alert your parent immediately."
+    return "About two minutes. Call or message your Safety Circle contact from the result screen."
   }
 
   private var heroButtonTitle: String {
     if !model.baselineReady { return "Record sober baseline" }
-    if !model.guardianRelationshipIsActive { return "Set up Guardian Mode" }
+    if !isSafetyCircleReady { return "Set up your Safety Circle" }
     return "Start a check"
   }
 

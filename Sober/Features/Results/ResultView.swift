@@ -158,7 +158,13 @@ struct ResultView: View {
             .foregroundStyle(Palette.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
 
-          if guardianAlertState == .actNow || guardianAlertState == .notConfigured {
+          // Only .actNow is a retriable transient failure. .notConfigured
+          // means there's no Guardian relationship to send to at all —
+          // beginConcerningGuardianAlert's own guard clause would just set
+          // .notConfigured again, so a "retry" button there is a dead end;
+          // the message above already tells them to use the manual
+          // options below instead.
+          if guardianAlertState == .actNow {
             Button("Try Guardian request again", action: onRetryGuardianAlert)
               .font(.subheadline.weight(.semibold))
               .foregroundStyle(Palette.primary)
