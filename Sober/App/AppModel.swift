@@ -12,14 +12,10 @@ final class AppModel: ObservableObject {
   /// stale `UserDefaults` value survives an upgrade from an internal build.
   @Published private(set) var isFounderPreview: Bool
   @Published var researchConsent: Bool {
-    didSet { defaults.set(researchConsent, forKey: Keys.researchConsent) }
+    didSet { privacyStore.saveResearchConsent(researchConsent) }
   }
   @Published var researchPreferences: ResearchPreferences {
-    didSet {
-      if let data = try? JSONEncoder().encode(researchPreferences) {
-        defaults.set(data, forKey: Keys.researchPreferences)
-      }
-    }
+    didSet { privacyStore.saveResearchPreferences(researchPreferences) }
   }
   @Published private(set) var researchSessions: [ResearchSessionEnvelope] = []
   @Published private(set) var baselineProfile: BaselineProfileSummary?
@@ -39,20 +35,12 @@ final class AppModel: ObservableObject {
   @Published private(set) var guardianError: String?
   @Published private(set) var guardianIsWorking = false
   @Published var safetyPlan: SafetyPlan {
-    didSet {
-      if let data = try? JSONEncoder().encode(safetyPlan) {
-        defaults.set(data, forKey: Keys.safetyPlan)
-      }
-    }
+    didSet { privacyStore.saveSafetyPlan(safetyPlan) }
   }
 
   /// App-local identity. Deliberately never passed to `ResearchSessionEnvelope`.
   @Published var userProfile: UserProfile {
-    didSet {
-      if let data = try? JSONEncoder().encode(userProfile) {
-        defaults.set(data, forKey: Keys.userProfile)
-      }
-    }
+    didSet { privacyStore.saveUserProfile(userProfile) }
   }
 
   @Published private(set) var participantID: PseudonymousParticipantID
@@ -61,7 +49,9 @@ final class AppModel: ObservableObject {
   /// public and internal behaviours from a single (Debug) test run.
   let allowsInternalTools: Bool
   private let defaults: UserDefaults
-  private let researchStore: ResearchSessionStore
+  private let baselineStore: any BaselineStore
+  private let permissionStore: any PermissionStore
+  private let privacyStore: any PrivacyStore
   private let guardianStore: any GuardianSessionStoring
   private let guardianAPI: GuardianAPIClient
   private let guardianHomeStore: any GuardianHomeStoring
@@ -74,7 +64,9 @@ final class AppModel: ObservableObject {
 
   init(
     defaults: UserDefaults = .standard,
-    researchStore: ResearchSessionStore = ResearchSessionStore(),
+    baselineStore: (any BaselineStore)? = nil,
+    permissionStore: (any PermissionStore)? = nil,
+    privacyStore: (any PrivacyStore)? = nil,
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
@@ -84,9 +76,16 @@ final class AppModel: ObservableObject {
     automaticallyStartsGuardianServices: Bool = BuildChannel.allowsInternalTools,
     allowsInternalTools: Bool = BuildChannel.allowsInternalTools
   ) {
+    let resolvedBaselineStore = baselineStore ?? LocalBaselineStore(defaults: defaults)
+    let resolvedPermissionStore = permissionStore ?? SystemPermissionStore()
+    let resolvedPrivacyStore = privacyStore ?? UserDefaultsPrivacyStore(defaults: defaults)
+    let privacySnapshot = resolvedPrivacyStore.load()
+
     self.allowsInternalTools = allowsInternalTools
     self.defaults = defaults
-    self.researchStore = researchStore
+    self.baselineStore = resolvedBaselineStore
+    self.permissionStore = resolvedPermissionStore
+    self.privacyStore = resolvedPrivacyStore
     self.guardianStore = guardianStore
     self.guardianAPI = guardianAPI
     self.guardianHomeStore = guardianHomeStore
@@ -94,47 +93,18 @@ final class AppModel: ObservableObject {
     self.guardianCheckInScheduler = guardianCheckInScheduler
     self.guardianLiveLocation = guardianLiveLocation
     hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarding)
-    // `baselineSessions` is the measured count and nothing else. Inflating it
-    // here made a demo state indistinguishable from a real one on disk, and it
-    // survived "delete all data".
-    baselineSessions = defaults.integer(forKey: Keys.baselines)
+    // Readiness begins empty and is rebuilt only from versioned archive records.
+    // The old UserDefaults counter is deliberately ignored by BaselineStore.
+    baselineSessions = 0
     // A public binary ignores a persisted founder flag rather than trusting it,
     // so an internal build that is later replaced by an App Store build cannot
     // leave the user stranded in the demo state.
     isFounderPreview = allowsInternalTools && defaults.bool(forKey: Keys.founderPreview)
-    researchConsent = defaults.bool(forKey: Keys.researchConsent)
-
-    if let rawParticipantID = defaults.string(forKey: Keys.participantID) {
-      participantID = PseudonymousParticipantID(rawValue: rawParticipantID)
-    } else {
-      let generated = PseudonymousParticipantID.generate()
-      participantID = generated
-      defaults.set(generated.rawValue, forKey: Keys.participantID)
-    }
-
-    if let data = defaults.data(forKey: Keys.researchPreferences),
-      let preferences = try? JSONDecoder().decode(ResearchPreferences.self, from: data)
-    {
-      researchPreferences = preferences
-    } else {
-      researchPreferences = ResearchPreferences()
-    }
-
-    if let data = defaults.data(forKey: Keys.safetyPlan),
-      let storedPlan = try? JSONDecoder().decode(SafetyPlan.self, from: data)
-    {
-      safetyPlan = storedPlan
-    } else {
-      safetyPlan = SafetyPlan()
-    }
-
-    if let data = defaults.data(forKey: Keys.userProfile),
-      let storedProfile = try? JSONDecoder().decode(UserProfile.self, from: data)
-    {
-      userProfile = storedProfile
-    } else {
-      userProfile = UserProfile()
-    }
+    researchConsent = privacySnapshot.researchConsent
+    researchPreferences = privacySnapshot.researchPreferences
+    safetyPlan = privacySnapshot.safetyPlan
+    userProfile = privacySnapshot.userProfile
+    participantID = resolvedBaselineStore.participantID
 
     do {
       guardianSession = try guardianStore.load()
@@ -167,7 +137,11 @@ final class AppModel: ObservableObject {
     }
 
     Task {
-      await reloadResearchData()
+      if self.baselineStore.deletionPending {
+        await deleteAllResearchData()
+      } else {
+        await reloadResearchData()
+      }
       if automaticallyStartsGuardianServices, guardianSession != nil { await refreshGuardian() }
     }
   }
@@ -184,8 +158,8 @@ final class AppModel: ObservableObject {
     return measuredEligibleSessions >= 5
   }
 
-  /// The best eligible-session count across protocol variants, falling back to
-  /// the persisted count before research data has loaded.
+  /// The best eligible-session count across protocol variants. It stays zero
+  /// until the versioned archive has been loaded successfully.
   var measuredEligibleSessions: Int {
     baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions
   }
@@ -196,6 +170,14 @@ final class AppModel: ObservableObject {
       sessions: researchSessions,
       protocolVariant: protocolVariant
     )
+  }
+
+  var cameraPermissionState: CameraPermissionState {
+    permissionStore.cameraAuthorization
+  }
+
+  func requestCameraPermission() async -> CameraPermissionState {
+    await permissionStore.requestCameraAuthorization()
   }
 
   var guardianRelationshipIsActive: Bool {
@@ -747,8 +729,7 @@ final class AppModel: ObservableObject {
   func completeOnboarding(founderPreview: Bool) {
     isFounderPreview = allowsInternalTools && founderPreview
     hasCompletedOnboarding = true
-    defaults.set("prototype-v2", forKey: Keys.consentVersion)
-    defaults.set(Date(), forKey: Keys.consentDate)
+    privacyStore.recordConsent(version: "prototype-v2", at: Date())
     persist()
   }
 
@@ -819,7 +800,7 @@ final class AppModel: ObservableObject {
     )
 
     do {
-      try await researchStore.append(envelope)
+      try await baselineStore.append(envelope)
       await reloadResearchData()
     } catch {
       researchDataError = error.localizedDescription
@@ -827,8 +808,15 @@ final class AppModel: ObservableObject {
   }
 
   func reloadResearchData() async {
+    let requestedRevision = baselineStore.stateRevision
     do {
-      let sessions = try await researchStore.list()
+      let sessions = try await baselineStore.list()
+      guard requestedRevision == baselineStore.stateRevision,
+        !baselineStore.deletionPending
+      else {
+        clearBaselineState()
+        return
+      }
       researchSessions = sessions
       baselineProfile = baselineEngine.summarize(
         participantID: participantID,
@@ -845,9 +833,9 @@ final class AppModel: ObservableObject {
         baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? 0,
         baselineProfile?.eligibleSessionCount ?? 0
       )
-      persist()
       researchDataError = nil
     } catch {
+      clearBaselineState()
       researchDataError = error.localizedDescription
     }
   }
@@ -855,7 +843,7 @@ final class AppModel: ObservableObject {
   func prepareResearchExport() async -> URL? {
     guard researchConsent else { return nil }
     do {
-      let data = try await researchStore.exportData()
+      let data = try await baselineStore.exportData(exportedAt: Date())
       let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("sober-research-export-\(participantID.rawValue).json")
       try data.write(to: url, options: .atomic)
@@ -874,15 +862,19 @@ final class AppModel: ObservableObject {
     }
   }
 
-  /// Deletes the local archive *and* any export file already written to the
-  /// temporary directory. Leaving the export behind would keep data the user
-  /// was told is gone readable on the device.
+  /// Installs a synchronous deletion barrier, clears in-memory readiness, and
+  /// then removes active, legacy, quarantined, and exported copies. If the file
+  /// operation fails, the barrier remains and the old records cannot reappear.
   func deleteAllResearchData() async {
+    baselineStore.beginDeletion()
+    clearBaselineState()
+    isFounderPreview = false
+    defaults.removeObject(forKey: Keys.founderPreview)
+    discardPreparedExport()
+
     do {
-      _ = try await researchStore.deleteAll()
-      discardPreparedExport()
-      rotateParticipantID()
-      baselineSessions = 0
+      let receipt = try await baselineStore.deleteAllAndRotateIdentity()
+      participantID = receipt.participantID
       await reloadResearchData()
     } catch {
       researchDataError = error.localizedDescription
@@ -890,34 +882,27 @@ final class AppModel: ObservableObject {
   }
 
   func discardPreparedExport() {
-    guard let lastExportURL else { return }
-    try? FileManager.default.removeItem(at: lastExportURL)
+    let deterministicURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("sober-research-export-\(participantID.rawValue).json")
+    let candidates = [lastExportURL, deterministicURL].compactMap { $0 }
+    for url in Set(candidates) {
+      try? FileManager.default.removeItem(at: url)
+    }
     self.lastExportURL = nil
   }
 
-  private func rotateParticipantID() {
-    let replacement = PseudonymousParticipantID.generate()
-    participantID = replacement
-    defaults.set(replacement.rawValue, forKey: Keys.participantID)
-  }
-
   func resetPrototype() {
+    baselineStore.beginDeletion()
+    clearBaselineState()
     hasCompletedOnboarding = false
-    baselineSessions = 0
     isFounderPreview = false
     researchConsent = false
     researchPreferences = ResearchPreferences()
     safetyPlan = SafetyPlan()
     userProfile = UserProfile()
-    defaults.removeObject(forKey: Keys.userProfile)
+    privacyStore.reset()
     defaults.removeObject(forKey: Keys.onboarding)
-    defaults.removeObject(forKey: Keys.baselines)
     defaults.removeObject(forKey: Keys.founderPreview)
-    defaults.removeObject(forKey: Keys.safetyPlan)
-    defaults.removeObject(forKey: Keys.consentVersion)
-    defaults.removeObject(forKey: Keys.consentDate)
-    defaults.removeObject(forKey: Keys.researchConsent)
-    defaults.removeObject(forKey: Keys.researchPreferences)
     clearPendingGuardianCheckInCompletion()
     try? guardianStore.delete()
     try? guardianHomeStore.delete()
@@ -938,23 +923,21 @@ final class AppModel: ObservableObject {
     Task { await deleteAllResearchData() }
   }
 
+  private func clearBaselineState() {
+    researchSessions = []
+    baselineProfile = nil
+    baselineVariantBreakdown = [:]
+    baselineSessions = 0
+  }
+
   private func persist() {
     defaults.set(hasCompletedOnboarding, forKey: Keys.onboarding)
-    defaults.set(baselineSessions, forKey: Keys.baselines)
     defaults.set(isFounderPreview, forKey: Keys.founderPreview)
   }
 
   private enum Keys {
     static let onboarding = "sober.onboarding.complete"
-    static let baselines = "sober.baseline.sessions"
     static let founderPreview = "sober.founder.preview"
-    static let safetyPlan = "sober.safety.plan"
-    static let consentVersion = "sober.consent.version"
-    static let consentDate = "sober.consent.date"
-    static let participantID = "sober.research.participant-id"
-    static let researchConsent = "sober.research.consent"
-    static let researchPreferences = "sober.research.preferences"
-    static let userProfile = "sober.user.profile"
     static let pendingGuardianCheckInCompletionID = "sober.guardian.check-in.pending-id"
     static let pendingGuardianCheckInCompletionDate = "sober.guardian.check-in.pending-date"
     static let guardianLocationSharingEnabled = "sober.guardian.location-sharing.enabled"

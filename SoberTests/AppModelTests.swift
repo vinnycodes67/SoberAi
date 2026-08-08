@@ -23,9 +23,10 @@ final class AppModelTests: XCTestCase {
   }
 
   private func makeModel(_ harness: Harness, allowsInternalTools: Bool) -> AppModel {
-    AppModel(
+    let archive = ResearchSessionStore(directoryURL: harness.directory)
+    return AppModel(
       defaults: harness.defaults,
-      researchStore: ResearchSessionStore(directoryURL: harness.directory),
+      baselineStore: LocalBaselineStore(defaults: harness.defaults, archive: archive),
       automaticallyStartsGuardianServices: false,
       allowsInternalTools: allowsInternalTools
     )
@@ -69,8 +70,9 @@ final class AppModelTests: XCTestCase {
 
     let model = makeModel(harness, allowsInternalTools: false)
 
-    XCTAssertEqual(model.baselineSessions, 3, "measured count is the truth on disk")
-    XCTAssertFalse(model.baselineReady, "three measured sessions is not a ready baseline")
+    XCTAssertEqual(model.baselineSessions, 0, "a cache without records is never measurement truth")
+    XCTAssertFalse(model.baselineReady)
+    XCTAssertNil(harness.defaults.object(forKey: "sober.baseline.sessions"))
   }
 
   func testPublicBuildOnboardingIsAlwaysTheRealBaselinePath() {
@@ -129,6 +131,35 @@ final class AppModelTests: XCTestCase {
 
     XCTAssertEqual(model.baselineSessions, 0)
     XCTAssertFalse(model.baselineReady)
+  }
+
+  func testDeletingDataAlsoEndsInternalSyntheticReadiness() async {
+    let harness = makeHarness()
+    let model = makeModel(harness, allowsInternalTools: true)
+    model.completeOnboarding(founderPreview: true)
+    XCTAssertTrue(model.baselineReady)
+
+    await model.deleteAllResearchData()
+
+    XCTAssertFalse(model.isFounderPreview)
+    XCTAssertFalse(model.baselineReady)
+    XCTAssertEqual(model.baselineSessions, 0)
+    XCTAssertTrue(model.researchSessions.isEmpty)
+  }
+
+  func testResetClearsSyntheticStateBeforeAsynchronousDeletionReturns() {
+    let harness = makeHarness()
+    let model = makeModel(harness, allowsInternalTools: true)
+    model.completeOnboarding(founderPreview: true)
+    XCTAssertTrue(model.baselineReady)
+
+    model.resetPrototype()
+
+    XCTAssertFalse(model.isFounderPreview)
+    XCTAssertFalse(model.baselineReady)
+    XCTAssertEqual(model.baselineSessions, 0)
+    XCTAssertTrue(model.researchSessions.isEmpty)
+    XCTAssertTrue(harness.defaults.bool(forKey: "sober.baseline.deletion-pending"))
   }
 
   // MARK: - Build channel wiring

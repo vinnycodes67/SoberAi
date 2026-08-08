@@ -312,7 +312,10 @@ final class ReviewRegressionTests: XCTestCase {
 
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory),
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: directory)
+      ),
       automaticallyStartsGuardianServices: false
     )
     let skipped = FaceTrackingService().unusableSummary(issue: .interrupted)
@@ -368,7 +371,10 @@ final class ReviewRegressionTests: XCTestCase {
 
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory),
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: directory)
+      ),
       automaticallyStartsGuardianServices: false
     )
     let originalParticipantID = model.participantID
@@ -400,6 +406,47 @@ final class ReviewRegressionTests: XCTestCase {
       defaults.string(forKey: "sober.research.participant-id"),
       model.participantID.rawValue
     )
+  }
+
+  @MainActor
+  func testDeletingAfterRelaunchRemovesTheDeterministicExportFile() async {
+    let suiteName = "ReviewRegressionTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer {
+      defaults.removePersistentDomain(forName: suiteName)
+      try? FileManager.default.removeItem(at: directory)
+    }
+
+    let archive = ResearchSessionStore(directoryURL: directory)
+    let firstModel = AppModel(
+      defaults: defaults,
+      baselineStore: LocalBaselineStore(defaults: defaults, archive: archive),
+      automaticallyStartsGuardianServices: false
+    )
+    firstModel.researchConsent = true
+    await firstModel.recordCompletedSession(
+      mode: .check,
+      selfReport: .no,
+      metrics: .demoClear,
+      reactionSummary: nil,
+      ocularSummary: nil,
+      startedAt: Date()
+    )
+    let preparedExportURL = await firstModel.prepareResearchExport()
+    let exportURL = try? XCTUnwrap(preparedExportURL)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: exportURL!.path))
+
+    let relaunchedModel = AppModel(
+      defaults: defaults,
+      baselineStore: LocalBaselineStore(defaults: defaults, archive: archive),
+      automaticallyStartsGuardianServices: false
+    )
+    await relaunchedModel.deleteAllResearchData()
+
+    XCTAssertFalse(FileManager.default.fileExists(atPath: exportURL!.path))
+    XCTAssertFalse(relaunchedModel.baselineReady)
   }
 
   // MARK: - Fixtures

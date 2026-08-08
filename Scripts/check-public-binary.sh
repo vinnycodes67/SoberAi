@@ -94,6 +94,7 @@ FORBIDDEN_KEYS=(
   UIBackgroundModes
   NSAppTransportSecurity
   SoberGuardianAPIURL
+  CFBundleURLTypes
 )
 
 for key in "${FORBIDDEN_KEYS[@]}"; do
@@ -113,6 +114,49 @@ if /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" "$APP/Info.plist
 else
   fail "Info.plist is missing NSCameraUsageDescription"
 fi
+
+# The public v1 intentionally ships with no crash or analytics provider. Check
+# the linked image and embedded frameworks rather than relying on package files
+# alone, because a manually embedded binary would otherwise bypass the audit.
+echo
+echo "==> No-provider telemetry audit"
+FORBIDDEN_PROVIDERS=(
+  Firebase
+  Crashlytics
+  Sentry
+  PostHog
+  Mixpanel
+  Amplitude
+  Datadog
+  NewRelic
+  Instabug
+  Bugsnag
+  AppCenter
+)
+
+LINKED_IMAGE=$(otool -L "$BINARY" 2>/dev/null || true)
+BUNDLED_FRAMEWORKS=$(find "$APP" -path '*/Frameworks/*' -print 2>/dev/null || true)
+BINARY_STRINGS=$(strings -a "$BINARY" 2>/dev/null || true)
+for provider in "${FORBIDDEN_PROVIDERS[@]}"; do
+  if printf '%s\n%s\n%s\n' "$LINKED_IMAGE" "$BUNDLED_FRAMEWORKS" "$BINARY_STRINGS" \
+    | grep -qi -F -- "$provider"; then
+    fail "telemetry provider is linked or embedded: $provider"
+  else
+    pass "no provider artifact: $provider"
+  fi
+done
+
+# Public v1 has no push or remote-notification contract. The simulator product
+# may be unsigned; when entitlements are present, assert the deferred keys are
+# absent from the signed payload as well.
+ENTITLEMENTS=$(codesign -d --entitlements :- "$APP" 2>/dev/null || true)
+for key in aps-environment com.apple.developer.usernotifications.communication; do
+  if printf '%s' "$ENTITLEMENTS" | grep -q -F -- "$key"; then
+    fail "public app contains deferred entitlement: $key"
+  else
+    pass "absent entitlement: $key"
+  fi
+done
 
 # Sensitivity control.
 #
@@ -154,4 +198,4 @@ if [ "$failures" -ne 0 ]; then
   exit 1
 fi
 
-echo "PASSED: public build exposes no internal routes, permissions, or relay configuration"
+echo "PASSED: public build exposes no internal routes, permissions, relay configuration, or telemetry provider"
