@@ -1,6 +1,6 @@
 import SwiftUI
 
-private enum ScreeningStep: Int {
+enum ScreeningStep: Int, CaseIterable {
   case attestation
   case environment
   case reaction
@@ -10,6 +10,36 @@ private enum ScreeningStep: Int {
   case analyzing
   case result
   case baselineComplete
+
+  /// The steps whose numbers come from the wall clock.
+  ///
+  /// Reaction latency is the gap between a target appearing and the tap; the
+  /// timing and gaze tasks run on elapsed time. Time spent outside the
+  /// foreground lands inside those measurements.
+  static let timedTasks: [ScreeningStep] = [.reaction, .tracking, .timing, .gaze]
+
+  /// Calibration, the self-report and the result screens have nothing running,
+  /// so leaving the app there costs nothing and must not raise a recovery
+  /// screen -- doing so would make a notification during setup feel like a
+  /// crash.
+  static func isTimedTask(_ step: ScreeningStep) -> Bool {
+    switch step {
+    case .reaction, .tracking, .timing, .gaze:
+      return true
+    case .attestation, .environment, .analyzing, .result, .baselineComplete:
+      return false
+    }
+  }
+
+  static func taskName(for step: ScreeningStep) -> String {
+    switch step {
+    case .reaction: "the reaction task"
+    case .tracking: "the tracking task"
+    case .timing: "the timing task"
+    case .gaze: "the guided gaze task"
+    default: "that task"
+    }
+  }
 }
 
 struct ScreeningFlowView: View {
@@ -18,6 +48,7 @@ struct ScreeningFlowView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.scenePhase) private var scenePhase
   @StateObject private var faceTracking = FaceTrackingService()
   @State private var step: ScreeningStep
   @State private var selfReport: SelfReport = .no
@@ -36,6 +67,12 @@ struct ScreeningFlowView: View {
   @State private var baselineAccepted = false
   @State private var baselineCompletionState = BaselineCompletionState(reason: .ready)
   @State private var didSubmitCheckInCompletion = false
+  /// Set when the app left the foreground during a timed task. Non-nil means the
+  /// current task's reading has been discarded and the recovery screen is up.
+  @State private var interruptedStep: ScreeningStep?
+  /// Bumped to force a task view to be rebuilt from scratch on redo, so no
+  /// partial state survives the interruption.
+  @State private var taskAttempt = 0
 
   private let engine = ScreeningEngine()
 
@@ -102,12 +139,22 @@ struct ScreeningFlowView: View {
             step = .gaze
           }
         case .gaze:
-          OcularTaskView(service: faceTracking) { summary in
-            ocularSummary = summary
-            gazeSmoothness = summary.smoothnessRisk
-            qualityScore = summary.qualityScore
-            step = .analyzing
-          }
+          OcularTaskView(
+            service: faceTracking,
+            onComplete: { summary in
+              ocularSummary = summary
+              gazeSmoothness = summary.smoothnessRisk
+              qualityScore = summary.qualityScore
+              step = .analyzing
+            },
+            onRetryCalibration: {
+              // Back to setup with a fresh attempt, so the abandoned capture
+              // leaves nothing behind.
+              taskAttempt += 1
+              step = .environment
+            },
+            onEndCheck: { dismiss() }
+          )
         case .analyzing:
           AnalyzingView {
             finishScoring()
@@ -137,7 +184,7 @@ struct ScreeningFlowView: View {
           )
         }
       }
-      .id(step)
+      .id("\(step.rawValue)-\(taskAttempt)")
       .transition(
         reduceMotion
           ? .opacity
@@ -165,8 +212,29 @@ struct ScreeningFlowView: View {
         .padding(.horizontal, 16)
         .padding(.top, 4)
       }
+
+      if let interruptedStep {
+        InterruptedTaskView(
+          taskName: ScreeningStep.taskName(for: interruptedStep),
+          onRestartTask: restartInterruptedTask,
+          onEndCheck: { dismiss() }
+        )
+        .transition(.opacity)
+        .zIndex(2)
+      }
     }
     .preferredColorScheme(.dark)
+    // A timed task measured across a backgrounding records the interruption as
+    // the person's reaction. Catch it at the moment focus is lost rather than on
+    // return, so the task view is already torn down by the time it resumes.
+    .onChange(of: scenePhase) { _, phase in
+      guard phase != .active,
+        interruptedStep == nil,
+        configuration.scenario == .live,
+        ScreeningStep.isTimedTask(step)
+      else { return }
+      interruptedStep = step
+    }
     .task {
       if configuration.scenario == .live { model.prepareGuardianForNewCheck() }
     }
@@ -193,6 +261,17 @@ struct ScreeningFlowView: View {
 
   private var canExit: Bool {
     step != .result && step != .baselineComplete && configuration.scenario == .live
+      && interruptedStep == nil
+  }
+
+
+  /// Rebuilds the task from scratch. Discarding the partial reading is what
+  /// `taskAttempt` is for: the view's `id` changes, so no state survives.
+  private func restartInterruptedTask() {
+    guard let interruptedStep else { return }
+    taskAttempt += 1
+    step = interruptedStep
+    self.interruptedStep = nil
   }
 
   private func handleSelfReport(_ answer: SelfReport) {
