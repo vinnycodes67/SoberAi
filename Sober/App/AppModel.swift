@@ -18,6 +18,10 @@ final class AppModel: ObservableObject {
     didSet { privacyStore.saveResearchPreferences(researchPreferences) }
   }
   @Published private(set) var researchSessions: [ResearchSessionEnvelope] = []
+  /// Local History. Independent of research consent and bounded by
+  /// `CheckHistoryStore`'s retention window.
+  @Published private(set) var checkHistory: [CheckHistoryEntry] = []
+  @Published private(set) var historyDataError: String?
   @Published private(set) var baselineProfile: BaselineProfileSummary?
   @Published private(set) var baselineVariantBreakdown: [OcularProtocolVariant: BaselineProfileSummary] = [:]
   @Published private(set) var researchDataError: String?
@@ -63,6 +67,7 @@ final class AppModel: ObservableObject {
   private let privacyStore: any PrivacyStore
   private let privacyLockAuthenticator: any PrivacyLockAuthenticating
   private let privacyLockPolicy: PrivacyLockPolicy
+  private let checkHistoryStore: CheckHistoryStore
   private let guardianStore: any GuardianSessionStoring
   private let guardianAPI: GuardianAPIClient
   private let guardianHomeStore: any GuardianHomeStoring
@@ -81,6 +86,7 @@ final class AppModel: ObservableObject {
     privacyStore: (any PrivacyStore)? = nil,
     privacyLockAuthenticator: any PrivacyLockAuthenticating = SystemPrivacyLockAuthenticator(),
     privacyLockPolicy: PrivacyLockPolicy = .standard,
+    checkHistoryStore: CheckHistoryStore = CheckHistoryStore(),
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
@@ -102,6 +108,7 @@ final class AppModel: ObservableObject {
     self.privacyStore = resolvedPrivacyStore
     self.privacyLockAuthenticator = privacyLockAuthenticator
     self.privacyLockPolicy = privacyLockPolicy
+    self.checkHistoryStore = checkHistoryStore
     self.guardianStore = guardianStore
     self.guardianAPI = guardianAPI
     self.guardianHomeStore = guardianHomeStore
@@ -159,6 +166,7 @@ final class AppModel: ObservableObject {
         await deleteAllResearchData()
       } else {
         await reloadResearchData()
+        await reloadCheckHistory()
       }
       if automaticallyStartsGuardianServices, guardianSession != nil { await refreshGuardian() }
     }
@@ -884,8 +892,15 @@ final class AppModel: ObservableObject {
     metrics: ScreeningMetrics,
     reactionSummary: ChoiceReactionSummary?,
     ocularSummary: GazeCaptureSummary?,
-    startedAt: Date
+    startedAt: Date,
+    outcome: ScreeningOutcome? = nil
   ) async {
+    // History first, and unconditionally. It is a record for the person and has
+    // nothing to do with research consent; gating it on consent meant a public
+    // build — which has no way to grant consent — recorded no checks at all.
+    await appendCheckHistory(
+      mode: mode, metrics: metrics, startedAt: startedAt, outcome: outcome)
+
     guard mode == .baseline || researchConsent else { return }
 
     let quality = ocularSummary?.quality
@@ -952,6 +967,72 @@ final class AppModel: ObservableObject {
     }
   }
 
+  private func appendCheckHistory(
+    mode: ScreeningMode,
+    metrics: ScreeningMetrics,
+    startedAt: Date,
+    outcome: ScreeningOutcome?
+  ) async {
+    let entry = CheckHistoryEntry(
+      id: UUID(),
+      startedAt: startedAt,
+      kind: mode == .baseline ? .baseline : .check,
+      outcome: outcome.map(Self.historyOutcome),
+      qualityScore: metrics.qualityScore,
+      completedAllTasks: metrics.completedAllTasks
+    )
+    do {
+      try await checkHistoryStore.append(entry)
+      await reloadCheckHistory()
+    } catch let error as CheckHistoryStoreError {
+      checkHistory = []
+      historyDataError = error.localizedDescription
+
+      // Quarantine moved the unreadable source out of the active path. Preserve
+      // it, then retry once so the check that just finished is not silently
+      // omitted from the person's new History archive.
+      guard case .archiveQuarantined = error else { return }
+      do {
+        try await checkHistoryStore.append(entry)
+        checkHistory = try await checkHistoryStore.list()
+      } catch {
+        checkHistory = []
+        historyDataError = error.localizedDescription
+      }
+    } catch {
+      checkHistory = []
+      historyDataError = error.localizedDescription
+    }
+  }
+
+  private static func historyOutcome(_ outcome: ScreeningOutcome) -> CheckHistoryEntry.Outcome {
+    switch outcome.state {
+    case .signalsDetected: .signalsDetected
+    case .inconclusive: .inconclusive
+    case .noSignalsDetected: .noSignalsDetected
+    }
+  }
+
+  func reloadCheckHistory() async {
+    do {
+      checkHistory = try await checkHistoryStore.list()
+      historyDataError = nil
+    } catch {
+      checkHistory = []
+      historyDataError = error.localizedDescription
+    }
+  }
+
+  func deleteCheckHistory() async {
+    checkHistory = []
+    do {
+      _ = try await checkHistoryStore.deleteAll()
+      historyDataError = nil
+    } catch {
+      historyDataError = error.localizedDescription
+    }
+  }
+
   func reloadResearchData() async {
     let requestedRevision = baselineStore.stateRevision
     do {
@@ -1013,13 +1094,19 @@ final class AppModel: ObservableObject {
   func deleteAllResearchData() async {
     baselineStore.beginDeletion()
     clearBaselineState()
+    checkHistory = []
     isFounderPreview = false
     defaults.removeObject(forKey: Keys.founderPreview)
     discardPreparedExport()
 
     do {
+      // History is a separate local archive, but "all local data" remains one
+      // truthful operation. The baseline deletion barrier is already active,
+      // so a failure here cannot make baseline state reappear.
+      _ = try await checkHistoryStore.deleteAll()
       let receipt = try await baselineStore.deleteAllAndRotateIdentity()
       participantID = receipt.participantID
+      await reloadCheckHistory()
       await reloadResearchData()
     } catch {
       researchDataError = error.localizedDescription
@@ -1039,6 +1126,8 @@ final class AppModel: ObservableObject {
   func resetPrototype() {
     baselineStore.beginDeletion()
     clearBaselineState()
+    checkHistory = []
+    historyDataError = nil
     hasCompletedOnboarding = false
     isFounderPreview = false
     researchConsent = false
