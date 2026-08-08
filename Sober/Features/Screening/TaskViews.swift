@@ -45,20 +45,20 @@ struct ReactionTaskView: View {
             VStack(spacing: 12) {
               if phase == .intro {
                 Text("6 choices")
-                  .font(.system(.title, design: .rounded, weight: .semibold))
+                  .font(DSFont.title)
                 Text("Color + shape + timing")
-                  .font(.subheadline)
+                  .font(DSFont.subheadline)
                   .foregroundStyle(Palette.textSecondary)
               } else if phase == .waiting {
                 Circle()
                   .fill(StimulusPalette.guide.opacity(0.25))
                   .frame(width: 12, height: 12)
                 Text("Wait…")
-                  .font(.subheadline)
+                  .font(DSFont.subheadline)
                   .foregroundStyle(Palette.textSecondary)
               } else {
                 Image(systemName: "checkmark")
-                  .font(.title2.weight(.bold))
+                  .font(DSFont.title)
                   .foregroundStyle(Palette.primary)
               }
             }
@@ -74,7 +74,7 @@ struct ReactionTaskView: View {
               HStack(spacing: 10) {
                 reactionSymbol(choice, size: 28)
                 Text(choice.accessibilityLabel)
-                  .font(.caption.weight(.semibold))
+                  .font(DSFont.footnoteStrong)
                   .foregroundStyle(Palette.textPrimary)
                 Spacer(minLength: 0)
               }
@@ -101,7 +101,7 @@ struct ReactionTaskView: View {
             .foregroundStyle(Palette.warning)
         }
       }
-      .font(.caption.monospacedDigit())
+      .font(DSFont.footnote.monospacedDigit())
       .foregroundStyle(Palette.textSecondary)
 
       if phase == .intro {
@@ -307,7 +307,7 @@ struct MotorTrackingTaskView: View {
         Image(systemName: "arrow.right")
           .foregroundStyle(Palette.primary)
         Text("If you lift early, the path resets. That is expected.")
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
       }
     }
@@ -375,7 +375,7 @@ struct TimeEstimateTaskView: View {
       .buttonStyle(PrimaryActionButtonStyle())
 
       Text("The timer stays hidden on purpose.")
-        .font(.caption)
+        .font(DSFont.footnote)
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }

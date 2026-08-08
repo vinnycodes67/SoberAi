@@ -31,10 +31,10 @@ struct CameraCalibrationView: View {
             .fill(service.quality.isUsable ? Palette.primary : Palette.warning)
             .frame(width: 8, height: 8)
           Text(service.status.label)
-            .font(.caption.weight(.semibold))
+            .font(DSFont.footnoteStrong)
           Spacer()
           Text(service.quality.isUsable ? "READY" : "ADJUST")
-            .font(.caption2.monospaced().weight(.bold))
+            .font(DSFont.caption2.monospaced())
             .tracking(1)
         }
         .foregroundStyle(Palette.textPrimary)
@@ -70,7 +70,7 @@ struct CameraCalibrationView: View {
 
       if !service.quality.isUsable {
         Label(service.quality.primaryGuidance, systemImage: "exclamationmark.triangle.fill")
-          .font(.caption.weight(.medium))
+          .font(DSFont.footnoteStrong)
           .foregroundStyle(Palette.warning)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -87,14 +87,14 @@ struct CameraCalibrationView: View {
 
       if isPermissionDenied, let settingsURL = URL(string: UIApplication.openSettingsURLString) {
         Link("Open Settings to allow camera access", destination: settingsURL)
-          .font(.subheadline.weight(.semibold))
+          .font(DSFont.subheadlineStrong)
           .foregroundStyle(Palette.primary)
           .frame(maxWidth: .infinity, alignment: .center)
       }
 
       if canOnlyContinueWithLimitedCapture {
         Text("A live check can continue, but its result will be inconclusive without usable camera capture.")
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .multilineTextAlignment(.center)
       }
@@ -157,9 +157,9 @@ struct CameraCalibrationView: View {
           .font(.system(size: 42))
           .foregroundStyle(Palette.textSecondary)
         Text("Live face preview unavailable")
-          .font(.headline)
+          .font(DSFont.headline)
         Text(unsupportedDetail)
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .multilineTextAlignment(.center)
           .padding(.horizontal, 30)
@@ -174,7 +174,7 @@ struct CameraCalibrationView: View {
         .frame(width: 20)
         .contentTransition(.symbolEffect(.replace))
       Text(title)
-        .font(.caption.weight(.semibold))
+        .font(DSFont.footnoteStrong)
       Spacer(minLength: 0)
     }
     .padding(.horizontal, 12)

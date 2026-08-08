@@ -26,7 +26,7 @@ struct ResearchModeView: View {
 
           if let error = model.researchDataError {
             Label(error, systemImage: "exclamationmark.triangle.fill")
-              .font(.caption)
+              .font(DSFont.footnote)
               .foregroundStyle(Palette.warning)
               .fixedSize(horizontal: false, vertical: true)
           }
@@ -62,9 +62,9 @@ struct ResearchModeView: View {
         Toggle(isOn: $model.researchConsent) {
           VStack(alignment: .leading, spacing: 4) {
             Text("Record checks for research")
-              .font(.headline)
+              .font(DSFont.headline)
             Text("Store completed check sessions locally for export and future offline analysis")
-              .font(.caption)
+              .font(DSFont.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
         }
@@ -76,7 +76,7 @@ struct ResearchModeView: View {
           "Baseline sessions are stored locally for your personal reference. If you enable research later, earlier baselines are included in the export; this switch also adds ordinary checks.",
           systemImage: "lock.iphone"
         )
-        .font(.caption)
+        .font(DSFont.footnote)
         .foregroundStyle(Palette.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
       }
@@ -89,14 +89,14 @@ struct ResearchModeView: View {
         HStack {
           VStack(alignment: .leading, spacing: 3) {
             Text("Measured sober baseline")
-              .font(.headline)
+              .font(DSFont.headline)
             Text("Only complete sessions with camera quality ≥72% count")
-              .font(.caption)
+              .font(DSFont.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
           Spacer()
           Text("\(eligibleBaselineCount)/5")
-            .font(.title2.monospacedDigit().weight(.semibold))
+            .font(DSFont.title.monospacedDigit())
             .foregroundStyle(Palette.primary)
         }
 
@@ -110,18 +110,18 @@ struct ResearchModeView: View {
 
         if let profile = model.baselineProfile, profile.excludedSessionCount > 0 {
           Text("\(profile.excludedSessionCount) session\(profile.excludedSessionCount == 1 ? " was" : "s were") excluded for incomplete or low-quality capture.")
-            .font(.caption)
+            .font(DSFont.footnote)
             .foregroundStyle(Palette.warning)
         }
 
         let fullCount = model.baselineVariantBreakdown[.full]?.eligibleSessionCount ?? 0
         let reducedCount = model.baselineVariantBreakdown[.reducedMotion]?.eligibleSessionCount ?? 0
         Text("Full-protocol baseline: \(fullCount)/5 • Reduced-motion baseline: \(reducedCount)/5")
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.primary)
 
         Text("Median and median absolute deviation are calculated locally. These values are research features and do not change the prototype scorer.")
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -133,9 +133,9 @@ struct ResearchModeView: View {
       VStack(alignment: .leading, spacing: 16) {
         VStack(alignment: .leading, spacing: 4) {
           Text("Session context")
-            .font(.headline)
+            .font(DSFont.headline)
           Text("These factors can change performance without alcohol.")
-            .font(.caption)
+            .font(DSFont.footnote)
             .foregroundStyle(Palette.textSecondary)
         }
 
@@ -171,9 +171,9 @@ struct ResearchModeView: View {
         HStack {
           VStack(alignment: .leading, spacing: 3) {
             Text("Local dataset")
-              .font(.headline)
+              .font(DSFont.headline)
             Text("\(model.researchSessions.count) versioned session\(model.researchSessions.count == 1 ? "" : "s")")
-              .font(.caption)
+              .font(DSFont.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
           Spacer()
@@ -182,7 +182,7 @@ struct ResearchModeView: View {
         }
 
         Text("Participant key: \(shortParticipantID)")
-          .font(.caption.monospaced())
+          .font(DSFont.footnote.monospaced())
           .foregroundStyle(Palette.textSecondary)
 
         if let exportURL {
@@ -228,7 +228,7 @@ struct ResearchModeView: View {
 
   private func contextToggle(_ title: String, isOn: Binding<Bool>) -> some View {
     Toggle(title, isOn: isOn)
-      .font(.subheadline)
+      .font(DSFont.subheadline)
       .tint(Palette.primary)
   }
 }

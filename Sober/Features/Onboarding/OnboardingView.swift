@@ -22,7 +22,7 @@ struct OnboardingView: View {
         SoberWordmark()
         Spacer()
         Text("\(page + 1) / \(Self.pageCount)")
-          .font(.caption.monospacedDigit())
+          .font(DSFont.footnote.monospacedDigit())
           .foregroundStyle(Palette.textSecondary)
           .contentTransition(.numericText())
           .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: page)
@@ -65,7 +65,7 @@ struct OnboardingView: View {
           Button("Explore founder demo") {
             model.completeOnboarding(founderPreview: true)
           }
-          .font(.subheadline.weight(.semibold))
+          .font(DSFont.subheadlineStrong)
           .foregroundStyle(canConsent ? Palette.textSecondary : Palette.textSecondary.opacity(0.45))
           .disabled(!canConsent)
           #endif
@@ -99,7 +99,7 @@ struct OnboardingView: View {
           Text(
             "A short, private check for changes in reaction, coordination, and guided gaze, followed by a way home."
           )
-          .font(.body)
+          .font(DSFont.body)
           .multilineTextAlignment(.center)
           .foregroundStyle(Palette.textSecondary)
           .padding(.horizontal, 14)
@@ -194,7 +194,7 @@ struct OnboardingView: View {
                 Image(systemName: flag.isBlocking ? "exclamationmark.circle.fill" : "info.circle")
                   .foregroundStyle(flag.isBlocking ? Palette.accent : Palette.textSecondary)
                 Text(flag.message)
-                  .font(.footnote)
+                  .font(DSFont.footnote)
                   .foregroundStyle(flag.isBlocking ? Palette.textPrimary : Palette.textSecondary)
                   .fixedSize(horizontal: false, vertical: true)
               }
@@ -217,13 +217,13 @@ struct OnboardingView: View {
     autocapitalize: Bool = false
   ) -> some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text(title).font(.headline)
+      Text(title).font(DSFont.headline)
       TextField(prompt, text: text)
         .keyboardType(keyboard)
         .textContentType(contentType)
         .textInputAutocapitalization(autocapitalize ? .characters : .words)
         .autocorrectionDisabled(autocapitalize)
-        .font(.body)
+        .font(DSFont.body)
         .foregroundStyle(Palette.textPrimary)
         .padding(.vertical, 8)
         .overlay(alignment: .bottom) {
@@ -265,12 +265,12 @@ struct OnboardingView: View {
         Button("Read the retention policy") {
           showingRetentionPolicy = true
         }
-        .font(.subheadline.weight(.semibold))
+        .font(DSFont.subheadlineStrong)
         .foregroundStyle(Palette.primary)
         .soberEntrance(order: 2)
 
         Text("Prototype consent only, not legal advice or a production privacy policy.")
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .soberEntrance(order: 3)
       }
@@ -282,13 +282,13 @@ struct OnboardingView: View {
     SoberCard {
       HStack(alignment: .top, spacing: 14) {
         Image(systemName: icon)
-          .font(.title3)
+          .font(DSFont.title)
           .foregroundStyle(Palette.primary)
           .frame(width: 32, height: 32)
         VStack(alignment: .leading, spacing: 4) {
-          Text(title).font(.headline)
+          Text(title).font(DSFont.headline)
           Text(detail)
-            .font(.subheadline)
+            .font(DSFont.subheadline)
             .foregroundStyle(Palette.textSecondary)
         }
       }
@@ -302,9 +302,9 @@ struct OnboardingView: View {
   ) -> some View {
     Toggle(isOn: isOn) {
       VStack(alignment: .leading, spacing: 5) {
-        Text(title).font(.headline)
+        Text(title).font(DSFont.headline)
         Text(detail)
-          .font(.subheadline)
+          .font(DSFont.subheadline)
           .foregroundStyle(Palette.textSecondary)
       }
     }
@@ -412,7 +412,7 @@ struct RetentionPolicyView: View {
 
   private func policySection(_ title: String, _ detail: String) -> some View {
     VStack(alignment: .leading, spacing: 7) {
-      Text(title).font(.headline)
+      Text(title).font(DSFont.headline)
       Text(detail)
         .foregroundStyle(Palette.textSecondary)
         .fixedSize(horizontal: false, vertical: true)

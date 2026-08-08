@@ -172,7 +172,7 @@ struct AboutPrototypeView: View {
 
   private func aboutRow(_ title: String, _ icon: String) -> some View {
     Label(title, systemImage: icon)
-      .font(.subheadline.weight(.medium))
+      .font(DSFont.subheadlineStrong)
       .foregroundStyle(Palette.textPrimary)
   }
 

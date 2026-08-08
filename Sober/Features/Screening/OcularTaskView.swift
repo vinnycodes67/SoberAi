@@ -85,9 +85,9 @@ struct OcularTaskView: View {
         SoberCard {
           VStack(alignment: .leading, spacing: 10) {
             Label("Reduced Motion is enabled", systemImage: "figure.walk.motion")
-              .font(.headline)
+              .font(DSFont.headline)
             Text("This variant uses a static hold and jump targets only. It still records a live visual sample when the camera is usable.")
-              .font(.caption)
+              .font(DSFont.footnote)
               .foregroundStyle(Palette.textSecondary)
           }
         }
@@ -166,7 +166,7 @@ struct OcularTaskView: View {
             .monospacedDigit()
         }
       }
-      .font(.caption.weight(.medium))
+      .font(DSFont.footnoteStrong)
       .foregroundStyle(service.quality.facePresent ? Palette.textSecondary : Palette.warning)
     }
   }

@@ -155,7 +155,7 @@ struct ScreeningFlowView: View {
             showingExitAlert = true
           } label: {
             Image(systemName: "xmark")
-              .font(.subheadline.weight(.bold))
+              .font(DSFont.subheadlineStrong)
               .foregroundStyle(Palette.textSecondary)
               .frame(width: 44, height: 44)
               .soberGlassCircle()
@@ -378,7 +378,7 @@ private struct BaselineAttestationView: View {
           Text(
             "I haven’t used alcohol, cannabis, stimulants, opioids, or other impairing substances in the last 4 hours, and I feel rested."
           )
-          .font(.body.weight(.medium))
+          .font(DSFont.headline)
           .fixedSize(horizontal: false, vertical: true)
         }
         .tint(Palette.primary)
@@ -390,7 +390,7 @@ private struct BaselineAttestationView: View {
         .opacity(attested ? 1 : 0.42)
 
       Text("Don’t use a baseline session to decide whether to drive.")
-        .font(.caption)
+        .font(DSFont.footnote)
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -426,7 +426,7 @@ private struct SelfReportView: View {
             Text(
               "We won’t run tasks to talk you out of what you already know. Safer options come next."
             )
-            .font(.subheadline.weight(.medium))
+            .font(DSFont.subheadlineStrong)
             .fixedSize(horizontal: false, vertical: true)
           }
         }
@@ -436,9 +436,9 @@ private struct SelfReportView: View {
         SoberCard {
           VStack(alignment: .leading, spacing: 8) {
             Text("I can’t do the visual tasks")
-              .font(.headline)
+              .font(DSFont.headline)
             Text("The visual tasks need sight and a steady drag. You can skip them and still get to the safer next step.")
-              .font(.subheadline)
+              .font(DSFont.subheadline)
               .foregroundStyle(Palette.textSecondary)
           }
         }
@@ -459,7 +459,7 @@ private struct SelfReportView: View {
       .opacity(selection == nil ? 0.42 : 1)
 
       Text("Sober never returns a no-signals result after reported use.")
-        .font(.caption)
+        .font(DSFont.footnote)
         .foregroundStyle(Palette.textSecondary)
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -470,7 +470,7 @@ private struct SelfReportView: View {
       selection = value
     } label: {
       HStack {
-        Text(title).font(.headline)
+        Text(title).font(DSFont.headline)
         Spacer()
         Image(systemName: selection == value ? "checkmark.circle.fill" : "circle")
           .foregroundStyle(selection == value ? Palette.primary : Palette.textSecondary)
@@ -546,7 +546,7 @@ private struct BaselineCompleteView: View {
         Text(
           "This was calibration, not a driving result. It does not mean you’re sober or safe to drive."
         )
-        .font(.subheadline.weight(.medium))
+        .font(DSFont.subheadlineStrong)
         .fixedSize(horizontal: false, vertical: true)
       }
       .soberEntrance(order: 2)

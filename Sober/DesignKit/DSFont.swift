@@ -57,6 +57,10 @@ enum DSFont {
   static let callout = Font.custom(Face.regular, size: 16, relativeTo: .callout)
   /// 15 regular. The secondary line beneath a row title.
   static let subheadline = Font.custom(Face.regular, size: 15, relativeTo: .subheadline)
+  /// 15 medium. A small label that titles something, where `headline` would be
+  /// too heavy for its place in the page. Pairs with `subheadline` the way
+  /// `footnoteStrong` pairs with `footnote`.
+  static let subheadlineStrong = Font.custom(Face.medium, size: 15, relativeTo: .subheadline)
 
   // MARK: - Metadata
   // Genuinely peripheral text. A screen set mostly in these has its hierarchy

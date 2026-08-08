@@ -85,9 +85,9 @@ struct CircleMapView: View {
           .foregroundStyle(Palette.primary)
       }
       Text(emptyTitle)
-        .font(.title3.weight(.semibold))
+        .font(DSFont.title)
       Text(emptyDetail)
-        .font(.subheadline)
+        .font(DSFont.subheadline)
         .foregroundStyle(Palette.textSecondary)
         .multilineTextAlignment(.center)
         .frame(maxWidth: 280)
@@ -110,9 +110,9 @@ struct CircleMapView: View {
 
         VStack(alignment: .leading, spacing: 3) {
           Text(statusTitle)
-            .font(.headline)
+            .font(DSFont.headline)
           Text(statusDetail)
-            .font(.subheadline)
+            .font(DSFont.subheadline)
             .foregroundStyle(Palette.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
         }
@@ -121,7 +121,7 @@ struct CircleMapView: View {
 
       if let error = model.guardianError {
         Label(error, systemImage: "exclamationmark.triangle.fill")
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.warning)
       }
 
@@ -131,7 +131,7 @@ struct CircleMapView: View {
         retentionDetail,
         systemImage: "hand.raised.fill"
       )
-      .font(.caption)
+      .font(DSFont.footnote)
       .foregroundStyle(Palette.textSecondary)
       .fixedSize(horizontal: false, vertical: true)
     }
@@ -160,7 +160,7 @@ struct CircleMapView: View {
       .buttonStyle(SecondaryActionButtonStyle(tint: Palette.item2))
 
       Text("Founder preview only · this sample is not uploaded or presented as a real person.")
-        .font(.caption)
+        .font(DSFont.footnote)
         .foregroundStyle(Palette.warning)
     } else if model.guardianSession?.role == .person, model.guardianRelationshipIsActive {
       if !model.guardianLocationSharingIsEnabled {
@@ -182,7 +182,7 @@ struct CircleMapView: View {
           .buttonStyle(PrimaryActionButtonStyle())
 
           Text("Right now the map updates only while Sober is open. Background access keeps it current after you leave the app.")
-            .font(.caption)
+            .font(DSFont.footnote)
             .foregroundStyle(Palette.textSecondary)
 
         case .denied, .restricted, .unavailable:
@@ -201,7 +201,7 @@ struct CircleMapView: View {
         Button("Stop sharing", role: .destructive) {
           showingStopConfirmation = true
         }
-        .font(.subheadline.weight(.semibold))
+        .font(DSFont.subheadlineStrong)
         .disabled(model.guardianIsWorking)
       }
     }
@@ -218,11 +218,11 @@ struct CircleMapView: View {
           }
           .shadow(color: .black.opacity(0.32), radius: 10, y: 5)
         Text(point.initials)
-          .font(.headline.weight(.bold))
+          .font(DSFont.headline)
           .foregroundStyle(Palette.textPrimary)
       }
       Text(point.name)
-        .font(.caption.weight(.semibold))
+        .font(DSFont.footnoteStrong)
         .foregroundStyle(.white)
         .padding(.horizontal, 9)
         .padding(.vertical, 5)

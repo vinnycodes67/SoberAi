@@ -22,9 +22,9 @@ struct SafetyPlanView: View {
           SoberCard {
             Toggle(isOn: $plan.isActive) {
               VStack(alignment: .leading, spacing: 3) {
-                Text("Safety Circle").font(.headline)
+                Text("Safety Circle").font(DSFont.headline)
                 Text(plan.isActive ? "Ride and contact plan active" : "Safety Circle paused")
-                  .font(.caption)
+                  .font(DSFont.footnote)
                   .foregroundStyle(Palette.textSecondary)
               }
             }
@@ -75,7 +75,7 @@ struct SafetyPlanView: View {
                   : "Add the exact drop-off address before you need a ride.",
                 systemImage: plan.hasRideDestination ? "mappin.and.ellipse" : "location.slash"
               )
-              .font(.caption)
+              .font(DSFont.footnote)
               .foregroundStyle(plan.hasRideDestination ? Palette.textSecondary : Palette.warning)
             }
           }
@@ -83,7 +83,7 @@ struct SafetyPlanView: View {
           Text(
             "Guardian Mode is configured separately and uses a two-device invite. Ride booking and direct contact always require your tap."
           )
-          .font(.caption)
+          .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .padding(.horizontal, 4)
         }
@@ -103,7 +103,7 @@ struct SafetyPlanView: View {
 
   private func fieldLabel(_ text: String) -> some View {
     Text(text.uppercased())
-      .font(.caption.weight(.semibold))
+      .font(DSFont.footnoteStrong)
       .tracking(1.1)
       .foregroundStyle(Palette.primary)
   }
