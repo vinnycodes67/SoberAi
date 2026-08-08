@@ -164,6 +164,20 @@ final class ScreeningEngineTests: XCTestCase {
     XCTAssertNil(EllipseFit.fit(points: [(0, 0), (1, 1)]))
   }
 
+  /// Regression guard for the pupil-segmentation model actually shipping:
+  /// this project runs its tests inside the Sober.app host process (see
+  /// TEST_HOST in project.pbxproj), so Bundle.main here is the real app
+  /// bundle — if PupilSegmentation.mlmodelc is ever dropped from the
+  /// target's Resources build phase, or fails to compile, this fails
+  /// instead of silently degrading pupillometry back to "no reading."
+  @MainActor
+  func testPupilSegmentationModelIsBundledAndLoads() {
+    XCTAssertTrue(
+      PupilCaptureService().isModelAvailable,
+      "PupilSegmentation.mlmodelc should be bundled and loadable — see Training/PupilSegmentation/README.md"
+    )
+  }
+
   func testDeriveTrialExtractsExpectedPLRMetrics() {
     // A hand-constructed diameter/time trace with known latency, peak
     // constriction velocity, amplitude, and recovery time, verified against

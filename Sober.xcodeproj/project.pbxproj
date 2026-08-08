@@ -65,6 +65,7 @@
 		F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B2F1096488EAE1C4259DBC /* ResultView.swift */; };
 		FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */; };
 		FF7AD08CAF8E27D323547F73 /* DSBaselinePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */; };
+		9BBD74127FCCF629F7B2DFEA /* PupilSegmentation.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = A0416EA5574ECC7342233668 /* PupilSegmentation.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -139,6 +140,7 @@
 		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Medium.otf"; sourceTree = "<group>"; };
 		FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCheckInServices.swift; sourceTree = "<group>"; };
+		A0416EA5574ECC7342233668 /* PupilSegmentation.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = PupilSegmentation.mlpackage; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -321,6 +323,7 @@
 		CF199D20615C689ACDD35182 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A0416EA5574ECC7342233668 /* PupilSegmentation.mlpackage */,
 				DDD0C5D73633CBC696CD7E6F /* Fonts */,
 			);
 			path = Resources;
@@ -444,6 +447,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9BBD74127FCCF629F7B2DFEA /* PupilSegmentation.mlpackage in Resources */,
 				1D1326C4DC1C9225BADB044D /* README.md in Resources */,
 				BD924C265FB5EABC82799B00 /* Satoshi-Black.otf in Resources */,
 				778CF042B4E3088D27699393 /* Satoshi-Bold.otf in Resources */,
