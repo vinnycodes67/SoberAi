@@ -166,7 +166,7 @@ final class ReviewRegressionTests: XCTestCase {
   // MARK: - The manual contact message never leaks diagnostic detail
 
   func testManualMessageBodySharesOnlyASafeRequestForHelp() {
-    let body = InterventionCard.messageBody(homeLabel: "Home")
+    let body = SafeRideMessage.body(destinationName: "Home")
 
     XCTAssertTrue(body.contains("Home"))
     XCTAssertFalse(body.localizedCaseInsensitiveContains("quality"))
@@ -310,7 +310,8 @@ final class ReviewRegressionTests: XCTestCase {
 
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory)
+      researchStore: ResearchSessionStore(directoryURL: directory),
+      automaticallyStartsGuardianServices: false
     )
     let skipped = FaceTrackingService().unusableSummary(issue: .interrupted)
 
@@ -365,7 +366,8 @@ final class ReviewRegressionTests: XCTestCase {
 
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory)
+      researchStore: ResearchSessionStore(directoryURL: directory),
+      automaticallyStartsGuardianServices: false
     )
     let originalParticipantID = model.participantID
     model.researchConsent = true

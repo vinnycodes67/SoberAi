@@ -104,25 +104,39 @@ struct DSIntegratedResultScreen: View {
     let moved = measuredDetails.filter(\.concern).count
     let total = measuredDetails.count
 
-    return HStack(alignment: .firstTextBaseline, spacing: DSSpace.xs) {
-      Text("\(moved)")
-        .font(DSFont.figureLarge)
-        .monospacedDigit()
-        .dsHeroTracking()
-        .foregroundStyle(DSPalette.accent)
-      VStack(alignment: .leading, spacing: DSSpace.xxs) {
-        Text("of \(total) measured")
-          .font(DSFont.title)
-          .foregroundStyle(DSPalette.textSecondary)
-        Text(moved == 1 ? "reading outside your usual range" : "readings outside your usual range")
-          .font(DSFont.footnote)
-          .foregroundStyle(DSPalette.textMuted)
-          .fixedSize(horizontal: false, vertical: true)
+    return Group {
+      if total == 0 {
+        VStack(alignment: .leading, spacing: DSSpace.xxs) {
+          Text("No tasks measured")
+            .font(DSFont.title)
+            .foregroundStyle(DSPalette.textSecondary)
+          Text("Your report determined this result.")
+            .font(DSFont.footnote)
+            .foregroundStyle(DSPalette.textMuted)
+        }
+        .accessibilityElement(children: .combine)
+      } else {
+        HStack(alignment: .firstTextBaseline, spacing: DSSpace.xs) {
+          Text("\(moved)")
+            .font(DSFont.figureLarge)
+            .monospacedDigit()
+            .dsHeroTracking()
+            .foregroundStyle(DSPalette.accent)
+          VStack(alignment: .leading, spacing: DSSpace.xxs) {
+            Text("of \(total) measured")
+              .font(DSFont.title)
+              .foregroundStyle(DSPalette.textSecondary)
+            Text(moved == 1 ? "reading outside your usual range" : "readings outside your usual range")
+              .font(DSFont.footnote)
+              .foregroundStyle(DSPalette.textMuted)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+          Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(moved) of \(total) measured readings outside your usual range")
       }
-      Spacer(minLength: 0)
     }
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(moved) of \(total) measured readings outside your usual range")
   }
 
   private var guardianAlertCard: some View {
@@ -275,40 +289,15 @@ struct DSIntegratedResultScreen: View {
   private var measurements: some View {
     DSSection("Measurements") {
       DSRows {
-        HStack {
-          Text("Capture quality")
-            .font(DSFont.body)
-            .foregroundStyle(DSPalette.textSecondary)
-          Spacer()
-          Text("\(Int(outcome.qualityScore * 100))%")
-            .font(DSFont.body)
-            .monospacedDigit()
-            .foregroundStyle(DSPalette.textPrimary)
-        }
-        .frame(minHeight: DSHit.minimum)
+        DSValueRow(
+          label: "Capture quality",
+          value: "\(Int(outcome.qualityScore * 100))%"
+        )
         .padding(.vertical, DSSpace.sm)
 
         ForEach(outcome.details) { detail in
           DSSeparator()
-          HStack(alignment: .firstTextBaseline, spacing: DSSpace.sm) {
-            VStack(alignment: .leading, spacing: DSSpace.xxs) {
-              Text(detail.label)
-                .font(DSFont.body)
-                .foregroundStyle(DSPalette.textPrimary)
-              Text(readingStatus(detail))
-                .font(DSFont.caption)
-                .foregroundStyle(readingTint(detail))
-            }
-            Spacer(minLength: DSSpace.sm)
-            Text(detail.value)
-              .font(DSFont.subheadline)
-              .monospacedDigit()
-              .foregroundStyle(DSPalette.textSecondary)
-              .multilineTextAlignment(.trailing)
-          }
-          .frame(minHeight: DSHit.minimum)
-          .padding(.vertical, DSSpace.sm)
-          .accessibilityElement(children: .combine)
+          measurementRow(detail)
         }
       }
 
@@ -353,25 +342,56 @@ struct DSIntegratedResultScreen: View {
   }
 
   private var measuredDetails: [SignalDetail] {
-    outcome.details.filter { isMeasured($0) }
-  }
-
-  private func isMeasured(_ detail: SignalDetail) -> Bool {
-    let value = detail.value.lowercased()
-    return !value.contains("not measured")
-      && !value.contains("not read")
-      && !value.contains("unavailable")
-      && !value.contains("interrupted")
-      && !value.contains("low light")
+    outcome.details.filter(\.wasMeasured)
   }
 
   private func readingStatus(_ detail: SignalDetail) -> String {
-    if !isMeasured(detail) { return "Not measured" }
+    if !detail.wasMeasured { return "Not measured" }
     return detail.concern ? "Outside usual range" : "Within usual range"
   }
 
   private func readingTint(_ detail: SignalDetail) -> Color {
-    isMeasured(detail) && detail.concern ? DSPalette.accent : DSPalette.textMuted
+    detail.wasMeasured && detail.concern ? DSPalette.accent : DSPalette.textMuted
+  }
+
+  private func measurementRow(_ detail: SignalDetail) -> some View {
+    Group {
+      if dynamicTypeSize.isAccessibilitySize {
+        VStack(alignment: .leading, spacing: DSSpace.xxs) {
+          measurementLabel(detail)
+          measurementValue(detail)
+        }
+      } else {
+        HStack(alignment: .firstTextBaseline, spacing: DSSpace.sm) {
+          measurementLabel(detail)
+          Spacer(minLength: DSSpace.sm)
+          measurementValue(detail)
+        }
+      }
+    }
+    .frame(minHeight: DSHit.minimum)
+    .padding(.vertical, DSSpace.sm)
+    .accessibilityElement(children: .combine)
+  }
+
+  private func measurementLabel(_ detail: SignalDetail) -> some View {
+    VStack(alignment: .leading, spacing: DSSpace.xxs) {
+      Text(detail.label)
+        .font(DSFont.body)
+        .foregroundStyle(DSPalette.textPrimary)
+      Text(readingStatus(detail))
+        .font(DSFont.caption)
+        .foregroundStyle(readingTint(detail))
+    }
+  }
+
+  private func measurementValue(_ detail: SignalDetail) -> some View {
+    Text(detail.value)
+      .font(DSFont.subheadline)
+      .monospacedDigit()
+      .foregroundStyle(DSPalette.textSecondary)
+      .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+      .fixedSize(horizontal: false, vertical: true)
   }
 
   private func openRide() {
@@ -396,7 +416,7 @@ struct DSIntegratedResultScreen: View {
 
   private func messageContact() {
     let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    let message = "Can you help me get to \(safetyPlan.destinationDisplayName)? I’m choosing not to drive."
+    let message = SafeRideMessage.body(destinationName: safetyPlan.destinationDisplayName)
     let body = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? message
     if let url = URL(string: "sms:\(digits)?body=\(body)") { openURL(url) }
   }

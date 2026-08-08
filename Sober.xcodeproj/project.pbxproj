@@ -7,15 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		08A851590CA7A6ED0ABFF445 /* DSResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6207FDAE7E7349B990EAC653 /* DSResultScreen.swift */; };
 		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
-		0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */; };
-		1D1326C4DC1C9225BADB044D /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 922CB8B49235BD85CA25CDA7 /* README.md */; };
 		1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */; };
 		2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
 		2B3D0C06779F49543898A3F2 /* DSIntegratedResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */; };
 		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
-		33381EAC09FDFE42F2D71F5C /* DSHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF3D4323CCCC873108E06AEC /* DSHomeScreen.swift */; };
 		37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
@@ -40,6 +36,7 @@
 		77950C028EA8BD14C1C02927 /* ResearchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281945014B1C95CFDF4E271C /* ResearchPreferences.swift */; };
 		7927D50C9628B61ED2BCC976 /* GuardianCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */; };
 		857568F4B503E22D9B628C11 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
+		89C872F604789BD16689E0A4 /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */; };
 		8C740BBAA1BAB84580CFFDAF /* DSPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3431821643AFE8BAF39CD613 /* DSPalette.swift */; };
 		906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
@@ -50,7 +47,7 @@
 		AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
 		B02AF5E71ED033A20B47DFA7 /* Satoshi-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */; };
 		B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
-		BD924C265FB5EABC82799B00 /* Satoshi-Black.otf in Resources */ = {isa = PBXBuildFile; fileRef = 48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */; };
+		BE6A415DAF213AB35C1B663E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA8BCEEE16E4133908B99020 /* Assets.xcassets */; };
 		C20DFEC7378189BB52BE4274 /* Satoshi-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */; };
 		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
@@ -58,13 +55,11 @@
 		D7802D3FD752061892E354A5 /* DSTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6127949ED5CD1BF168B4251C /* DSTabBar.swift */; };
 		D8DEE00CB83D1B254F3D7A73 /* DSTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1154AF077381776EE9F825A /* DSTokens.swift */; };
 		DB81A446A6CE180BAA7A76E6 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
-		E686B010896F7FF513912081 /* PupillometryTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A29C931E495C2E4717792E /* PupillometryTaskView.swift */; };
 		E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */; };
 		EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */; };
 		EC8E5A96E6EB532342042E02 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		EE98AA891AE6BF7AD58F751D /* OnboardingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */; };
 		F484B3BF63DC3E3462E2D447 /* DSIntegratedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */; };
-		F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B2F1096488EAE1C4259DBC /* ResultView.swift */; };
 		FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */; };
 		FF7AD08CAF8E27D323547F73 /* DSBaselinePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */; };
 /* End PBXBuildFile section */
@@ -81,6 +76,7 @@
 
 /* Begin PBXFileReference section */
 		008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchSessionStore.swift; sourceTree = "<group>"; };
+		05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupilMetricsAnalyzer.swift; sourceTree = "<group>"; };
 		08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModeTests.swift; sourceTree = "<group>"; };
 		0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSFont.swift; sourceTree = "<group>"; };
 		0B3EFD4DB4DBCB29DA687024 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -94,35 +90,30 @@
 		17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularAndTaskTests.swift; sourceTree = "<group>"; };
 		1CC25F72A27335610F808FA8 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		23942604D2736802062223EA /* SignalHalo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalHalo.swift; sourceTree = "<group>"; };
-		25B2F1096488EAE1C4259DBC /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
 		281945014B1C95CFDF4E271C /* ResearchPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchPreferences.swift; sourceTree = "<group>"; };
 		2D117214C47BD9D0F74EB077 /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
 		3431821643AFE8BAF39CD613 /* DSPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSPalette.swift; sourceTree = "<group>"; };
 		37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianSessionStore.swift; sourceTree = "<group>"; };
 		3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
-		48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Black.otf"; sourceTree = "<group>"; };
 		4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedResultScreen.swift; sourceTree = "<group>"; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
 		6127949ED5CD1BF168B4251C /* DSTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTabBar.swift; sourceTree = "<group>"; };
-		6207FDAE7E7349B990EAC653 /* DSResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSResultScreen.swift; sourceTree = "<group>"; };
 		64D21C92E2C87F13E3587EA3 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
-		68A29C931E495C2E4717792E /* PupillometryTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupillometryTaskView.swift; sourceTree = "<group>"; };
 		6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskViews.swift; sourceTree = "<group>"; };
 		6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
 		7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularTaskView.swift; sourceTree = "<group>"; };
 		804D0A298DBB719A4493299F /* ResearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModels.swift; sourceTree = "<group>"; };
 		85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingValidator.swift; sourceTree = "<group>"; };
 		900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianLiveLocationService.swift; sourceTree = "<group>"; };
-		922CB8B49235BD85CA25CDA7 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Satoshi-LICENSE.txt"; sourceTree = "<group>"; };
 		A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningFlowView.swift; sourceTree = "<group>"; };
 		A283843C5F8155F2ABF81000 /* SoberTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SoberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceTrackingService.swift; sourceTree = "<group>"; };
 		A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewRegressionTests.swift; sourceTree = "<group>"; };
+		AA8BCEEE16E4133908B99020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSBaselinePortrait.swift; sourceTree = "<group>"; };
 		BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRiskTests.swift; sourceTree = "<group>"; };
-		BF3D4323CCCC873108E06AEC /* DSHomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHomeScreen.swift; sourceTree = "<group>"; };
 		C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSGallery.swift; sourceTree = "<group>"; };
 		C9001A9459892F746005CE25 /* OcularModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularModels.swift; sourceTree = "<group>"; };
 		CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianAPIClient.swift; sourceTree = "<group>"; };
@@ -139,7 +130,6 @@
 		F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Regular.otf"; sourceTree = "<group>"; };
 		F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedHomeScreen.swift; sourceTree = "<group>"; };
 		F69FF16FB9F7B0082399E074 /* SoberComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberComponents.swift; sourceTree = "<group>"; };
-		F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupilCaptureService.swift; sourceTree = "<group>"; };
 		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Medium.otf"; sourceTree = "<group>"; };
 		FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCheckInServices.swift; sourceTree = "<group>"; };
@@ -173,19 +163,10 @@
 			children = (
 				13A596808C5944580D9A323B /* CameraCalibrationView.swift */,
 				7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */,
-				68A29C931E495C2E4717792E /* PupillometryTaskView.swift */,
 				A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */,
 				6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */,
 			);
 			path = Screening;
-			sourceTree = "<group>";
-		};
-		1FABC51C5F600CB258190FC0 /* Results */ = {
-			isa = PBXGroup;
-			children = (
-				25B2F1096488EAE1C4259DBC /* ResultView.swift */,
-			);
-			path = Results;
 			sourceTree = "<group>";
 		};
 		26FAADC19274E05E861374DF /* Design */ = {
@@ -229,7 +210,6 @@
 				98960DCB1EE83BC3C464228A /* Onboarding */,
 				CD2CD37750A1FFEE5BC32AEF /* Plan */,
 				0A1D53C05D7DB542D8368F35 /* Research */,
-				1FABC51C5F600CB258190FC0 /* Results */,
 				0D931F194DF9B61C0FE41CFF /* Screening */,
 			);
 			path = Features;
@@ -258,10 +238,8 @@
 		7BA9B9C8590A9ABE6F39B865 /* Screens */ = {
 			isa = PBXGroup;
 			children = (
-				BF3D4323CCCC873108E06AEC /* DSHomeScreen.swift */,
 				F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */,
 				4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */,
-				6207FDAE7E7349B990EAC653 /* DSResultScreen.swift */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -276,7 +254,6 @@
 				3431821643AFE8BAF39CD613 /* DSPalette.swift */,
 				6127949ED5CD1BF168B4251C /* DSTabBar.swift */,
 				F1154AF077381776EE9F825A /* DSTokens.swift */,
-				922CB8B49235BD85CA25CDA7 /* README.md */,
 				7BA9B9C8590A9ABE6F39B865 /* Screens */,
 			);
 			path = DesignKit;
@@ -327,6 +304,7 @@
 		CF199D20615C689ACDD35182 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				AA8BCEEE16E4133908B99020 /* Assets.xcassets */,
 				DDD0C5D73633CBC696CD7E6F /* Fonts */,
 			);
 			path = Resources;
@@ -335,7 +313,6 @@
 		DDD0C5D73633CBC696CD7E6F /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
-				48DEB3682B5C5A75529EBFCC /* Satoshi-Black.otf */,
 				DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */,
 				93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */,
 				FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */,
@@ -355,7 +332,7 @@
 				37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */,
 				E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */,
 				85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */,
-				F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */,
+				05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */,
 				008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */,
 				544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */,
 			);
@@ -450,8 +427,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1D1326C4DC1C9225BADB044D /* README.md in Resources */,
-				BD924C265FB5EABC82799B00 /* Satoshi-Black.otf in Resources */,
+				BE6A415DAF213AB35C1B663E /* Assets.xcassets in Resources */,
 				778CF042B4E3088D27699393 /* Satoshi-Bold.otf in Resources */,
 				C20DFEC7378189BB52BE4274 /* Satoshi-LICENSE.txt in Resources */,
 				EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */,
@@ -488,11 +464,9 @@
 				AE3B1465AE2122A6E021CC4E /* DSComponents.swift in Sources */,
 				2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */,
 				37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */,
-				33381EAC09FDFE42F2D71F5C /* DSHomeScreen.swift in Sources */,
 				F484B3BF63DC3E3462E2D447 /* DSIntegratedHomeScreen.swift in Sources */,
 				2B3D0C06779F49543898A3F2 /* DSIntegratedResultScreen.swift in Sources */,
 				8C740BBAA1BAB84580CFFDAF /* DSPalette.swift in Sources */,
-				08A851590CA7A6ED0ABFF445 /* DSResultScreen.swift in Sources */,
 				D7802D3FD752061892E354A5 /* DSTabBar.swift in Sources */,
 				D8DEE00CB83D1B254F3D7A73 /* DSTokens.swift in Sources */,
 				75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */,
@@ -511,13 +485,11 @@
 				EE98AA891AE6BF7AD58F751D /* OnboardingValidator.swift in Sources */,
 				6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */,
 				3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */,
-				0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */,
-				E686B010896F7FF513912081 /* PupillometryTaskView.swift in Sources */,
+				89C872F604789BD16689E0A4 /* PupilMetricsAnalyzer.swift in Sources */,
 				B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */,
 				48E4C17B7146DC42773D76D5 /* ResearchModels.swift in Sources */,
 				77950C028EA8BD14C1C02927 /* ResearchPreferences.swift in Sources */,
 				630520EC9D9955E4D2C300B3 /* ResearchSessionStore.swift in Sources */,
-				F6F27FAD29936B7B0D697832 /* ResultView.swift in Sources */,
 				3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */,
 				C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */,
 				4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */,
@@ -729,7 +701,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.app;
 				PRODUCT_NAME = Sober;
 				SDKROOT = iphoneos;
-				SOBER_GUARDIAN_API_URL = "http://127.0.0.1:8787";
+				SOBER_GUARDIAN_API_URL = "";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;

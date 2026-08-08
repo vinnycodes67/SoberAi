@@ -40,6 +40,26 @@ final class ScreeningEngineTests: XCTestCase {
     XCTAssertEqual(result.state, .inconclusive)
   }
 
+  func testSelfReportOnlyResultDoesNotClaimTasksWereMeasured() {
+    let metrics = ScreeningMetrics(
+      reactionTimeMilliseconds: 0,
+      reactionMisses: 0,
+      reactionWasMeasured: false,
+      trackingError: nil,
+      timeEstimateError: 0,
+      timingWasMeasured: false,
+      gazeSmoothness: nil,
+      qualityScore: 0,
+      completedAllTasks: false
+    )
+
+    let result = engine.evaluate(selfReport: .yes, metrics: metrics)
+
+    XCTAssertEqual(result.state, .signalsDetected)
+    XCTAssertTrue(result.details.allSatisfy { !$0.wasMeasured })
+    XCTAssertTrue(result.details.allSatisfy { $0.value == "Not measured" })
+  }
+
   func testLowQualityRefusesToGuess() {
     var metrics = ScreeningMetrics.demoClear
     metrics.qualityScore = 0.41
@@ -175,7 +195,7 @@ final class ScreeningEngineTests: XCTestCase {
       (11.2, 3.2), (11.4, 3.6), (11.6, 4.0), (11.8, 4.5), (12.0, 4.8),
     ]
 
-    let trial = PupilCaptureService.deriveTrial(samples: samples, flashOnsetTime: 10.0)
+    let trial = PupilLightReflexAnalyzer.deriveTrial(samples: samples, flashOnsetTime: 10.0)
     XCTAssertNotNil(trial)
     XCTAssertEqual(trial?.baselineDiameterMm ?? 0, 5.0, accuracy: 0.001)
     XCTAssertEqual(trial?.minDiameterMm ?? 0, 3.0, accuracy: 0.001)
@@ -190,7 +210,7 @@ final class ScreeningEngineTests: XCTestCase {
       (0, 5), (0.5, 5), (1, 5), (1.5, 5),
       (2, 5), (2.2, 4.6), (2.4, 4.0), (2.6, 3.4), (2.8, 3.0), (3.0, 3.0),
     ]
-    let trial = PupilCaptureService.deriveTrial(samples: samples, flashOnsetTime: 2.0)
+    let trial = PupilLightReflexAnalyzer.deriveTrial(samples: samples, flashOnsetTime: 2.0)
     XCTAssertNotNil(trial)
     XCTAssertNil(trial?.recoveryTo75PercentSeconds)
   }

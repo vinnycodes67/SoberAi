@@ -1,4 +1,4 @@
-import { base64URL, validP256Jwk } from "./guardian-crypto.js";
+import { base64URL, isUsableP256PublicKey, validP256Jwk } from "./guardian-crypto.js";
 
 const encoder = new TextEncoder();
 
@@ -8,7 +8,10 @@ export async function handleGuardianRequest(request, env) {
     if (env.GUARDIAN_FOUNDER_MODE !== "true") return responseError(404, "notFound");
     if (!env.GUARDIAN_RELATIONSHIPS) return responseError(503, "dependencyUnavailable");
     const body = await parseJSON(request);
-    if (!body || !validCreationBody(body)) return responseError(422, "invalidRequest");
+    if (!body || !validCreationBody(body)
+      || !(await isUsableP256PublicKey(body.personPublicKeyJwk))) {
+      return responseError(422, "invalidRequest");
+    }
 
     const relationshipId = `rel_${crypto.randomUUID().replaceAll("-", "")}`;
     const personCapabilityId = `rcap_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -37,7 +40,9 @@ export async function handleGuardianRequest(request, env) {
   if (match && env.GUARDIAN_RELATIONSHIPS) {
     if (request.method === "POST" && url.pathname.endsWith("/redeem")) {
       const body = await parseJSON(request);
-      if (!body) return responseError(404, "invalidInvite");
+      if (!body || !(await isUsableP256PublicKey(body.guardianPublicKeyJwk))) {
+        return responseError(404, "invalidInvite");
+      }
       body.guardianCapabilityId = `rcap_${crypto.randomUUID().replaceAll("-", "")}`;
       request = new Request(request, { body: JSON.stringify(body) });
     }

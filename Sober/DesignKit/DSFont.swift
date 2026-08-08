@@ -15,7 +15,7 @@ import SwiftUI
 ///
 /// **To switch to real Styrene:** buy the licence, drop the `.otf` files into
 /// `Resources/Fonts`, add them to `UIAppFonts` in `project.yml`, and change
-/// the four constants in `Face` below. Nothing else in the app names a font.
+/// the three constants in `Face` below. Nothing else in the app names a font.
 ///
 /// ## The scale
 ///
@@ -33,7 +33,6 @@ enum DSFont {
     static let regular = "Satoshi-Regular"
     static let medium = "Satoshi-Medium"
     static let semibold = "Satoshi-Bold"
-    static let bold = "Satoshi-Black"
   }
 
   // MARK: - Display
@@ -45,8 +44,6 @@ enum DSFont {
     .monospacedDigit()
   /// 34 semibold. The sentence a screen exists to say.
   static let hero = Font.custom(Face.semibold, size: 34, relativeTo: .largeTitle)
-  /// 28 semibold. A large navigation title.
-  static let largeTitle = Font.custom(Face.semibold, size: 28, relativeTo: .title)
   /// 22 semibold. A section that opens a new idea.
   static let title = Font.custom(Face.semibold, size: 22, relativeTo: .title2)
 
@@ -74,10 +71,6 @@ enum DSFont {
   /// 11 medium, uppercase. Group headings, via `DSEyebrow`.
   static let caption = Font.custom(Face.medium, size: 11, relativeTo: .caption2)
 
-  /// Tabular figures. Medium: a number should be legible, not loud.
-  static func figure(_ size: CGFloat) -> Font {
-    Font.custom(Face.medium, size: size, relativeTo: .title).monospacedDigit()
-  }
 }
 
 extension View {

@@ -193,9 +193,11 @@ struct ScreeningFlowView: View {
       let metrics = ScreeningMetrics(
         reactionTimeMilliseconds: 0,
         reactionMisses: 0,
-        trackingError: 0,
+        reactionWasMeasured: false,
+        trackingError: nil,
         timeEstimateError: 0,
-        gazeSmoothness: 0,
+        timingWasMeasured: false,
+        gazeSmoothness: nil,
         qualityScore: 0,
         completedAllTasks: false
       )
@@ -220,9 +222,11 @@ struct ScreeningFlowView: View {
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: 0,
       reactionMisses: 0,
+      reactionWasMeasured: false,
       trackingError: MotorTrackingOutcome.notMeasured.error,
       timeEstimateError: 0,
-      gazeSmoothness: 0,
+      timingWasMeasured: false,
+      gazeSmoothness: nil,
       qualityScore: 0,
       completedAllTasks: false
     )

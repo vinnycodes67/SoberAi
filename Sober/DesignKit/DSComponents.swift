@@ -221,20 +221,39 @@ struct DSValueRow: View {
   let label: String
   let value: String
   var tint: Color = DSPalette.textPrimary
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
-    HStack(alignment: .firstTextBaseline) {
-      Text(label)
-        .font(DSFont.body)
-        .foregroundStyle(DSPalette.textSecondary)
-      Spacer(minLength: DSSpace.sm)
-      Text(value)
-        .font(DSFont.body)
-        .monospacedDigit()
-        .foregroundStyle(tint)
+    Group {
+      if dynamicTypeSize.isAccessibilitySize {
+        VStack(alignment: .leading, spacing: DSSpace.xxs) {
+          labelText
+          valueText
+        }
+      } else {
+        HStack(alignment: .firstTextBaseline) {
+          labelText
+          Spacer(minLength: DSSpace.sm)
+          valueText
+        }
+      }
     }
     .frame(minHeight: DSHit.minimum)
     .accessibilityElement(children: .combine)
+  }
+
+  private var labelText: some View {
+    Text(label)
+      .font(DSFont.body)
+      .foregroundStyle(DSPalette.textSecondary)
+  }
+
+  private var valueText: some View {
+    Text(value)
+      .font(DSFont.body)
+      .monospacedDigit()
+      .foregroundStyle(tint)
+      .fixedSize(horizontal: false, vertical: true)
   }
 }
 
@@ -312,19 +331,6 @@ extension View {
   /// The page ground.
   func dsPageBackground() -> some View {
     background(DSPalette.background.ignoresSafeArea())
-  }
-
-  /// Fades content out under a pinned header rather than cutting it.
-  func dsHeaderScrim() -> some View {
-    background {
-      LinearGradient(
-        colors: [DSPalette.background, DSPalette.background, DSPalette.background.opacity(0)],
-        startPoint: .top,
-        endPoint: .bottom
-      )
-      .ignoresSafeArea(edges: .top)
-      .allowsHitTesting(false)
-    }
   }
 
   /// Staggered fade-in for a screen's blocks.

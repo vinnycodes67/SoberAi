@@ -91,6 +91,7 @@ export async function handleRelationshipRequest(storage, request) {
   const authentication = await verifyCapabilitySignature(request, current, expectedRole(path, request.method));
   if (!authentication.ok || current.relationshipState === "revoked") return error(404, "notFound");
   pruneNonces(current);
+  pruneExpiredAlerts(current);
   pruneStaleLocation(current);
   current.nonces[authentication.nonce] = authentication.signedAt;
   // Persist replay protection before any later shape/state rejection. A valid
@@ -362,6 +363,25 @@ function pruneStaleLocation(state) {
     && Date.now() - Date.parse(state.locationSharing.latestLocation.capturedAt)
       > locationRetentionMilliseconds) {
     state.locationSharing.latestLocation = null;
+  }
+}
+
+function pruneExpiredAlerts(state) {
+  state.alerts ??= {};
+  state.aliases ??= {};
+  const now = Date.now();
+  for (const [eventId, alert] of Object.entries(state.alerts)) {
+    if (!Number.isFinite(Date.parse(alert.expiresAt)) || Date.parse(alert.expiresAt) <= now) {
+      delete state.alerts[eventId];
+    }
+  }
+  for (const [requestedEventId, canonicalEventId] of Object.entries(state.aliases)) {
+    if (!state.alerts[requestedEventId] || !state.alerts[canonicalEventId]) {
+      delete state.aliases[requestedEventId];
+    }
+  }
+  if (state.activeEventId && !state.alerts[state.activeEventId]) {
+    state.activeEventId = null;
   }
 }
 

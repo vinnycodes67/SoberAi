@@ -151,11 +151,7 @@ enum OnboardingRiskFlag: String, Codable, CaseIterable, Sendable {
 struct OnboardingValidation: Equatable, Sendable {
   let flags: [OnboardingRiskFlag]
 
-  static let clean = OnboardingValidation(flags: [])
-
   var isBlocked: Bool { flags.contains(where: \.isBlocking) }
-  var blockingFlags: [OnboardingRiskFlag] { flags.filter(\.isBlocking) }
-  var reviewFlags: [OnboardingRiskFlag] { flags.filter { !$0.isBlocking } }
 
   /// True when anything at all was out of the ordinary, blocking or not.
   var isOutOfOrdinary: Bool { !flags.isEmpty }

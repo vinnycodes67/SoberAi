@@ -34,10 +34,14 @@ enum ScreeningResultState: String, Sendable {
 struct ScreeningMetrics: Equatable, Sendable {
   var reactionTimeMilliseconds: Double
   var reactionMisses: Int
+  /// `false` when the reaction task never ran, such as a self-report-only result.
+  var reactionWasMeasured: Bool = true
   /// `nil` means the task was skipped or the capture failed. An unmeasured
   /// metric is never substituted with a stand-in value.
   var trackingError: Double?
   var timeEstimateError: Double
+  /// `false` when the timing task never ran.
+  var timingWasMeasured: Bool = true
   var gazeSmoothness: Double?
   /// `nil` when the pupillometry step was skipped or the model/capture
   /// couldn't produce a reading. Unlike trackingError/gazeSmoothness this
@@ -81,6 +85,23 @@ struct SignalDetail: Identifiable, Equatable, Sendable {
   let label: String
   let value: String
   let concern: Bool
+  /// Carries capture state explicitly so presentation never has to infer it
+  /// from localized display copy.
+  let wasMeasured: Bool
+
+  init(
+    id: String,
+    label: String,
+    value: String,
+    concern: Bool,
+    wasMeasured: Bool = true
+  ) {
+    self.id = id
+    self.label = label
+    self.value = value
+    self.concern = concern
+    self.wasMeasured = wasMeasured
+  }
 }
 
 struct ScreeningOutcome: Equatable, Sendable {
@@ -97,12 +118,10 @@ enum BaselineCompletionReason: Sendable {
 }
 
 struct BaselineCompletionState: Equatable, Sendable {
-  let reason: BaselineCompletionReason
   let title: String
   let message: String
 
   init(reason: BaselineCompletionReason) {
-    self.reason = reason
     switch reason {
     case .ready:
       self.title = "Baseline recorded"
@@ -129,6 +148,12 @@ enum FounderScenario: String, CaseIterable, Identifiable, Sendable {
 enum ScreeningMode: Sendable {
   case check
   case baseline
+}
+
+enum SafeRideMessage {
+  nonisolated static func body(destinationName: String) -> String {
+    "Can you help me get to \(destinationName)? I’m choosing not to drive."
+  }
 }
 
 /// One completed sober baseline session's per-task readings. Optional

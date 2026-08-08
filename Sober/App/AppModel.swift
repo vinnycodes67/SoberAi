@@ -4,8 +4,13 @@ import Foundation
 @MainActor
 final class AppModel: ObservableObject {
   @Published var hasCompletedOnboarding: Bool
+  /// The number of *measured* eligible baseline sessions. This is always the
+  /// truth on disk; the founder preview never inflates it.
   @Published var baselineSessions: Int
-  @Published var isFounderPreview: Bool
+  /// Only ever true in an `INTERNAL_BUILD`. Writes are clamped by
+  /// `allowsInternalTools`, so a public binary cannot enter this state even if a
+  /// stale `UserDefaults` value survives an upgrade from an internal build.
+  @Published private(set) var isFounderPreview: Bool
   @Published var researchConsent: Bool {
     didSet { defaults.set(researchConsent, forKey: Keys.researchConsent) }
   }
@@ -52,6 +57,9 @@ final class AppModel: ObservableObject {
 
   @Published private(set) var participantID: PseudonymousParticipantID
 
+  /// Compile-time capability gate. Injectable so tests can exercise both the
+  /// public and internal behaviours from a single (Debug) test run.
+  let allowsInternalTools: Bool
   private let defaults: UserDefaults
   private let researchStore: ResearchSessionStore
   private let guardianStore: any GuardianSessionStoring
@@ -72,8 +80,11 @@ final class AppModel: ObservableObject {
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
     guardianLocation: any GuardianLocationProviding = GuardianLocationService(),
     guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler(),
-    guardianLiveLocation: any GuardianLiveLocationProviding = GuardianLiveLocationService()
+    guardianLiveLocation: any GuardianLiveLocationProviding = GuardianLiveLocationService(),
+    automaticallyStartsGuardianServices: Bool = true,
+    allowsInternalTools: Bool = BuildChannel.allowsInternalTools
   ) {
+    self.allowsInternalTools = allowsInternalTools
     self.defaults = defaults
     self.researchStore = researchStore
     self.guardianStore = guardianStore
@@ -83,10 +94,14 @@ final class AppModel: ObservableObject {
     self.guardianCheckInScheduler = guardianCheckInScheduler
     self.guardianLiveLocation = guardianLiveLocation
     hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarding)
-    let storedBaselineSessions = defaults.integer(forKey: Keys.baselines)
-    let storedFounderPreview = defaults.bool(forKey: Keys.founderPreview)
-    baselineSessions = storedFounderPreview ? max(storedBaselineSessions, 5) : storedBaselineSessions
-    isFounderPreview = storedFounderPreview
+    // `baselineSessions` is the measured count and nothing else. Inflating it
+    // here made a demo state indistinguishable from a real one on disk, and it
+    // survived "delete all data".
+    baselineSessions = defaults.integer(forKey: Keys.baselines)
+    // A public binary ignores a persisted founder flag rather than trusting it,
+    // so an internal build that is later replaced by an App Store build cannot
+    // leave the user stranded in the demo state.
+    isFounderPreview = allowsInternalTools && defaults.bool(forKey: Keys.founderPreview)
     researchConsent = defaults.bool(forKey: Keys.researchConsent)
 
     if let rawParticipantID = defaults.string(forKey: Keys.participantID) {
@@ -121,31 +136,58 @@ final class AppModel: ObservableObject {
       userProfile = UserProfile()
     }
 
-    guardianSession = try? guardianStore.load()
-    guardianHomeAnchor = try? guardianHomeStore.load()
-    guardianLocationAuthorization = guardianLiveLocation.authorizationState
-    guardianLiveLocation.onAuthorizationChange = { [weak self] state in
-      self?.guardianLocationAuthorization = state
+    do {
+      guardianSession = try guardianStore.load()
+    } catch {
+      guardianSession = nil
+      guardianError = "Guardian setup could not be loaded from this iPhone."
     }
-    guardianLiveLocation.onLocation = { [weak self] update in
-      guard let self else { return }
-      self.guardianLocalLocation = update
-      Task { await self.publishGuardianLocation(update) }
+    do {
+      guardianHomeAnchor = try guardianHomeStore.load()
+    } catch {
+      guardianHomeAnchor = nil
+      guardianError = "Your private Home location could not be loaded from this iPhone."
     }
-    if guardianSession?.role == .person,
-      defaults.bool(forKey: Keys.guardianLocationSharingEnabled)
-    {
-      guardianLiveLocation.resumeIfAuthorized()
+
+    if automaticallyStartsGuardianServices {
+      guardianLocationAuthorization = guardianLiveLocation.authorizationState
+      guardianLiveLocation.onAuthorizationChange = { [weak self] state in
+        self?.guardianLocationAuthorization = state
+      }
+      guardianLiveLocation.onLocation = { [weak self] update in
+        guard let self else { return }
+        self.guardianLocalLocation = update
+        Task { await self.publishGuardianLocation(update) }
+      }
+      if guardianSession?.role == .person,
+        defaults.bool(forKey: Keys.guardianLocationSharingEnabled)
+      {
+        guardianLiveLocation.resumeIfAuthorized()
+      }
     }
 
     Task {
       await reloadResearchData()
-      if guardianSession != nil { await refreshGuardian() }
+      if automaticallyStartsGuardianServices, guardianSession != nil { await refreshGuardian() }
     }
   }
 
+  /// True once the person has enough *measured* eligible sessions to be
+  /// compared against their own steady.
+  ///
+  /// The founder preview may short-circuit this, but only in an internal build.
+  /// In a public build this is a function of measured data alone — the UI must
+  /// never claim a personal baseline exists while `ScreeningEngine` is silently
+  /// scoring against population norms.
   var baselineReady: Bool {
-    isFounderPreview || (baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions) >= 5
+    if allowsInternalTools, isFounderPreview { return true }
+    return measuredEligibleSessions >= 5
+  }
+
+  /// The best eligible-session count across protocol variants, falling back to
+  /// the persisted count before research data has loaded.
+  var measuredEligibleSessions: Int {
+    baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions
   }
 
   var guardianRelationshipIsActive: Bool {
@@ -220,6 +262,9 @@ final class AppModel: ObservableObject {
       await retryPendingGuardianCheckInCompletion()
       if let alert = envelope.activeAlert {
         applyGuardianAlert(alert)
+      } else if session.activeEventID != nil {
+        clearStaleGuardianAlert(requiresDirectAction: false)
+        return
       }
       guardianError = nil
     } catch GuardianAPIError.relationshipUnavailable {
@@ -234,6 +279,26 @@ final class AppModel: ObservableObject {
     } catch {
       guardianError = error.localizedDescription
     }
+  }
+
+  private func clearStaleGuardianAlert(requiresDirectAction: Bool) {
+    if var session = guardianSession {
+      session.activeEventID = nil
+      guardianSession = session
+      do {
+        try guardianStore.save(session)
+      } catch {
+        guardianError = "The expired request was cleared, but Sober could not save that change."
+        guardianAlertState = requiresDirectAction ? .actNow : .notRequired
+        guardianActiveAlert = nil
+        return
+      }
+    }
+    guardianActiveAlert = nil
+    guardianAlertState = requiresDirectAction ? .actNow : .notRequired
+    guardianError = requiresDirectAction
+      ? "The Guardian request expired. Contact someone directly if you still need help."
+      : nil
   }
 
   func enableGuardianLocationSharing() async {
@@ -361,6 +426,26 @@ final class AppModel: ObservableObject {
       guardianActiveAlert = envelope.alert
       applyGuardianAlert(envelope.alert)
       guardianError = nil
+    } catch GuardianAPIError.alertUnavailable {
+      // The relay deliberately returns the same 404 for a missing alert and
+      // an unavailable relationship. Probe the signed relationship endpoint
+      // before clearing local state so a revoked relationship is not mistaken
+      // for an expired alert.
+      do {
+        let envelope = try await guardianAPI.relationship(for: session)
+        guardianRelationship = envelope.relationship
+        guardianCheckInPlan = envelope.checkInPlan
+        guardianLocationSharing = envelope.locationSharing
+        clearStaleGuardianAlert(requiresDirectAction: true)
+      } catch GuardianAPIError.relationshipUnavailable {
+        guardianRelationship = nil
+        guardianActiveAlert = nil
+        guardianAlertState = .actNow
+        guardianError = GuardianAPIError.relationshipUnavailable.localizedDescription
+      } catch {
+        guardianAlertState = .actNow
+        guardianError = error.localizedDescription
+      }
     } catch GuardianAPIError.relationshipUnavailable {
       guardianRelationship = nil
       guardianActiveAlert = nil
@@ -657,13 +742,6 @@ final class AppModel: ObservableObject {
     }
     defaults.set("prototype-v2", forKey: Keys.consentVersion)
     defaults.set(Date(), forKey: Keys.consentDate)
-    persist()
-  }
-
-  /// Legacy counter path retained for previews. Live baseline flows use
-  /// `recordCompletedSession` so eligibility comes from stored measurements.
-  func recordBaseline() {
-    baselineSessions = min(baselineSessions + 1, 5)
     persist()
   }
 

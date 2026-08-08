@@ -143,6 +143,26 @@ test("founder mode creates a pending relationship and one-time invite", async ()
   assert.equal(JSON.stringify(state).includes(created.body.inviteCode), false);
 });
 
+test("relationship creation rejects a public key that is not a P-256 point", async () => {
+  const env = environment();
+  const response = await handleGuardianRequest(new Request(`${origin}/v1/guardian-relationships`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      personPublicKeyJwk: {
+        kty: "EC", crv: "P-256",
+        x: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        y: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      },
+      personDisplayName: "Alex",
+      senderConsentVersion: "guardian-sender-v1",
+    }),
+  }), env);
+
+  assert.equal(response.status, 422);
+  assert.equal(env.GUARDIAN_RELATIONSHIPS.instances.size, 0);
+});
+
 test("relationship creation stays closed outside the founder build", async () => {
   const created = await createRelationship(environment("false"));
   assert.equal(created.response.status, 404);
@@ -161,6 +181,21 @@ test("guardian redeems an invite exactly once with a different key", async () =>
   const created2 = await createRelationship(env2);
   const sameKey = await redeemRelationship(env2, created2, created2.personKey);
   assert.equal(sameKey.response.status, 404);
+});
+
+test("guardian redemption rejects a public key that is not a P-256 point", async () => {
+  const env = environment();
+  const created = await createRelationship(env);
+  const redeemed = await redeemRelationship(env, created, undefined, {
+    guardianPublicKeyJwk: {
+      kty: "EC", crv: "P-256",
+      x: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      y: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    },
+  });
+
+  assert.equal(redeemed.response.status, 404);
+  assert.equal(redeemed.body.error.code, "invalidInvite");
 });
 
 test("signed relationship reads are role-scoped and replay protected", async () => {
@@ -288,6 +323,50 @@ test("guardian sees the pending alert and signed acknowledgment reaches the pers
     privateKey: created.personKey.privateKey,
   }), env);
   assert.equal((await personPoll.json()).alert.personActionState, "guardianConfirmed");
+});
+
+test("expired alerts, aliases, and the active pointer are pruned after 24 hours", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const base = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const body = {
+    occurredAt: new Date().toISOString(), result: "SIGNALS_DETECTED",
+    source: "liveCheck", messageTemplateVersion: "guardian-help-v1",
+  };
+  const canonicalEventId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/alerts/${canonicalEventId}`, method: "PUT", body,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: canonicalEventId,
+  }), env);
+
+  const aliasEventId = crypto.randomUUID();
+  await handleGuardianRequest(await signedRequest({
+    path: `${base}/alerts/${aliasEventId}`, method: "PUT", body,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey, idempotencyKey: aliasEventId,
+  }), env);
+
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  for (const alert of Object.values(state.alerts)) {
+    alert.expiresAt = new Date(Date.now() - 1_000).toISOString();
+  }
+  await storage.put("state", state);
+
+  const guardianRead = await handleGuardianRequest(await signedRequest({
+    path: base, relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  assert.equal((await guardianRead.json()).activeAlert, null);
+
+  const pruned = await storage.get("state");
+  assert.deepEqual(pruned.alerts, {});
+  assert.deepEqual(pruned.aliases, {});
+  assert.equal(pruned.activeEventId, null);
 });
 
 test("alert idempotency survives separate handler calls", async () => {

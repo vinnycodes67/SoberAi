@@ -58,26 +58,10 @@ enum DSPalette {
   // product never signals that anyone is clear to drive.
 
   static let withinRange = Color(dsHex: 0xA9A8A4)
-  static let outsideRange = accent
   /// Could not be read. Never orange, because an absent reading is not a
   /// finding.
   static let unmeasured = Color(dsHex: 0x6B6A66)
 
-  // MARK: - Task stimuli
-  //
-  // Functional colours for the choice-reaction task, which asks someone to
-  // match a colour. These are stimuli, not brand, and must never be folded
-  // into the accent: an earlier sweep collapsed both to one value and made
-  // the task impossible to complete.
-  //
-  // Blue and magenta stay separable under deuteranopia and protanopia, where
-  // red and green do not, and they are separated by luminance (about 2.5:1)
-  // so they also work for someone who sees no colour at all. Colour is never
-  // the sole cue regardless: every symbol carries a shape, and its
-  // accessibility label states both.
-
-  static let stimulusBlue = Color(dsHex: 0x2F7FD4)
-  static let stimulusMagenta = Color(dsHex: 0xFFB3E2)
 }
 
 extension Color {

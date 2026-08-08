@@ -104,7 +104,6 @@ final class FaceTrackingService: NSObject, ObservableObject {
   private var recentHeadPositions: [SIMD3<Float>] = []
   private var qualityHistory = CaptureQualityHistory()
   private var wantsSessionRunning = false
-  private var currentMode: OcularPhase = .calibration
   private var lastFaceSeenAt: TimeInterval?
   private var activeProtocolVariant: OcularProtocolVariant = .full
 
@@ -131,13 +130,13 @@ final class FaceTrackingService: NSObject, ObservableObject {
   }
 
   func startCalibration() {
-    beginCapture(mode: .calibration)
+    beginCapture()
   }
 
   func startOcularProtocol(variant: OcularProtocolVariant = .full) {
     activeProtocolVariant = variant
     protocolStartedAt = ProcessInfo.processInfo.systemUptime
-    beginCapture(mode: .fixation, preserveProtocolStart: true)
+    beginCapture(preserveProtocolStart: true)
   }
 
   func pause() {
@@ -203,7 +202,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
     )
   }
 
-  private func beginCapture(mode: OcularPhase, preserveProtocolStart: Bool = false) {
+  private func beginCapture(preserveProtocolStart: Bool = false) {
     samples.removeAll(keepingCapacity: true)
     sampleCount = 0
     observedFrameCount = 0
@@ -211,7 +210,6 @@ final class FaceTrackingService: NSObject, ObservableObject {
     recentHeadPositions.removeAll(keepingCapacity: true)
     qualityHistory = CaptureQualityHistory()
     lastFaceSeenAt = nil
-    currentMode = mode
     wantsSessionRunning = true
     if !preserveProtocolStart { protocolStartedAt = nil }
 
@@ -306,7 +304,6 @@ final class FaceTrackingService: NSObject, ObservableObject {
     let target: OcularTarget
     if let protocolStartedAt {
       target = OcularProtocolSchedule.target(at: timestamp - protocolStartedAt, variant: activeProtocolVariant)
-      currentMode = target.phase
     } else {
       target = OcularTarget(phase: .calibration, x: 0.5, y: 0.5)
     }

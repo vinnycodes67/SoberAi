@@ -155,38 +155,6 @@ struct SecondaryActionButtonStyle: ButtonStyle {
   }
 }
 
-struct SoberCardButtonStyle: ButtonStyle {
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.986)
-      .brightness(configuration.isPressed ? 0.035 : 0)
-      .animation(reduceMotion ? nil : SoberMotion.press, value: configuration.isPressed)
-  }
-}
-
-struct SoberGlassControlGroup<Content: View>: View {
-  let spacing: CGFloat
-  @ViewBuilder let content: Content
-
-  init(spacing: CGFloat = 12, @ViewBuilder content: () -> Content) {
-    self.spacing = spacing
-    self.content = content()
-  }
-
-  @ViewBuilder
-  var body: some View {
-    if #available(iOS 26.0, *) {
-      GlassEffectContainer(spacing: spacing) {
-        content
-      }
-    } else {
-      content
-    }
-  }
-}
-
 struct StepProgress: View {
   let current: Int
   let total: Int
@@ -233,19 +201,6 @@ struct ScreenHeader: View {
         .foregroundStyle(Palette.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
     }
-  }
-}
-
-struct PrototypeBadge: View {
-  var body: some View {
-    Text("FOUNDER PROTOTYPE")
-      .font(.caption2.weight(.bold))
-      .tracking(1.2)
-      .foregroundStyle(Palette.warning)
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
-      .background(Palette.warning.opacity(0.1), in: Capsule())
-      .overlay { Capsule().stroke(Palette.warning.opacity(0.34), lineWidth: 1) }
   }
 }
 

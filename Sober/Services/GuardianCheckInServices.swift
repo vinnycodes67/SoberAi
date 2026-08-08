@@ -99,9 +99,6 @@ final class GuardianLocationService: NSObject, GuardianLocationProviding, @MainA
 
   func currentCoordinate() async throws -> GuardianCoordinate {
     guard continuation == nil else { throw GuardianLocationError.requestInProgress }
-    guard CLLocationManager.locationServicesEnabled() else {
-      throw GuardianLocationError.servicesUnavailable
-    }
     return try await withCheckedThrowingContinuation { continuation in
       self.continuation = continuation
       continueAfterAuthorization(manager.authorizationStatus)
@@ -150,7 +147,6 @@ final class GuardianLocationService: NSObject, GuardianLocationProviding, @MainA
 }
 
 enum GuardianLocationError: LocalizedError {
-  case servicesUnavailable
   case permissionDenied
   case locationUnavailable
   case preciseLocationRequired
@@ -158,7 +154,6 @@ enum GuardianLocationError: LocalizedError {
 
   var errorDescription: String? {
     switch self {
-    case .servicesUnavailable: "Location Services are turned off."
     case .permissionDenied: "Allow location while using Sober to check whether you’re at Home."
     case .locationUnavailable: "Sober couldn’t get a current location. Try again."
     case .preciseLocationRequired: "Sober needs a more precise location to save or compare Home. Turn on Precise Location in Settings and try again."

@@ -19,7 +19,8 @@ final class AppModelTests: XCTestCase {
 
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory)
+      researchStore: ResearchSessionStore(directoryURL: directory),
+      automaticallyStartsGuardianServices: false
     )
 
     XCTAssertTrue(model.baselineReady)

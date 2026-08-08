@@ -44,7 +44,7 @@ Stated explicitly, as requested. These were checked and no defect was found.
 | Reported use overrides task performance | Sound. `selfReport == .yes` returns `signalsDetected` with `riskScore` floored at the threshold before any task metric is consulted ([ScreeningEngine.swift:40-47](../Sober/Services/ScreeningEngine.swift#L40)). Covered by `testReportedUseCanNeverReturnNoSignals` across clean, perfect, and degraded metrics. |
 | Simulator / unsupported live path | Sound. Unsupported capture yields `qualityScore == 0`, which fails the `minimumQuality` gate and returns `INCONCLUSIVE`. A live check on the simulator cannot present as a measured result. |
 | Founder previews never send | Sound. `ParentAlertPolicy.shouldSend` requires `!isSample`, and the flow short-circuits sample scenarios to `.preview` before any relay call. |
-| Provider acceptance vs carrier delivery | Sound. The success copy reads "Alert accepted for sending … Carrier delivery is not yet confirmed" ([ResultView.swift:196](../Sober/Features/Results/ResultView.swift#L196)). No state claims the parent received anything. |
+| Guardian request confirmation | Sound in the current flow. The result distinguishes an in-flight request, a signed Guardian acknowledgment, and an unconfirmed fallback ([DSIntegratedResultScreen.swift](../Sober/DesignKit/Screens/DSIntegratedResultScreen.swift)). No state claims help is confirmed without the acknowledgment. |
 | Baseline exclusion, median/MAD | Sound. `isEligible` requires current schema, a `completedAt`, `completedAllTasks`, quality ≥ 0.72, and finite metrics. Median and raw (unscaled) MAD are correct, including the even-count average; the docstring correctly notes the 1.4826 factor is omitted. |
 | Research data does not retune the scorer | Sound. `BaselineProfileEngine` output flows only to `AppModel.baselineProfile` for display. `ScreeningEngine` takes no baseline input and holds fixed constants. |
 | Exported JSON identifiers | Sound. The envelope carries a random `participant_<uuid>` and no name, phone, contact, or precise device model (`UIDevice.model` is the generic `"iPhone"`). Locale is the only mild fingerprint. |
@@ -192,7 +192,7 @@ Stated explicitly, as requested. These were checked and no defect was found.
 | --- | --- | --- |
 | P3-1 | [Docs/FOUNDER_REVIEW.md:21](FOUNDER_REVIEW.md), [plan.md:40](../plan.md#L40) | Both describe "randomized saccades". `OcularProtocolSchedule` uses a fixed 8-position sequence in a fixed order. Either randomise the order per session or correct the wording. |
 | P3-2 | [OcularSignalAnalyzer.swift:59](../Sober/Services/OcularSignalAnalyzer.swift#L59) | `blinkRatePerMinute` is computed and archived but contributes nothing to any score. Fine as a research feature; worth a comment saying so. |
-| P3-3 | [ResultView.swift:68](../Sober/Features/Results/ResultView.swift#L68) | The 4-second countdown gating "Return home" is not announced to VoiceOver; the button simply reads as disabled. Add an accessibility value or a live-region announcement. |
+| Resolved | [DSIntegratedResultScreen.swift](../Sober/DesignKit/Screens/DSIntegratedResultScreen.swift) | The 4-second safety hold now exposes an accessibility value and posts an announcement when Return home becomes available. |
 
 ---
 

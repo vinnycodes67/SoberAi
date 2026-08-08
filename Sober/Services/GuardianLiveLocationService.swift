@@ -50,7 +50,6 @@ final class GuardianLiveLocationService: NSObject, GuardianLiveLocationProviding
   }
 
   var authorizationState: GuardianLocationAuthorizationState {
-    guard CLLocationManager.locationServicesEnabled() else { return .unavailable }
     return switch manager.authorizationStatus {
     case .notDetermined: .notDetermined
     case .authorizedWhenInUse: .foregroundOnly

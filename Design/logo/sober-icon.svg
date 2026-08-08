@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Sober app icon">
+  <defs>
+    <radialGradient id="ground" cx="50%" cy="44%" r="72%">
+      <stop offset="0%" stop-color="#1A2429"/>
+      <stop offset="100%" stop-color="#131415"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Full-bleed ground: iOS masks the corners, so no rounded rect here. -->
+  <rect width="1024" height="1024" fill="url(#ground)"/>
+
+  <!-- Mark at 64% of canvas, optically centred. -->
+  <g transform="translate(184.5 184.5) scale(6.55)" color="#6FC5E4">
+    <circle cx="50" cy="50" r="32" fill="none" stroke="currentColor" stroke-width="3.5"
+            stroke-linecap="round" stroke-dasharray="168 33" transform="rotate(-58 50 50)"/>
+    <circle cx="50" cy="50" r="14" fill="currentColor"/>
+  </g>
+</svg>

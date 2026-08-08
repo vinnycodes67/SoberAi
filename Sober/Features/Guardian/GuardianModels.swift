@@ -268,6 +268,7 @@ enum GuardianAPIError: LocalizedError, Equatable, Sendable {
   case invalidInvite
   case invalidResponse
   case relationshipUnavailable
+  case alertUnavailable
   case server(code: String, retryable: Bool)
 
   var errorDescription: String? {
@@ -280,6 +281,8 @@ enum GuardianAPIError: LocalizedError, Equatable, Sendable {
       "Guardian Mode received an unreadable response."
     case .relationshipUnavailable:
       "This Guardian relationship is no longer available."
+    case .alertUnavailable:
+      "That Guardian help request is no longer available."
     case let .server(_, retryable):
       retryable
         ? "Guardian Mode is temporarily unavailable. Try again."

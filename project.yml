@@ -14,10 +14,15 @@ targets:
     platform: iOS
     sources:
       - path: Sober
+        excludes:
+          - DesignKit/README.md
+          - Resources/Fonts/Satoshi-Black.otf
     info:
       path: Sober/Info.plist
       properties:
         CFBundleDisplayName: Sober
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
         NSLocationWhenInUseUsageDescription: Sober uses your location for private Home checks and, only when you turn on Circle sharing, to show your current location to your connected guardian.
         NSLocationAlwaysAndWhenInUseUsageDescription: When you explicitly enable background Circle sharing, Sober keeps your connected guardian's map current after you leave the app. You can stop sharing at any time.
@@ -37,7 +42,6 @@ targets:
           - Satoshi-Regular.otf
           - Satoshi-Medium.otf
           - Satoshi-Bold.otf
-          - Satoshi-Black.otf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app
@@ -45,7 +49,12 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "2"
-        SOBER_GUARDIAN_API_URL: "http://127.0.0.1:8787"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Debug:
+          SOBER_GUARDIAN_API_URL: "http://127.0.0.1:8787"
+        Release:
+          SOBER_GUARDIAN_API_URL: ""
     scheme:
       testTargets:
         - SoberTests

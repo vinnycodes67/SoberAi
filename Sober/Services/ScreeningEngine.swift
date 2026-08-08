@@ -198,28 +198,51 @@ struct ScreeningEngine: Sendable {
     metrics: ScreeningMetrics
   ) -> [SignalDetail] {
     [
-      SignalDetail(
-        id: "reaction",
-        label: "Reaction",
-        value: "\(Int(metrics.reactionTimeMilliseconds.rounded())) ms",
-        concern: reactionRisk >= 0.55 || metrics.reactionMisses > 0
-      ),
+      reactionDetail(risk: reactionRisk, metrics: metrics),
       trackingDetail(risk: trackingRisk, error: metrics.trackingError),
-      SignalDetail(
-        id: "timing",
-        label: "Time estimate",
-        value: "\(Int(metrics.timeEstimateError * 100))% off",
-        concern: timingRisk >= 0.55
-      ),
+      timingDetail(risk: timingRisk, metrics: metrics),
       gazeDetail(risk: gazeRisk, smoothness: metrics.gazeSmoothness),
       pupilDetail(risk: pupilRisk, sample: metrics.pupillometry),
     ]
   }
 
+  private func reactionDetail(risk: Double, metrics: ScreeningMetrics) -> SignalDetail {
+    guard metrics.reactionWasMeasured else {
+      return SignalDetail(
+        id: "reaction", label: "Reaction", value: "Not measured", concern: false,
+        wasMeasured: false
+      )
+    }
+    return SignalDetail(
+      id: "reaction",
+      label: "Reaction",
+      value: "\(Int(metrics.reactionTimeMilliseconds.rounded())) ms",
+      concern: risk >= 0.55 || metrics.reactionMisses > 0
+    )
+  }
+
+  private func timingDetail(risk: Double, metrics: ScreeningMetrics) -> SignalDetail {
+    guard metrics.timingWasMeasured else {
+      return SignalDetail(
+        id: "timing", label: "Time estimate", value: "Not measured", concern: false,
+        wasMeasured: false
+      )
+    }
+    return SignalDetail(
+      id: "timing",
+      label: "Time estimate",
+      value: "\(Int(metrics.timeEstimateError * 100))% off",
+      concern: risk >= 0.55
+    )
+  }
+
   /// Never prints a percentage for a task that didn't run.
   private func pupilDetail(risk: Double?, sample: PupillometrySample?) -> SignalDetail {
     guard let risk, let sample, !sample.trials.isEmpty else {
-      return SignalDetail(id: "pupil", label: "Light reflex", value: "Not measured", concern: true)
+      return SignalDetail(
+        id: "pupil", label: "Light reflex", value: "Not measured", concern: false,
+        wasMeasured: false
+      )
     }
     let averageAmplitude =
       sample.trials.map(\.amplitudePercent).reduce(0, +) / Double(sample.trials.count)
@@ -234,7 +257,10 @@ struct ScreeningEngine: Sendable {
   /// Never prints a percentage for a task that didn't run.
   private func trackingDetail(risk: Double?, error: Double?) -> SignalDetail {
     guard let risk, let error else {
-      return SignalDetail(id: "tracking", label: "Motor tracking", value: "Not measured", concern: true)
+      return SignalDetail(
+        id: "tracking", label: "Motor tracking", value: "Not measured", concern: false,
+        wasMeasured: false
+      )
     }
     return SignalDetail(
       id: "tracking",
@@ -247,7 +273,10 @@ struct ScreeningEngine: Sendable {
   /// Never prints a percentage for a task that didn't run.
   private func gazeDetail(risk: Double?, smoothness: Double?) -> SignalDetail {
     guard let risk, let smoothness else {
-      return SignalDetail(id: "gaze", label: "Guided gaze", value: "Not measured", concern: true)
+      return SignalDetail(
+        id: "gaze", label: "Guided gaze", value: "Not measured", concern: false,
+        wasMeasured: false
+      )
     }
     return SignalDetail(
       id: "gaze",
@@ -282,10 +311,15 @@ struct ScreeningEngine: Sendable {
         details: [
           SignalDetail(id: "reaction", label: "Reaction", value: "2 missed", concern: true),
           SignalDetail(
-            id: "tracking", label: "Motor tracking", value: "Interrupted", concern: true),
+            id: "tracking", label: "Motor tracking", value: "Interrupted", concern: false,
+            wasMeasured: false),
           SignalDetail(id: "timing", label: "Time estimate", value: "Completed", concern: false),
-          SignalDetail(id: "gaze", label: "Guided gaze", value: "Low light", concern: true),
-          SignalDetail(id: "pupil", label: "Light reflex", value: "Not measured", concern: true),
+          SignalDetail(
+            id: "gaze", label: "Guided gaze", value: "Low light", concern: false,
+            wasMeasured: false),
+          SignalDetail(
+            id: "pupil", label: "Light reflex", value: "Not measured", concern: false,
+            wasMeasured: false),
         ]
       )
     case .noSignals:

@@ -4,6 +4,46 @@ import XCTest
 @testable import Sober
 
 final class GuardianModeTests: XCTestCase {
+  func testMalformedRelationshipIDInInviteIsRejectedBeforeNetworking() async {
+    let client = GuardianAPIClient(
+      configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
+      transport: { _ in
+        XCTFail("Malformed invites must not reach the transport")
+        throw GuardianAPIError.invalidResponse
+      }
+    )
+
+    do {
+      _ = try await client.redeem(inviteCode: "rel_../../relationships.token")
+      XCTFail("Expected the invite to be rejected")
+    } catch let error as GuardianAPIError {
+      XCTAssertEqual(error, .invalidInvite)
+    } catch {
+      XCTFail("Unexpected error: \(error)")
+    }
+  }
+
+  func testNoContentRevokeDecodesWithoutUnsafeCasting() async throws {
+    let key = P256.Signing.PrivateKey()
+    let session = GuardianSession(
+      role: .person,
+      relationshipID: "rel_test123",
+      capabilityID: "rcap_person123",
+      privateKey: key.rawRepresentation,
+      inviteCode: nil,
+      activeEventID: nil
+    )
+    let client = GuardianAPIClient(
+      configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
+      transport: { request in
+        XCTAssertEqual(request.httpMethod, "DELETE")
+        return (Data(), Self.httpResponse(status: 204))
+      }
+    )
+
+    try await client.revoke(session: session)
+  }
+
   func testSignedRelationshipRequestMatchesFrozenCanonicalContract() async throws {
     let key = P256.Signing.PrivateKey()
     let session = GuardianSession(
@@ -53,7 +93,10 @@ final class GuardianModeTests: XCTestCase {
     let client = GuardianAPIClient(
       configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
       transport: { request in
-        let object = try JSONSerialization.jsonObject(with: request.httpBody!) as! [String: Any]
+        let requestBody = try XCTUnwrap(request.httpBody)
+        let object = try XCTUnwrap(
+          try JSONSerialization.jsonObject(with: requestBody) as? [String: Any]
+        )
         XCTAssertEqual(Set(object.keys), [
           "occurredAt", "result", "source", "messageTemplateVersion",
         ])
@@ -83,7 +126,10 @@ final class GuardianModeTests: XCTestCase {
     let client = GuardianAPIClient(
       configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
       transport: { request in
-        let object = try JSONSerialization.jsonObject(with: request.httpBody!) as! [String: Any]
+        let requestBody = try XCTUnwrap(request.httpBody)
+        let object = try XCTUnwrap(
+          try JSONSerialization.jsonObject(with: requestBody) as? [String: Any]
+        )
         XCTAssertEqual(Set(object.keys), [
           "proposalId", "cadence", "localTime", "timeZoneIdentifier", "condition",
           "graceMinutes", "proposalConsentVersion",
@@ -124,7 +170,10 @@ final class GuardianModeTests: XCTestCase {
       configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
       transport: { request in
         let count = requestCount.increment()
-        let object = try JSONSerialization.jsonObject(with: request.httpBody!) as! [String: Any]
+        let requestBody = try XCTUnwrap(request.httpBody)
+        let object = try XCTUnwrap(
+          try JSONSerialization.jsonObject(with: requestBody) as? [String: Any]
+        )
         if count == 1 {
           XCTAssertTrue(request.url!.path.hasSuffix("/location-sharing"))
           XCTAssertEqual(Set(object.keys), [
@@ -275,7 +324,8 @@ final class GuardianModeTests: XCTestCase {
       defaults: defaults,
       researchStore: ResearchSessionStore(directoryURL: directory),
       guardianStore: store,
-      guardianAPI: client
+      guardianAPI: client,
+      automaticallyStartsGuardianServices: false
     )
     await model.refreshGuardian()
     let eventID = UUID()
@@ -285,6 +335,54 @@ final class GuardianModeTests: XCTestCase {
     XCTAssertEqual(model.guardianAlertState, .requestingHelp)
     let requests = await recorder.requests
     XCTAssertTrue(requests.contains { $0.url?.lastPathComponent == eventID.uuidString.lowercased() })
+  }
+
+  @MainActor
+  func testExpiredAlertDoesNotTearDownTheGuardianRelationship() async throws {
+    let key = P256.Signing.PrivateKey()
+    let eventID = UUID().uuidString.lowercased()
+    let initial = GuardianSession(
+      role: .person,
+      relationshipID: "rel_test123",
+      capabilityID: "rcap_person123",
+      privateKey: key.rawRepresentation,
+      inviteCode: nil,
+      activeEventID: eventID
+    )
+    let store = MemoryGuardianStore(initial)
+    let client = GuardianAPIClient(
+      configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
+      transport: { request in
+        if request.url?.path.contains("/alerts/") == true {
+          let body = Data("""
+            {"error":{"code":"notFound","message":"The request could not be completed.","retryable":false}}
+            """.utf8)
+          return (body, Self.httpResponse(status: 404))
+        }
+        return Self.relationshipResponse(role: "person")
+      }
+    )
+    let suiteName = "GuardianModeTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer {
+      defaults.removePersistentDomain(forName: suiteName)
+      try? FileManager.default.removeItem(at: directory)
+    }
+    let model = AppModel(
+      defaults: defaults,
+      researchStore: ResearchSessionStore(directoryURL: directory),
+      guardianStore: store,
+      guardianAPI: client,
+      automaticallyStartsGuardianServices: false
+    )
+
+    await model.reconcileActiveGuardianAlert()
+
+    XCTAssertNil(store.session?.activeEventID)
+    XCTAssertNotNil(model.guardianSession)
+    XCTAssertEqual(model.guardianAlertState, .actNow)
+    XCTAssertTrue(model.guardianError?.localizedCaseInsensitiveContains("expired") == true)
   }
 
   private static func relationshipResponse(role: String) -> (Data, URLResponse) {

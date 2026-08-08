@@ -5,8 +5,8 @@ import SwiftUI
 //
 // A self-contained visual system for Sober. Every type here is prefixed `DS`
 // so it can sit alongside the existing `Palette`, `SoberCard`, and friends
-// without collision. Nothing in the app currently depends on it: adopt it one
-// view at a time, and delete the old equivalents once a screen has moved.
+// without collision. Home, results, and Guardian Mode use these tokens; the
+// remaining legacy screens should migrate only when their designs are approved.
 //
 // The rules it encodes, in short:
 //
@@ -38,9 +38,6 @@ enum DSSpace {
   static let xl: CGFloat = 32
   /// 48. Between unrelated regions.
   static let xxl: CGFloat = 48
-  /// 64. Around a screen's single focal element.
-  static let xxxl: CGFloat = 64
-
   /// Bottom clearance for content sitting under the floating tab bar.
   static let tabBarClearance: CGFloat = 116
 }
@@ -70,9 +67,6 @@ enum DSMotion {
   static let quick = Animation.easeOut(duration: 0.18)
   /// 0.28s. A value changing, a section appearing.
   static let standard = Animation.easeInOut(duration: 0.28)
-  /// 0.4s. A screen transition.
-  static let deliberate = Animation.easeInOut(duration: 0.4)
-
   /// Staggered fade for a screen's blocks, capped so a long screen never
   /// makes someone wait on choreography.
   static func entrance(_ order: Int) -> Animation {

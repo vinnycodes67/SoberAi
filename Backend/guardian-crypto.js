@@ -115,3 +115,21 @@ export function validP256Jwk(value) {
     && /^[A-Za-z0-9_-]{40,50}$/.test(value.y);
 }
 
+/// Shape validation alone cannot prove that x/y identify a point on P-256.
+/// Import through WebCrypto at public ingress so an unusable key is never
+/// persisted as a relationship capability.
+export async function isUsableP256PublicKey(value) {
+  if (!validP256Jwk(value)) return false;
+  try {
+    await crypto.subtle.importKey(
+      "jwk",
+      value,
+      { name: "ECDSA", namedCurve: "P-256" },
+      false,
+      ["verify"]
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}

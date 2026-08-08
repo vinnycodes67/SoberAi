@@ -57,7 +57,9 @@ struct GuardianAPIClient: Sendable {
     let parts = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).split(
       separator: ".", maxSplits: 1, omittingEmptySubsequences: true
     )
-    guard parts.count == 2, parts[0].hasPrefix("rel_") else { throw GuardianAPIError.invalidInvite }
+    guard parts.count == 2, Self.isValidRelationshipID(parts[0]) else {
+      throw GuardianAPIError.invalidInvite
+    }
     let relationshipID = String(parts[0])
     let identity = P256.Signing.PrivateKey()
     let payload = RedeemRelationshipRequest(
@@ -124,13 +126,17 @@ struct GuardianAPIClient: Sendable {
   }
 
   func alert(session: GuardianSession, eventID: String) async throws -> GuardianAlertEnvelope {
-    try await sendSigned(
-      session: session,
-      method: "GET",
-      path: "/v1/guardian-relationships/\(session.relationshipID)/alerts/\(eventID)",
-      body: Optional<EmptyBody>.none,
-      idempotencyKey: nil
-    )
+    do {
+      return try await sendSigned(
+        session: session,
+        method: "GET",
+        path: "/v1/guardian-relationships/\(session.relationshipID)/alerts/\(eventID)",
+        body: Optional<EmptyBody>.none,
+        idempotencyKey: nil
+      )
+    } catch GuardianAPIError.relationshipUnavailable {
+      throw GuardianAPIError.alertUnavailable
+    }
   }
 
   func acknowledge(session: GuardianSession, eventID: String) async throws -> GuardianAlertEnvelope {
@@ -309,7 +315,8 @@ struct GuardianAPIClient: Sendable {
     let (data, rawResponse) = try await transport(request)
     guard let response = rawResponse as? HTTPURLResponse else { throw GuardianAPIError.invalidResponse }
     if response.statusCode == 204, Response.self == EmptyResponse.self {
-      return EmptyResponse() as! Response
+      do { return try JSONDecoder().decode(Response.self, from: Data("{}".utf8)) }
+      catch { throw GuardianAPIError.invalidResponse }
     }
     guard (200..<300).contains(response.statusCode) else {
       if response.statusCode == 404 { throw GuardianAPIError.relationshipUnavailable }
@@ -345,6 +352,12 @@ struct GuardianAPIClient: Sendable {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return formatter.string(from: date)
+  }
+
+  private static func isValidRelationshipID(_ value: Substring) -> Bool {
+    value.count == 36
+      && value.hasPrefix("rel_")
+      && value.dropFirst(4).allSatisfy { $0.isHexDigit && $0.isASCII }
   }
 }
 

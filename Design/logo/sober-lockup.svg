@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" width="320" height="100" role="img" aria-label="Sober logo lockup">
+  <!-- Mark, 72 units tall, left-aligned with 14 units of clear space. -->
+  <g transform="translate(14 14) scale(0.72)" >
+    <circle cx="50" cy="50" r="32" fill="none" stroke="currentColor" stroke-width="3.5"
+            stroke-linecap="round" stroke-dasharray="168 33" transform="rotate(-58 50 50)"/>
+    <circle cx="50" cy="50" r="14" fill="currentColor"/>
+  </g>
+
+  <!-- Wordmark. NOTE: convert to outlines before production use — this relies on
+       a system serif and will fall back on machines without New York. -->
+  <text x="108" y="64"
+        font-family="New York, Iowan Old Style, Palatino, Georgia, serif"
+        font-size="52" font-weight="600" letter-spacing="-1.6"
+        fill="currentColor">sober.</text>
+</svg>
