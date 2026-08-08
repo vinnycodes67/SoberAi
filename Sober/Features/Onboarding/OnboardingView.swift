@@ -51,19 +51,24 @@ struct OnboardingView: View {
           .disabled(page == 2 && profileValidation.isBlocked)
           .opacity(page == 2 && profileValidation.isBlocked ? 0.42 : 1)
         } else {
-          Button("Explore founder demo") {
-            model.completeOnboarding(founderPreview: true)
+          // The real baseline is the primary action. The founder demo fabricates
+          // a ready baseline, so it is compiled out of public builds entirely
+          // rather than hidden behind a runtime check.
+          Button("Start with a real baseline") {
+            model.completeOnboarding(founderPreview: false)
           }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(!canConsent)
           .opacity(canConsent ? 1 : 0.42)
 
-          Button("Start with a real baseline") {
-            model.completeOnboarding(founderPreview: false)
+          #if INTERNAL_BUILD
+          Button("Explore founder demo") {
+            model.completeOnboarding(founderPreview: true)
           }
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(canConsent ? Palette.textSecondary : Palette.textSecondary.opacity(0.45))
           .disabled(!canConsent)
+          #endif
         }
       }
       .padding(.horizontal, 22)
@@ -121,9 +126,9 @@ struct OnboardingView: View {
             icon: "hand.raised.fill", title: "No pass state",
             detail: "Every result keeps the safest choice visible.")
           boundaryRow(
-            icon: "person.2.badge.gearshape", title: "A Safety Circle you control",
-            detail:
-              "You can invite one trusted guardian to receive a minimal help request. No employer or law-enforcement mode.")
+            icon: boundaryPrivacyIcon,
+            title: boundaryPrivacyTitle,
+            detail: boundaryPrivacyDetail)
           boundaryRow(
             icon: "iphone.and.arrow.forward", title: "Action built in",
             detail: "Call a ride or your person from every result.")
@@ -149,8 +154,7 @@ struct OnboardingView: View {
 
   private func commitProfile() {
     model.userProfile = profileDraft
-    // Keep the Safety Circle's display name in step with onboarding so the
-    // alert copy and the family roster agree.
+    // Keep the Safety Plan's contact message in step with onboarding.
     model.safetyPlan.userName = profileDraft.trimmedName
   }
 
@@ -159,9 +163,8 @@ struct OnboardingView: View {
       VStack(alignment: .leading, spacing: 22) {
         ScreenHeader(
           eyebrow: "Your details",
-          title: "Who should your family see?",
-          detail:
-            "Your age stays on this iPhone. Your first name may appear in a help request to the guardian you choose. Neither is attached to research data."
+          title: profileTitle,
+          detail: profileDetail
         )
         .soberEntrance(order: 0)
 
@@ -238,8 +241,7 @@ struct OnboardingView: View {
         ScreenHeader(
           eyebrow: "Your biometric data",
           title: "Processed here. Gone right after.",
-          detail:
-            "Eye and face landmarks are sensitive. They stay on this iPhone. If you enable Safety Circle, only a short safety alert leaves the device."
+          detail: biometricDetail
         )
         .soberEntrance(order: 0)
 
@@ -253,8 +255,7 @@ struct OnboardingView: View {
             Divider().overlay(Palette.secondary.opacity(0.2))
             consentToggle(
               title: "Retention and deletion",
-              detail:
-                "I understand raw frames are discarded after feature extraction and are never uploaded. Safety alerts never contain biometric data.",
+              detail: retentionConsentDetail,
               isOn: $retentionConsent
             )
           }
@@ -310,6 +311,62 @@ struct OnboardingView: View {
     .toggleStyle(.switch)
     .tint(Palette.primary)
   }
+
+  private var boundaryPrivacyIcon: String {
+    #if INTERNAL_BUILD
+    "person.2.badge.gearshape"
+    #else
+    "iphone.and.arrow.down"
+    #endif
+  }
+
+  private var boundaryPrivacyTitle: String {
+    #if INTERNAL_BUILD
+    "A Safety Circle you control"
+    #else
+    "Private by default"
+    #endif
+  }
+
+  private var boundaryPrivacyDetail: String {
+    #if INTERNAL_BUILD
+    "You can invite one trusted Guardian to receive a minimal help request. No employer or law-enforcement mode."
+    #else
+    "Checks and baseline measurements stay on this iPhone. The public app has no family tracking or remote result feed."
+    #endif
+  }
+
+  private var profileTitle: String {
+    #if INTERNAL_BUILD
+    "Who should your family see?"
+    #else
+    "What should Sober call you?"
+    #endif
+  }
+
+  private var profileDetail: String {
+    #if INTERNAL_BUILD
+    "Your age stays on this iPhone. Your first name may appear in a help request to the Guardian you choose. Neither is attached to research data."
+    #else
+    "Your name and age stay on this iPhone and are not attached to camera frames or sent to a server."
+    #endif
+  }
+
+  private var biometricDetail: String {
+    #if INTERNAL_BUILD
+    "Eye and face landmarks are sensitive. They stay on this iPhone. If you enable Safety Circle, only a short safety alert leaves the device."
+    #else
+    "Eye and face landmarks are sensitive. They are processed on this iPhone and are never uploaded."
+    #endif
+  }
+
+  private var retentionConsentDetail: String {
+    #if INTERNAL_BUILD
+    "I understand raw frames are discarded after feature extraction and are never uploaded. Safety alerts never contain biometric data."
+    #else
+    "I understand raw frames are discarded after feature extraction and are never uploaded."
+    #endif
+  }
 }
 
 struct RetentionPolicyView: View {
@@ -335,11 +392,11 @@ struct RetentionPolicyView: View {
           )
           policySection(
             "Sharing",
-            "The MVP contains no advertising, analytics, biometric export, employer portal, or law-enforcement mode. If you explicitly enable Safety Circle, a concerning-result message is sent to the parent or guardian you provide."
+            sharingPolicy
           )
           policySection(
             "Your control",
-            "Research Mode can export or delete the local session archive at any time. Resetting the prototype clears onboarding, Safety Circle, and consent state, and permanently deletes every stored research session, your measured baseline, and any export file this build wrote."
+            controlPolicy
           )
         }
         .padding(22)
@@ -360,5 +417,21 @@ struct RetentionPolicyView: View {
         .foregroundStyle(Palette.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
     }
+  }
+
+  private var sharingPolicy: String {
+    #if INTERNAL_BUILD
+    "The internal build contains no advertising or biometric export. If you explicitly enable Safety Circle, a concerning-result message is sent to the Guardian you provide."
+    #else
+    "The public app contains no advertising, analytics, biometric export, employer portal, family tracking, or remote result feed."
+    #endif
+  }
+
+  private var controlPolicy: String {
+    #if INTERNAL_BUILD
+    "Research Mode can export or delete the local session archive at any time. Resetting clears onboarding, Safety Circle, consent state, stored research sessions, the measured baseline, and any prepared export file."
+    #else
+    "Resetting Sober clears onboarding, the Safety Plan, stored sessions, and your measured baseline from this iPhone."
+    #endif
   }
 }

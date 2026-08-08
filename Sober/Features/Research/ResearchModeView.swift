@@ -1,3 +1,4 @@
+#if INTERNAL_BUILD
 import SwiftUI
 
 struct ResearchModeView: View {
@@ -231,3 +232,4 @@ struct ResearchModeView: View {
       .tint(Palette.primary)
   }
 }
+#endif

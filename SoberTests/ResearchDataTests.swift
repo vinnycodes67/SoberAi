@@ -79,6 +79,54 @@ final class ResearchDataTests: XCTestCase {
     XCTAssertEqual(decoded.ocularSummary?.sampleCount, 240)
   }
 
+  func testResearchMetricsRoundTripPreservesUnmeasuredTasks() throws {
+    let stored = ResearchScreeningMetrics(
+      ScreeningMetrics(
+        reactionTimeMilliseconds: 0,
+        reactionMisses: 0,
+        reactionWasMeasured: false,
+        trackingError: nil,
+        timeEstimateError: 0,
+        timingWasMeasured: false,
+        gazeSmoothness: nil,
+        qualityScore: 0,
+        completedAllTasks: false
+      )
+    )
+
+    let data = try JSONEncoder().encode(stored)
+    let decoded = try JSONDecoder().decode(ResearchScreeningMetrics.self, from: data)
+    let metrics = decoded.screeningMetrics
+
+    XCTAssertFalse(metrics.reactionWasMeasured)
+    XCTAssertNil(metrics.trackingError)
+    XCTAssertFalse(metrics.timingWasMeasured)
+    XCTAssertNil(metrics.gazeSmoothness)
+  }
+
+  func testLegacyResearchMetricsDefaultExistingTasksToMeasured() throws {
+    let data = Data(
+      """
+      {
+        "reactionTimeMilliseconds": 420,
+        "reactionMisses": 0,
+        "trackingError": 0.18,
+        "timeEstimateError": 0.08,
+        "gazeSmoothness": 0.16,
+        "qualityScore": 0.9,
+        "completedAllTasks": true
+      }
+      """.utf8
+    )
+
+    let metrics = try JSONDecoder().decode(ResearchScreeningMetrics.self, from: data)
+
+    XCTAssertTrue(metrics.reactionWasMeasured)
+    XCTAssertTrue(metrics.timingWasMeasured)
+    XCTAssertEqual(metrics.screeningMetrics.trackingError, 0.18)
+    XCTAssertEqual(metrics.screeningMetrics.gazeSmoothness, 0.16)
+  }
+
   func testStoreAppendListExportAndDelete() async throws {
     let directoryURL = temporaryDirectory(named: #function)
     defer { try? FileManager.default.removeItem(at: directoryURL) }
@@ -209,6 +257,28 @@ final class ResearchDataTests: XCTestCase {
         ]
       ).isReady
     )
+  }
+
+  func testScoringBaselineUsesTheLatestThreeOnlyAfterFiveEligibleSessions() throws {
+    let participantID = PseudonymousParticipantID(rawValue: "participant_scoring")
+    let sessions = (1...5).map {
+      makeSession(
+        index: $0,
+        participantID: participantID,
+        reactionTimeMilliseconds: Double(300 + $0)
+      )
+    }
+    let engine = BaselineProfileEngine()
+
+    XCTAssertNil(
+      engine.personalBaseline(participantID: participantID, sessions: Array(sessions.prefix(4)))
+    )
+
+    let baseline = try XCTUnwrap(
+      engine.personalBaseline(participantID: participantID, sessions: sessions)
+    )
+    XCTAssertTrue(baseline.isReady)
+    XCTAssertEqual(baseline.samples.map(\.reactionTimeMilliseconds), [303, 304, 305])
   }
 
   private func makeSession(

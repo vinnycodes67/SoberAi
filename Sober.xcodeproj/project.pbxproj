@@ -7,59 +7,109 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		05CE2163F3E42DAEAA3BC849 /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
+		0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
+		1A71C37E89A77CAE14E2F97E /* ScreeningFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */; };
 		1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */; };
+		2240F5630277E3063C46013A /* TaskViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */; };
+		239948BB6751F7C427A1D917 /* GuardianLiveLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */; };
+		240740F7B4158F40241A1623 /* GuardianCheckInServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */; };
 		2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
+		25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
 		2B3D0C06779F49543898A3F2 /* DSIntegratedResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */; };
 		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
+		2D07B8D0B6262C3C51AC56B9 /* BaselineProfileEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */; };
 		37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
+		3EA25F4F063F9D6ED20EF794 /* GuardianModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D117214C47BD9D0F74EB077 /* GuardianModels.swift */; };
+		3F106A6C595930023A26361C /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
 		3F6DC813101ECF9A30552ABC /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
+		3FCEA4BDF29B948140B5BB46 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804D0A298DBB719A4493299F /* ResearchModels.swift */; };
 		40574DCC9B2EFDA9FB9D5434 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
+		42141DE1E9EE74A5965E13BB /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */; };
 		45A9CFA18E73738D0779B36E /* ResearchDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */; };
 		48E4C17B7146DC42773D76D5 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804D0A298DBB719A4493299F /* ResearchModels.swift */; };
 		4A4A228F87CD8ADA69E9632E /* GuardianModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D117214C47BD9D0F74EB077 /* GuardianModels.swift */; };
 		4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */; };
 		4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */; };
+		4E943F7B367AD4FC6E465D9F /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
+		4F62F042E27D34C126E97BA6 /* BuildChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FE4F8F275081E3EC620E82 /* BuildChannel.swift */; };
+		4F9264D1878E28A209723FC3 /* BuildChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FE4F8F275081E3EC620E82 /* BuildChannel.swift */; };
 		5108275C9415E69F6D8708FF /* ScreeningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */; };
+		519D1D4EC0B75FFC96D7979B /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
 		554AD224071C5C26118571A6 /* OcularModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9001A9459892F746005CE25 /* OcularModels.swift */; };
 		555EA5EDEA5A17AB2EFE72D3 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
 		5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
+		5C06CFD44B35DDEF0131EA78 /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
+		5D4D65ABCBFBD483FD21958D /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
 		630520EC9D9955E4D2C300B3 /* ResearchSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */; };
+		65F5CD02AA7AFB755CD8A507 /* ResearchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281945014B1C95CFDF4E271C /* ResearchPreferences.swift */; };
+		674907C06B5829FA87311557 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
+		682FB198136E7D1795584E14 /* ResearchSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */; };
+		69BC63D8C1ACB2AE62EE1053 /* OnboardingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */; };
+		6BEEAEAD50551D31CC92ACA5 /* Satoshi-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */; };
 		6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */; };
+		6D44101605F840EBD5E5F529 /* FaceCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */; };
 		6EE8A46000953B556D8BFE8F /* GuardianAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */; };
 		75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */; };
 		778CF042B4E3088D27699393 /* Satoshi-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */; };
 		77950C028EA8BD14C1C02927 /* ResearchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281945014B1C95CFDF4E271C /* ResearchPreferences.swift */; };
+		77D00FA3748836F23469020D /* Satoshi-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */; };
 		7927D50C9628B61ED2BCC976 /* GuardianCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */; };
 		857568F4B503E22D9B628C11 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
+		870CEAC234FC3FCCCF391525 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA8BCEEE16E4133908B99020 /* Assets.xcassets */; };
 		89C872F604789BD16689E0A4 /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */; };
+		8A7801282589E1B6707C385D /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B992B649C74F7395F2D97 /* DSComponents.swift */; };
 		8C740BBAA1BAB84580CFFDAF /* DSPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3431821643AFE8BAF39CD613 /* DSPalette.swift */; };
+		8C83DCF07328987A65E39935 /* OcularModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9001A9459892F746005CE25 /* OcularModels.swift */; };
+		8D5D2DD0C143CD57ED8F346E /* GuardianAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */; };
 		906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
+		90D6CB428AD2EE567D86CE04 /* Satoshi-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */; };
+		95C39A8225B5DB8620C7CEE5 /* DSBaselinePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */; };
+		9832990078C70120AAC43A1F /* DSTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1154AF077381776EE9F825A /* DSTokens.swift */; };
+		9B222019430D22DD7B06D15F /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
+		9CDF76D1EE7AA3B9E367503D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */; };
 		9DBE5A8CA3BCA27B3DEB32F7 /* GuardianModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */; };
+		A2D6113F96A89F7A087A1D96 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
+		A4657F61EB270A966DB12398 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
+		A476623DC27596BDEE2C1536 /* DSTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6127949ED5CD1BF168B4251C /* DSTabBar.swift */; };
 		A80B3F23583ADB494E615179 /* GuardianCheckInServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */; };
 		A8F1BE46F1E94207CAC11427 /* TaskViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */; };
 		AE3B1465AE2122A6E021CC4E /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B992B649C74F7395F2D97 /* DSComponents.swift */; };
 		AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
 		B02AF5E71ED033A20B47DFA7 /* Satoshi-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */; };
+		B3A8D5E80B20F1A3E8FAD387 /* DSIntegratedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */; };
 		B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
 		BE6A415DAF213AB35C1B663E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA8BCEEE16E4133908B99020 /* Assets.xcassets */; };
 		C20DFEC7378189BB52BE4274 /* Satoshi-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */; };
 		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
+		C74E3D8F49399F2A0F1B8295 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
+		CF746581A660CBD426F30F23 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
+		D59C851AEEB911F3B54376CD /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
 		D5F0A9F59D2DEA6E1171097A /* GuardianLiveLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */; };
 		D7802D3FD752061892E354A5 /* DSTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6127949ED5CD1BF168B4251C /* DSTabBar.swift */; };
+		D840A44D4F163A644F1FE9A6 /* DSPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3431821643AFE8BAF39CD613 /* DSPalette.swift */; };
 		D8DEE00CB83D1B254F3D7A73 /* DSTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1154AF077381776EE9F825A /* DSTokens.swift */; };
+		D93C118F4B3390CAE1922E84 /* ScreeningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */; };
 		DB81A446A6CE180BAA7A76E6 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
+		DBE3C36740FEC98793240D0A /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
+		DCF1B99206B155131E297B06 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */; };
+		E918AD349611CA1B147D0E7B /* DSIntegratedResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */; };
 		EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */; };
 		EC8E5A96E6EB532342042E02 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		EE98AA891AE6BF7AD58F751D /* OnboardingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */; };
+		F0FE2BEFEA5D3A82B0A9C037 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
+		F47B4525EB2D96CA0EFA1FE5 /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
 		F484B3BF63DC3E3462E2D447 /* DSIntegratedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */; };
+		F711B90B52AC65B1474A2205 /* GuardianCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */; };
+		F97EB6201A4427AAD0CA8F3C /* Satoshi-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */; };
 		FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */; };
 		FF7AD08CAF8E27D323547F73 /* DSBaselinePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */; };
 /* End PBXBuildFile section */
@@ -95,6 +145,8 @@
 		3431821643AFE8BAF39CD613 /* DSPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSPalette.swift; sourceTree = "<group>"; };
 		37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianSessionStore.swift; sourceTree = "<group>"; };
 		3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		41FE4F8F275081E3EC620E82 /* BuildChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildChannel.swift; sourceTree = "<group>"; };
+		47963FDA3614C605DC619806 /* Info-Internal.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info-Internal.plist"; sourceTree = "<group>"; };
 		4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedResultScreen.swift; sourceTree = "<group>"; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
 		6127949ED5CD1BF168B4251C /* DSTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTabBar.swift; sourceTree = "<group>"; };
@@ -102,6 +154,7 @@
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
 		6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskViews.swift; sourceTree = "<group>"; };
 		6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
+		780EA89290A39CE59962249D /* SoberInternal.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SoberInternal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularTaskView.swift; sourceTree = "<group>"; };
 		804D0A298DBB719A4493299F /* ResearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModels.swift; sourceTree = "<group>"; };
 		85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingValidator.swift; sourceTree = "<group>"; };
@@ -189,6 +242,7 @@
 		3302830DB36CA04243C83802 /* Sober */ = {
 			isa = PBXGroup;
 			children = (
+				47963FDA3614C605DC619806 /* Info-Internal.plist */,
 				0B3EFD4DB4DBCB29DA687024 /* Info.plist */,
 				B5546AEA9AF05100D39C8E97 /* App */,
 				6979467F7B883BBAC8250E17 /* Components */,
@@ -263,6 +317,7 @@
 			isa = PBXGroup;
 			children = (
 				E5D0277C1F1057B474837F2C /* Sober.app */,
+				780EA89290A39CE59962249D /* SoberInternal.app */,
 				A283843C5F8155F2ABF81000 /* SoberTests.xctest */,
 			);
 			name = Products;
@@ -280,6 +335,7 @@
 			isa = PBXGroup;
 			children = (
 				F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */,
+				41FE4F8F275081E3EC620E82 /* BuildChannel.swift */,
 				0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */,
 			);
 			path = App;
@@ -373,6 +429,24 @@
 			productReference = A283843C5F8155F2ABF81000 /* SoberTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		C57653EF52276BB440CAEB75 /* SoberInternal */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 593F4987F494A6B30199BB31 /* Build configuration list for PBXNativeTarget "SoberInternal" */;
+			buildPhases = (
+				0324F1B8F3DF91CC834CED98 /* Sources */,
+				24FE69E07AA8B30C5628EA8F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SoberInternal;
+			packageProductDependencies = (
+			);
+			productName = SoberInternal;
+			productReference = 780EA89290A39CE59962249D /* SoberInternal.app */;
+			productType = "com.apple.product-type.application";
+		};
 		F1848F7C2B81A7E5AF4CAD9A /* Sober */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 893B8341BFCD744CE5C81135 /* Build configuration list for PBXNativeTarget "Sober" */;
@@ -417,6 +491,7 @@
 			projectRoot = "";
 			targets = (
 				F1848F7C2B81A7E5AF4CAD9A /* Sober */,
+				C57653EF52276BB440CAEB75 /* SoberInternal */,
 				28D796906C95F4478FEED7B3 /* SoberTests */,
 			);
 		};
@@ -435,9 +510,72 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		24FE69E07AA8B30C5628EA8F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				870CEAC234FC3FCCCF391525 /* Assets.xcassets in Resources */,
+				77D00FA3748836F23469020D /* Satoshi-Bold.otf in Resources */,
+				F97EB6201A4427AAD0CA8F3C /* Satoshi-LICENSE.txt in Resources */,
+				90D6CB428AD2EE567D86CE04 /* Satoshi-Medium.otf in Resources */,
+				6BEEAEAD50551D31CC92ACA5 /* Satoshi-Regular.otf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0324F1B8F3DF91CC834CED98 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9B222019430D22DD7B06D15F /* AppModel.swift in Sources */,
+				2D07B8D0B6262C3C51AC56B9 /* BaselineProfileEngine.swift in Sources */,
+				4F9264D1878E28A209723FC3 /* BuildChannel.swift in Sources */,
+				25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */,
+				0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */,
+				95C39A8225B5DB8620C7CEE5 /* DSBaselinePortrait.swift in Sources */,
+				8A7801282589E1B6707C385D /* DSComponents.swift in Sources */,
+				F47B4525EB2D96CA0EFA1FE5 /* DSFont.swift in Sources */,
+				05CE2163F3E42DAEAA3BC849 /* DSGallery.swift in Sources */,
+				B3A8D5E80B20F1A3E8FAD387 /* DSIntegratedHomeScreen.swift in Sources */,
+				E918AD349611CA1B147D0E7B /* DSIntegratedResultScreen.swift in Sources */,
+				D840A44D4F163A644F1FE9A6 /* DSPalette.swift in Sources */,
+				A476623DC27596BDEE2C1536 /* DSTabBar.swift in Sources */,
+				9832990078C70120AAC43A1F /* DSTokens.swift in Sources */,
+				6D44101605F840EBD5E5F529 /* FaceCameraPreview.swift in Sources */,
+				3F106A6C595930023A26361C /* FaceTrackingService.swift in Sources */,
+				8D5D2DD0C143CD57ED8F346E /* GuardianAPIClient.swift in Sources */,
+				F711B90B52AC65B1474A2205 /* GuardianCenterView.swift in Sources */,
+				240740F7B4158F40241A1623 /* GuardianCheckInServices.swift in Sources */,
+				239948BB6751F7C427A1D917 /* GuardianLiveLocationService.swift in Sources */,
+				3EA25F4F063F9D6ED20EF794 /* GuardianModels.swift in Sources */,
+				A4657F61EB270A966DB12398 /* GuardianSessionStore.swift in Sources */,
+				519D1D4EC0B75FFC96D7979B /* HomeView.swift in Sources */,
+				8C83DCF07328987A65E39935 /* OcularModels.swift in Sources */,
+				DBE3C36740FEC98793240D0A /* OcularSignalAnalyzer.swift in Sources */,
+				D59C851AEEB911F3B54376CD /* OcularTaskView.swift in Sources */,
+				C74E3D8F49399F2A0F1B8295 /* OnboardingModels.swift in Sources */,
+				69BC63D8C1ACB2AE62EE1053 /* OnboardingValidator.swift in Sources */,
+				9CDF76D1EE7AA3B9E367503D /* OnboardingView.swift in Sources */,
+				4E943F7B367AD4FC6E465D9F /* Palette.swift in Sources */,
+				42141DE1E9EE74A5965E13BB /* PupilMetricsAnalyzer.swift in Sources */,
+				5D4D65ABCBFBD483FD21958D /* ResearchModeView.swift in Sources */,
+				3FCEA4BDF29B948140B5BB46 /* ResearchModels.swift in Sources */,
+				65F5CD02AA7AFB755CD8A507 /* ResearchPreferences.swift in Sources */,
+				682FB198136E7D1795584E14 /* ResearchSessionStore.swift in Sources */,
+				A2D6113F96A89F7A087A1D96 /* SafetyPlanView.swift in Sources */,
+				F0FE2BEFEA5D3A82B0A9C037 /* ScreeningEngine.swift in Sources */,
+				1A71C37E89A77CAE14E2F97E /* ScreeningFlowView.swift in Sources */,
+				D93C118F4B3390CAE1922E84 /* ScreeningModels.swift in Sources */,
+				CF746581A660CBD426F30F23 /* SignalHalo.swift in Sources */,
+				5C06CFD44B35DDEF0131EA78 /* SoberApp.swift in Sources */,
+				674907C06B5829FA87311557 /* SoberComponents.swift in Sources */,
+				DCF1B99206B155131E297B06 /* TaskModels.swift in Sources */,
+				2240F5630277E3063C46013A /* TaskViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AB4AD64EDF509BD6CA2DDFD8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -458,6 +596,7 @@
 			files = (
 				857568F4B503E22D9B628C11 /* AppModel.swift in Sources */,
 				439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */,
+				4F62F042E27D34C126E97BA6 /* BuildChannel.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
 				3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */,
 				FF7AD08CAF8E27D323547F73 /* DSBaselinePortrait.swift in Sources */,
@@ -530,6 +669,27 @@
 			};
 			name = Release;
 		};
+		5556A5E46F084F19CF103A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 2;
+				INFOPLIST_FILE = "Sober/Info-Internal.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.internal;
+				PRODUCT_NAME = SoberInternal;
+				SDKROOT = iphoneos;
+				SOBER_GUARDIAN_API_URL = "http://127.0.0.1:8787";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) INTERNAL_BUILD";
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		585D79BB5DCA16BA0D031A45 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -562,10 +722,31 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.app;
 				PRODUCT_NAME = Sober;
 				SDKROOT = iphoneos;
-				SOBER_GUARDIAN_API_URL = "http://127.0.0.1:8787";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
+		};
+		9F1E15CD0D47933038196CA7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 2;
+				INFOPLIST_FILE = "Sober/Info-Internal.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.internal;
+				PRODUCT_NAME = SoberInternal;
+				SDKROOT = iphoneos;
+				SOBER_GUARDIAN_API_URL = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) INTERNAL_BUILD";
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
 		};
 		A0E8C32166D771755CFC72C6 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -701,7 +882,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.soberprototype.app;
 				PRODUCT_NAME = Sober;
 				SDKROOT = iphoneos;
-				SOBER_GUARDIAN_API_URL = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -714,6 +895,15 @@
 			buildConfigurations = (
 				B6782AFC92B2B6441C0CD2C9 /* Debug */,
 				A0E8C32166D771755CFC72C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		593F4987F494A6B30199BB31 /* Build configuration list for PBXNativeTarget "SoberInternal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5556A5E46F084F19CF103A6D /* Debug */,
+				9F1E15CD0D47933038196CA7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

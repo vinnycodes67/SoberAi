@@ -142,7 +142,7 @@ final class ReviewRegressionTests: XCTestCase {
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: 318,
       reactionMisses: 0,
-      trackingError: MotorTrackingOutcome.notMeasured.error,
+      trackingError: nil,
       timeEstimateError: 0.08,
       gazeSmoothness: 0.16,
       qualityScore: 0,
@@ -152,6 +152,8 @@ final class ReviewRegressionTests: XCTestCase {
     let outcome = ScreeningEngine().evaluate(selfReport: .no, metrics: metrics)
     XCTAssertEqual(outcome.state, .inconclusive)
     XCTAssertNotEqual(outcome.state, .noSignalsDetected)
+    XCTAssertEqual(outcome.details.first(where: { $0.id == "tracking" })?.value, "Not measured")
+    XCTAssertEqual(outcome.details.first(where: { $0.id == "tracking" })?.wasMeasured, false)
   }
 
   func testBaselineCompletionMessagingDistinguishesUnavailableTaskFromLowQualityCapture() {
@@ -185,7 +187,7 @@ final class ReviewRegressionTests: XCTestCase {
     // The screening flow maps `wasMeasured` onto `completedAllTasks`. An
     // otherwise flawless check must still refuse to return NO_SIGNALS_DETECTED.
     var metrics = ScreeningMetrics.demoClear
-    metrics.trackingError = MotorTrackingOutcome.notMeasured.error
+    metrics.trackingError = nil
     metrics.completedAllTasks = MotorTrackingOutcome.notMeasured.wasMeasured
 
     let outcome = ScreeningEngine().evaluate(selfReport: .no, metrics: metrics)

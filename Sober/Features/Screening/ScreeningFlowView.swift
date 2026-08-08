@@ -24,7 +24,7 @@ struct ScreeningFlowView: View {
   @State private var reactionTime = 0.0
   @State private var reactionMisses = 0
   @State private var reactionSummary: ChoiceReactionSummary?
-  @State private var trackingError = 0.0
+  @State private var trackingError: Double?
   @State private var trackingWasMeasured = true
   @State private var timingError = 0.0
   @State private var gazeSmoothness = 0.0
@@ -55,10 +55,14 @@ struct ScreeningFlowView: View {
   }
 
   private var guardianAlertState: GuardianAlertPresentationState {
+    #if INTERNAL_BUILD
     if configuration.scenario != .live {
       return configuration.scenario == .signals ? .preview : .notRequired
     }
     return model.guardianAlertState
+    #else
+    return .notRequired
+    #endif
   }
 
   var body: some View {
@@ -88,7 +92,7 @@ struct ScreeningFlowView: View {
           }
         case .tracking:
           MotorTrackingTaskView { result in
-            trackingError = result.error
+            trackingError = result.wasMeasured ? result.error : nil
             trackingWasMeasured = result.wasMeasured
             step = .timing
           }
@@ -115,7 +119,11 @@ struct ScreeningFlowView: View {
               safetyPlan: model.safetyPlan,
               isSample: configuration.scenario != .live,
               guardianAlertState: guardianAlertState,
-              onRetryGuardianAlert: { beginGuardianAlert(for: outcome) }
+              onRetryGuardianAlert: {
+                #if INTERNAL_BUILD
+                beginGuardianAlert(for: outcome)
+                #endif
+              }
             ) {
               dismiss()
             }
@@ -223,7 +231,7 @@ struct ScreeningFlowView: View {
       reactionTimeMilliseconds: 0,
       reactionMisses: 0,
       reactionWasMeasured: false,
-      trackingError: MotorTrackingOutcome.notMeasured.error,
+      trackingError: nil,
       timeEstimateError: 0,
       timingWasMeasured: false,
       gazeSmoothness: nil,
@@ -274,7 +282,14 @@ struct ScreeningFlowView: View {
       return
     }
 
-    presentOutcome(engine.evaluate(selfReport: selfReport, metrics: metrics))
+    let protocolVariant = ocularSummary?.protocolVariant ?? .full
+    presentOutcome(
+      engine.evaluate(
+        selfReport: selfReport,
+        metrics: metrics,
+        personalBaseline: model.personalBaseline(for: protocolVariant)
+      )
+    )
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -290,10 +305,15 @@ struct ScreeningFlowView: View {
   private func presentOutcome(_ newOutcome: ScreeningOutcome) {
     outcome = newOutcome
     step = .result
+    #if INTERNAL_BUILD
     beginGuardianAlert(for: newOutcome)
     submitScheduledCheckInCompletionIfNeeded()
+    #else
+    model.clearGuardianAlertPresentation()
+    #endif
   }
 
+  #if INTERNAL_BUILD
   private func submitScheduledCheckInCompletionIfNeeded() {
     guard !didSubmitCheckInCompletion,
       configuration.scenario == .live,
@@ -314,6 +334,7 @@ struct ScreeningFlowView: View {
     }
     Task { await model.beginConcerningGuardianAlert() }
   }
+  #endif
 }
 
 struct FlowContainer<Content: View>: View {

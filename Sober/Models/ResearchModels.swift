@@ -191,51 +191,83 @@ struct ResearchSessionContext: Codable, Equatable, Sendable {
 struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
   let reactionTimeMilliseconds: Double
   let reactionMisses: Int
-  let trackingError: Double
+  let reactionWasMeasured: Bool
+  let trackingError: Double?
   let timeEstimateError: Double
-  let gazeSmoothness: Double
+  let timingWasMeasured: Bool
+  let gazeSmoothness: Double?
   let qualityScore: Double
   let completedAllTasks: Bool
 
   init(
     reactionTimeMilliseconds: Double,
     reactionMisses: Int,
-    trackingError: Double,
+    reactionWasMeasured: Bool = true,
+    trackingError: Double?,
     timeEstimateError: Double,
-    gazeSmoothness: Double,
+    timingWasMeasured: Bool = true,
+    gazeSmoothness: Double?,
     qualityScore: Double,
     completedAllTasks: Bool
   ) {
     self.reactionTimeMilliseconds = reactionTimeMilliseconds
     self.reactionMisses = reactionMisses
+    self.reactionWasMeasured = reactionWasMeasured
     self.trackingError = trackingError
     self.timeEstimateError = timeEstimateError
+    self.timingWasMeasured = timingWasMeasured
     self.gazeSmoothness = gazeSmoothness
     self.qualityScore = qualityScore
     self.completedAllTasks = completedAllTasks
   }
 
   init(_ metrics: ScreeningMetrics) {
-    // `nil` means the task wasn't measured, which already forces
-    // `completedAllTasks` false and excludes the session from baseline
-    // eligibility — the sentinel here is never read as a real value.
     self.init(
       reactionTimeMilliseconds: metrics.reactionTimeMilliseconds,
       reactionMisses: metrics.reactionMisses,
-      trackingError: metrics.trackingError ?? 1,
+      reactionWasMeasured: metrics.reactionWasMeasured,
+      trackingError: metrics.trackingError,
       timeEstimateError: metrics.timeEstimateError,
-      gazeSmoothness: metrics.gazeSmoothness ?? 1,
+      timingWasMeasured: metrics.timingWasMeasured,
+      gazeSmoothness: metrics.gazeSmoothness,
       qualityScore: metrics.qualityScore,
       completedAllTasks: metrics.completedAllTasks
     )
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case reactionTimeMilliseconds
+    case reactionMisses
+    case reactionWasMeasured
+    case trackingError
+    case timeEstimateError
+    case timingWasMeasured
+    case gazeSmoothness
+    case qualityScore
+    case completedAllTasks
+  }
+
+  init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    reactionTimeMilliseconds = try values.decode(Double.self, forKey: .reactionTimeMilliseconds)
+    reactionMisses = try values.decode(Int.self, forKey: .reactionMisses)
+    reactionWasMeasured = try values.decodeIfPresent(Bool.self, forKey: .reactionWasMeasured) ?? true
+    trackingError = try values.decodeIfPresent(Double.self, forKey: .trackingError)
+    timeEstimateError = try values.decode(Double.self, forKey: .timeEstimateError)
+    timingWasMeasured = try values.decodeIfPresent(Bool.self, forKey: .timingWasMeasured) ?? true
+    gazeSmoothness = try values.decodeIfPresent(Double.self, forKey: .gazeSmoothness)
+    qualityScore = try values.decode(Double.self, forKey: .qualityScore)
+    completedAllTasks = try values.decode(Bool.self, forKey: .completedAllTasks)
   }
 
   var screeningMetrics: ScreeningMetrics {
     ScreeningMetrics(
       reactionTimeMilliseconds: reactionTimeMilliseconds,
       reactionMisses: reactionMisses,
+      reactionWasMeasured: reactionWasMeasured,
       trackingError: trackingError,
       timeEstimateError: timeEstimateError,
+      timingWasMeasured: timingWasMeasured,
       gazeSmoothness: gazeSmoothness,
       qualityScore: qualityScore,
       completedAllTasks: completedAllTasks

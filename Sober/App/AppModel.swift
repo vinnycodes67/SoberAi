@@ -81,7 +81,7 @@ final class AppModel: ObservableObject {
     guardianLocation: any GuardianLocationProviding = GuardianLocationService(),
     guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler(),
     guardianLiveLocation: any GuardianLiveLocationProviding = GuardianLiveLocationService(),
-    automaticallyStartsGuardianServices: Bool = true,
+    automaticallyStartsGuardianServices: Bool = BuildChannel.allowsInternalTools,
     allowsInternalTools: Bool = BuildChannel.allowsInternalTools
   ) {
     self.allowsInternalTools = allowsInternalTools
@@ -188,6 +188,14 @@ final class AppModel: ObservableObject {
   /// the persisted count before research data has loaded.
   var measuredEligibleSessions: Int {
     baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions
+  }
+
+  func personalBaseline(for protocolVariant: OcularProtocolVariant) -> PersonalBaseline? {
+    baselineEngine.personalBaseline(
+      participantID: participantID,
+      sessions: researchSessions,
+      protocolVariant: protocolVariant
+    )
   }
 
   var guardianRelationshipIsActive: Bool {
@@ -734,12 +742,11 @@ final class AppModel: ObservableObject {
     }
   }
 
+  /// - Parameter founderPreview: honoured only in an `INTERNAL_BUILD`. A public
+  ///   build always completes onboarding into the real-baseline path.
   func completeOnboarding(founderPreview: Bool) {
-    isFounderPreview = founderPreview
+    isFounderPreview = allowsInternalTools && founderPreview
     hasCompletedOnboarding = true
-    if founderPreview {
-      baselineSessions = 5
-    }
     defaults.set("prototype-v2", forKey: Keys.consentVersion)
     defaults.set(Date(), forKey: Keys.consentDate)
     persist()
@@ -832,13 +839,13 @@ final class AppModel: ObservableObject {
         .full: baselineEngine.summarize(participantID: participantID, sessions: sessions, protocolVariant: .full),
         .reducedMotion: baselineEngine.summarize(participantID: participantID, sessions: sessions, protocolVariant: .reducedMotion)
       ]
-      if !isFounderPreview {
-        baselineSessions = max(
-          baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? 0,
-          baselineProfile?.eligibleSessionCount ?? 0
-        )
-        persist()
-      }
+      // Recompute unconditionally. Skipping this in the founder preview froze
+      // the stored count, so real sessions recorded afterwards never counted.
+      baselineSessions = max(
+        baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? 0,
+        baselineProfile?.eligibleSessionCount ?? 0
+      )
+      persist()
       researchDataError = nil
     } catch {
       researchDataError = error.localizedDescription
@@ -875,7 +882,7 @@ final class AppModel: ObservableObject {
       _ = try await researchStore.deleteAll()
       discardPreparedExport()
       rotateParticipantID()
-      baselineSessions = isFounderPreview ? 5 : 0
+      baselineSessions = 0
       await reloadResearchData()
     } catch {
       researchDataError = error.localizedDescription

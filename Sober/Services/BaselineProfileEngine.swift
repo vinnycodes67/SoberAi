@@ -66,6 +66,41 @@ struct BaselineProfileEngine: Sendable {
     )
   }
 
+  /// Returns the same eligible measurements that back the visible readiness
+  /// state, reduced to the rolling window consumed by `ScreeningEngine`.
+  /// A personal baseline is never exposed before the five-session product gate.
+  func personalBaseline(
+    participantID: PseudonymousParticipantID,
+    sessions: [ResearchSessionEnvelope],
+    protocolVariant: OcularProtocolVariant = .full
+  ) -> PersonalBaseline? {
+    let eligible = sessions
+      .filter {
+        $0.participantID == participantID
+          && $0.context.sessionKind == .soberBaseline
+          && $0.protocolVariant == protocolVariant
+          && isEligible($0, protocolVariant: protocolVariant)
+      }
+      .sorted { ($0.completedAt ?? $0.startedAt) < ($1.completedAt ?? $1.startedAt) }
+
+    guard eligible.count >= minimumRequiredSessions else { return nil }
+
+    var baseline = PersonalBaseline()
+    for session in eligible.suffix(PersonalBaseline.requiredSessions) {
+      let metrics = session.metrics
+      baseline.record(
+        BaselineSample(
+          reactionTimeMilliseconds: metrics.reactionTimeMilliseconds,
+          reactionMisses: metrics.reactionMisses,
+          trackingError: metrics.trackingError,
+          timeEstimateError: metrics.timeEstimateError,
+          gazeSmoothness: metrics.gazeSmoothness
+        )
+      )
+    }
+    return baseline.isReady ? baseline : nil
+  }
+
   private func isEligible(_ session: ResearchSessionEnvelope, protocolVariant: OcularProtocolVariant) -> Bool {
     guard session.schemaVersion == ResearchSessionEnvelope.currentSchemaVersion,
       session.completedAt != nil,
@@ -78,10 +113,17 @@ struct BaselineProfileEngine: Sendable {
     guard session.protocolVariant == protocolVariant else { return false }
 
     let metrics = session.metrics
+    guard metrics.reactionWasMeasured,
+      metrics.timingWasMeasured,
+      let trackingError = metrics.trackingError,
+      let gazeSmoothness = metrics.gazeSmoothness
+    else {
+      return false
+    }
     return metrics.reactionTimeMilliseconds.isFinite
-      && metrics.trackingError.isFinite
+      && trackingError.isFinite
       && metrics.timeEstimateError.isFinite
-      && metrics.gazeSmoothness.isFinite
+      && gazeSmoothness.isFinite
       && metrics.qualityScore.isFinite
   }
 
@@ -95,9 +137,9 @@ struct BaselineProfileEngine: Sendable {
         sessions.map(\.metrics.reactionTimeMilliseconds)
       ),
       reactionMisses: robustStatistic(sessions.map { Double($0.metrics.reactionMisses) }),
-      trackingError: robustStatistic(sessions.map(\.metrics.trackingError)),
+      trackingError: robustStatistic(sessions.compactMap(\.metrics.trackingError)),
       timeEstimateError: robustStatistic(sessions.map(\.metrics.timeEstimateError)),
-      gazeSmoothness: robustStatistic(sessions.map(\.metrics.gazeSmoothness)),
+      gazeSmoothness: robustStatistic(sessions.compactMap(\.metrics.gazeSmoothness)),
       qualityScore: robustStatistic(sessions.map(\.metrics.qualityScore))
     )
   }

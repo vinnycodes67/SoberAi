@@ -16,6 +16,7 @@ targets:
       - path: Sober
         excludes:
           - DesignKit/README.md
+          - Info-Internal.plist
           - Resources/Fonts/Satoshi-Black.otf
     info:
       path: Sober/Info.plist
@@ -24,13 +25,6 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
-        NSLocationWhenInUseUsageDescription: Sober uses your location for private Home checks and, only when you turn on Circle sharing, to show your current location to your connected guardian.
-        NSLocationAlwaysAndWhenInUseUsageDescription: When you explicitly enable background Circle sharing, Sober keeps your connected guardian's map current after you leave the app. You can stop sharing at any time.
-        UIBackgroundModes:
-          - location
-        NSAppTransportSecurity:
-          NSAllowsLocalNetworking: true
-        SoberGuardianAPIURL: "$(SOBER_GUARDIAN_API_URL)"
         LSApplicationCategoryType: public.app-category.healthcare-fitness
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
@@ -52,12 +46,59 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
-          SOBER_GUARDIAN_API_URL: "http://127.0.0.1:8787"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited)"
         Release:
-          SOBER_GUARDIAN_API_URL: ""
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited)"
     scheme:
       testTargets:
         - SoberTests
+  SoberInternal:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sober
+        excludes:
+          - DesignKit/README.md
+          - Info.plist
+          - Resources/Fonts/Satoshi-Black.otf
+    info:
+      path: Sober/Info-Internal.plist
+      properties:
+        CFBundleDisplayName: Sober Internal
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
+        NSLocationWhenInUseUsageDescription: Sober Internal uses your location for private Home checks and, only when you turn on Circle sharing, to show your current location to your connected guardian.
+        NSLocationAlwaysAndWhenInUseUsageDescription: When you explicitly enable background Circle sharing, Sober Internal keeps your connected guardian's map current after you leave the app. You can stop sharing at any time.
+        UIBackgroundModes:
+          - location
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        SoberGuardianAPIURL: "$(SOBER_GUARDIAN_API_URL)"
+        LSApplicationCategoryType: public.app-category.healthcare-fitness
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        UIUserInterfaceStyle: Dark
+        UIAppFonts:
+          - Satoshi-Regular.otf
+          - Satoshi-Medium.otf
+          - Satoshi-Bold.otf
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal
+        PRODUCT_NAME: SoberInternal
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Debug:
+          SOBER_GUARDIAN_API_URL: "http://127.0.0.1:8787"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD"
+        Release:
+          SOBER_GUARDIAN_API_URL: ""
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD"
+    scheme: {}
   SoberTests:
     type: bundle.unit-test
     platform: iOS

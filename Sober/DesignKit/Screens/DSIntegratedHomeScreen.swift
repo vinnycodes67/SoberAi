@@ -1,6 +1,6 @@
 import SwiftUI
 
-// 0.5s: one calm readiness card, one orange action, then Map, Guardian, and Plans.
+// 0.5s: one calm readiness card, one orange action, then the get-home plan.
 // User: someone leaving a social setting who needs to check in, find their circle,
 // or arrange a ride in under ten seconds.
 // Emotional intent: protected and in control, never watched or judged.
@@ -25,20 +25,26 @@ struct DSIntegratedHomeScreen: View {
         header.dsAppear(0)
         readinessCard.dsAppear(1)
 
+        #if INTERNAL_BUILD
         if showsScheduledCheckIn {
           scheduledCheckInCard.dsAppear(2)
         }
+        #endif
 
-        primaryAction.dsAppear(showsScheduledCheckIn ? 3 : 2)
+        primaryAction.dsAppear(2)
+        #if INTERNAL_BUILD
         connectedFeatures.dsAppear(4)
-        safetyPlanRow.dsAppear(5)
-        baselineStrip.dsAppear(6)
+        #endif
+        safetyPlanRow.dsAppear(3)
+        baselineStrip.dsAppear(4)
 
+        #if INTERNAL_BUILD
         if model.isFounderPreview {
-          founderTools.dsAppear(7)
+          founderTools.dsAppear(5)
         }
+        #endif
 
-        evidenceNote.dsAppear(model.isFounderPreview ? 8 : 7)
+        evidenceNote.dsAppear(6)
       }
       .padding(.horizontal, DSSpace.margin)
       .padding(.top, DSSpace.sm)
@@ -55,9 +61,11 @@ struct DSIntegratedHomeScreen: View {
         .foregroundStyle(DSPalette.textPrimary)
         .accessibilityAddTraits(.isHeader)
       Spacer()
+      #if INTERNAL_BUILD
       if model.isFounderPreview {
         DSBadge(text: "Founder build", tint: DSPalette.accent)
       }
+      #endif
       Button(action: onOpenAbout) {
         Image(systemName: "info.circle")
           .font(.system(size: 19, weight: .medium))
@@ -110,18 +118,16 @@ struct DSIntegratedHomeScreen: View {
   }
 
   private var readinessNeedsAttention: Bool {
-    !model.baselineReady || !model.guardianRelationshipIsActive
+    !model.baselineReady
   }
 
   private var readinessKicker: String {
     if !model.baselineReady { return "Getting set up" }
-    if !model.guardianRelationshipIsActive { return "One thing left" }
     return "Ready"
   }
 
   private var readinessTitle: String {
     if !model.baselineReady { return "Learn your steady." }
-    if !model.guardianRelationshipIsActive { return "Connect your Guardian." }
     return "Ready when you are."
   }
 
@@ -129,10 +135,12 @@ struct DSIntegratedHomeScreen: View {
     if !model.baselineReady {
       return "Five high-quality sessions while sober build your personal comparison range."
     }
-    if !model.guardianRelationshipIsActive {
-      return "A live check starts after one trusted person accepts your invite."
+    #if INTERNAL_BUILD
+    if model.guardianRelationshipIsActive {
+      return "A check takes about two minutes. A concerning result can send your Guardian a minimal help request, never camera data or scores."
     }
-    return "A check takes about two minutes. A concerning result sends your Guardian a minimal help request, never camera data or scores."
+    #endif
+    return "A private check takes about two minutes and works without a Guardian, network, location, or notifications."
   }
 
   private var primaryAction: some View {
@@ -143,21 +151,17 @@ struct DSIntegratedHomeScreen: View {
 
   private var primaryActionTitle: String {
     if !model.baselineReady { return "Record a baseline session" }
-    if !model.guardianRelationshipIsActive { return "Set up Guardian Mode" }
     return "Start Sober check"
   }
 
   private var primaryActionHint: String {
     if !model.baselineReady { return "Starts a sober baseline session" }
-    if !model.guardianRelationshipIsActive { return "Connects a trusted Guardian" }
     return "Starts the private impairment screening flow"
   }
 
   private func performPrimaryAction() {
     if !model.baselineReady {
       onStartBaseline()
-    } else if !model.guardianRelationshipIsActive {
-      onOpenGuardian()
     } else {
       onStartCheck()
     }

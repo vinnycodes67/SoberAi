@@ -1,12 +1,12 @@
 import Foundation
 
 /// Compile-time separation between the public App Store build and the internal
-/// founder/research build.
+/// founder/research/Guardian build.
 ///
 /// This is deliberately a compilation condition rather than a runtime flag. A
 /// runtime switch can fail open, and it leaves internal-only routes reachable in
-/// the binary that ships to users. `INTERNAL_BUILD` is defined only for the
-/// Debug configuration in `project.yml`; a Release build cannot turn it on.
+/// the binary that ships to users. `INTERNAL_BUILD` is defined only by the
+/// separate `SoberInternal` application target in `project.yml`.
 enum BuildChannel {
   /// True only when compiled with `INTERNAL_BUILD`.
   ///

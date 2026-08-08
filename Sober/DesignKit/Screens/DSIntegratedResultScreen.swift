@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-// 0.5s: the safety verdict and Guardian request state dominate the page.
+// The safety verdict and get-home actions dominate the page. Guardian delivery
+// appears only in the internal build.
 // User: someone who has just finished a check and needs a safe next action,
 // not a score or a false clearance signal.
 // Emotional intent: protected, informed, and able to get help immediately.
@@ -25,7 +26,9 @@ struct DSIntegratedResultScreen: View {
         verdict.dsAppear(0)
 
         if outcome.state == .signalsDetected {
+          #if INTERNAL_BUILD
           guardianAlertCard.dsAppear(1)
+          #endif
           movedCount.dsAppear(2)
         }
 
@@ -89,7 +92,7 @@ struct DSIntegratedResultScreen: View {
       .fixedSize(horizontal: false, vertical: true)
 
       if isSample {
-        Text("No live measurement or Guardian request was used.")
+        Text(sampleDisclosure)
           .font(DSFont.footnote)
           .foregroundStyle(DSPalette.textMuted)
       }
@@ -98,6 +101,14 @@ struct DSIntegratedResultScreen: View {
 
   private var stateTint: Color {
     outcome.state == .signalsDetected ? DSPalette.accent : DSPalette.textMuted
+  }
+
+  private var sampleDisclosure: String {
+    #if INTERNAL_BUILD
+    "No live measurement or Guardian request was used."
+    #else
+    "No live measurement was used."
+    #endif
   }
 
   private var movedCount: some View {
@@ -139,6 +150,7 @@ struct DSIntegratedResultScreen: View {
     }
   }
 
+  #if INTERNAL_BUILD
   private var guardianAlertCard: some View {
     VStack(alignment: .leading, spacing: DSSpace.md) {
       HStack(alignment: .top, spacing: DSSpace.sm) {
@@ -219,6 +231,7 @@ struct DSIntegratedResultScreen: View {
       "No Guardian request was required for this result."
     }
   }
+  #endif
 
   private var getHome: some View {
     DSSection("Get home without driving") {
@@ -257,7 +270,7 @@ struct DSIntegratedResultScreen: View {
             }
           }
         } else {
-          Text("Add a contact in Safety Circle to call or message from here.")
+          Text("Add a trusted contact in your Safety Plan to call or message from here.")
             .font(DSFont.footnote)
             .foregroundStyle(DSPalette.textMuted)
         }
@@ -280,9 +293,11 @@ struct DSIntegratedResultScreen: View {
   }
 
   private var interventionDisclosure: String {
+    #if INTERNAL_BUILD
     if outcome.state == .signalsDetected && !isSample {
       return "The Guardian request starts automatically. Your ride, call, and message actions remain under your control."
     }
+    #endif
     return "Ride, call, and message actions only happen when you tap them."
   }
 
