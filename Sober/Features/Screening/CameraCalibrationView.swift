@@ -136,6 +136,19 @@ struct CameraCalibrationView: View {
     return hasHeldReady ? "Camera ready" : "Hold steady…"
   }
 
+  /// Public builds have no founder previews, so pointing at them would send a
+  /// user on unsupported hardware looking for a screen that isn't in their app.
+  ///
+  /// The branch is on the string rather than the `Text` so the trailing view
+  /// modifiers stay attached to a concrete view.
+  private var unsupportedDetail: String {
+    #if INTERNAL_BUILD
+    return "Founder result previews remain available from the home screen."
+    #else
+    return "This check needs a working front camera."
+    #endif
+  }
+
   private var unsupportedPreview: some View {
     ZStack {
       Palette.cardBackground
@@ -145,7 +158,7 @@ struct CameraCalibrationView: View {
           .foregroundStyle(Palette.textSecondary)
         Text("Live face preview unavailable")
           .font(.headline)
-        Text("Founder result previews remain available from the home screen.")
+        Text(unsupportedDetail)
           .font(.caption)
           .foregroundStyle(Palette.textSecondary)
           .multilineTextAlignment(.center)
