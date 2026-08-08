@@ -105,83 +105,92 @@ struct ScreeningFlowView: View {
   var body: some View {
     ZStack(alignment: .top) {
       Group {
-        switch step {
-        case .attestation:
-          if configuration.mode == .baseline {
-            BaselineAttestationView { step = .environment }
-          } else {
-            SelfReportView { answer in
-              handleSelfReport(answer)
-            } onAccessibilityRoute: { answer in
-              handleAccessibilityUnavailableRoute(answer)
-            }
-          }
-        case .environment:
-          CameraCalibrationView(service: faceTracking) {
-            step = .reaction
-          }
-        case .reaction:
-          ReactionTaskView { summary in
-            reactionSummary = summary
-            reactionTime = summary.averageMilliseconds
-            reactionMisses = summary.totalErrors
-            step = .tracking
-          }
-        case .tracking:
-          MotorTrackingTaskView { result in
-            trackingError = result.wasMeasured ? result.error : nil
-            trackingWasMeasured = result.wasMeasured
-            step = .timing
-          }
-        case .timing:
-          TimeEstimateTaskView { error in
-            timingError = error
-            step = .gaze
-          }
-        case .gaze:
-          OcularTaskView(
-            service: faceTracking,
-            onComplete: { summary in
-              ocularSummary = summary
-              gazeSmoothness = summary.smoothnessRisk
-              qualityScore = summary.qualityScore
-              step = .analyzing
-            },
-            onRetryCalibration: {
-              // Back to setup with a fresh attempt, so the abandoned capture
-              // leaves nothing behind.
-              taskAttempt += 1
-              step = .environment
-            },
-            onEndCheck: { dismiss() }
-          )
-        case .analyzing:
-          AnalyzingView {
-            finishScoring()
-          }
-        case .result:
-          if let outcome {
-            DSIntegratedResultScreen(
-              outcome: outcome,
-              safetyPlan: model.safetyPlan,
-              isSample: configuration.scenario != .live,
-              guardianAlertState: guardianAlertState,
-              onRetryGuardianAlert: {
-                #if INTERNAL_BUILD
-                beginGuardianAlert(for: outcome)
-                #endif
+        // Removing the task from the hierarchy is the cancellation boundary.
+        // An overlay alone would leave its timers and callbacks running behind
+        // the recovery screen, allowing an interrupted reading to finish.
+        if interruptedStep == nil {
+          switch step {
+          case .attestation:
+            if configuration.mode == .baseline {
+              BaselineAttestationView { step = .environment }
+            } else {
+              SelfReportView { answer in
+                handleSelfReport(answer)
+              } onAccessibilityRoute: { answer in
+                handleAccessibilityUnavailableRoute(answer)
               }
-            ) {
-              dismiss()
             }
+          case .environment:
+            CameraCalibrationView(service: faceTracking) {
+              step = .reaction
+            }
+          case .reaction:
+            ReactionTaskView { summary in
+              guard interruptedStep == nil else { return }
+              reactionSummary = summary
+              reactionTime = summary.averageMilliseconds
+              reactionMisses = summary.totalErrors
+              step = .tracking
+            }
+          case .tracking:
+            MotorTrackingTaskView { result in
+              guard interruptedStep == nil else { return }
+              trackingError = result.wasMeasured ? result.error : nil
+              trackingWasMeasured = result.wasMeasured
+              step = .timing
+            }
+          case .timing:
+            TimeEstimateTaskView { error in
+              guard interruptedStep == nil else { return }
+              timingError = error
+              step = .gaze
+            }
+          case .gaze:
+            OcularTaskView(
+              service: faceTracking,
+              onComplete: { summary in
+                guard interruptedStep == nil else { return }
+                ocularSummary = summary
+                gazeSmoothness = summary.smoothnessRisk
+                qualityScore = summary.qualityScore
+                step = .analyzing
+              },
+              onRetryCalibration: {
+                // Back to setup with a fresh attempt, so the abandoned capture
+                // leaves nothing behind.
+                taskAttempt += 1
+                step = .environment
+              },
+              onEndCheck: { dismiss() }
+            )
+          case .analyzing:
+            AnalyzingView {
+              finishScoring()
+            }
+          case .result:
+            if let outcome {
+              DSIntegratedResultScreen(
+                outcome: outcome,
+                safetyPlan: model.safetyPlan,
+                isSample: configuration.scenario != .live,
+                guardianAlertState: guardianAlertState,
+                onRetryGuardianAlert: {
+                  #if INTERNAL_BUILD
+                  beginGuardianAlert(for: outcome)
+                  #endif
+                }
+              ) {
+                dismiss()
+              }
+            }
+          case .baselineComplete:
+            BaselineCompleteView(
+              sessions: model.baselineSessions,
+              accepted: baselineAccepted,
+              completionState: baselineCompletionState,
+              onDone: { dismiss() }
+            )
           }
-        case .baselineComplete:
-          BaselineCompleteView(
-            sessions: model.baselineSessions,
-            accepted: baselineAccepted,
-            completionState: baselineCompletionState,
-            onDone: { dismiss() }
-          )
         }
       }
       .id("\(step.rawValue)-\(taskAttempt)")
