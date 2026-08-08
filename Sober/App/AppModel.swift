@@ -22,6 +22,9 @@ final class AppModel: ObservableObject {
     }
   }
   @Published private(set) var researchSessions: [ResearchSessionEnvelope] = []
+  /// Local History. Independent of research consent and bounded by
+  /// `CheckHistoryStore`'s retention window.
+  @Published private(set) var checkHistory: [CheckHistoryEntry] = []
   @Published private(set) var baselineProfile: BaselineProfileSummary?
   @Published private(set) var baselineVariantBreakdown: [OcularProtocolVariant: BaselineProfileSummary] = [:]
   @Published private(set) var researchDataError: String?
@@ -62,6 +65,7 @@ final class AppModel: ObservableObject {
   let allowsInternalTools: Bool
   private let defaults: UserDefaults
   private let researchStore: ResearchSessionStore
+  private let checkHistoryStore: CheckHistoryStore
   private let guardianStore: any GuardianSessionStoring
   private let guardianAPI: GuardianAPIClient
   private let guardianHomeStore: any GuardianHomeStoring
@@ -75,6 +79,7 @@ final class AppModel: ObservableObject {
   init(
     defaults: UserDefaults = .standard,
     researchStore: ResearchSessionStore = ResearchSessionStore(),
+    checkHistoryStore: CheckHistoryStore = CheckHistoryStore(),
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
@@ -87,6 +92,7 @@ final class AppModel: ObservableObject {
     self.allowsInternalTools = allowsInternalTools
     self.defaults = defaults
     self.researchStore = researchStore
+    self.checkHistoryStore = checkHistoryStore
     self.guardianStore = guardianStore
     self.guardianAPI = guardianAPI
     self.guardianHomeStore = guardianHomeStore
@@ -758,8 +764,15 @@ final class AppModel: ObservableObject {
     metrics: ScreeningMetrics,
     reactionSummary: ChoiceReactionSummary?,
     ocularSummary: GazeCaptureSummary?,
-    startedAt: Date
+    startedAt: Date,
+    outcome: ScreeningOutcome? = nil
   ) async {
+    // History first, and unconditionally. It is a record for the person and has
+    // nothing to do with research consent; gating it on consent meant a public
+    // build — which has no way to grant consent — recorded no checks at all.
+    await appendCheckHistory(
+      mode: mode, metrics: metrics, startedAt: startedAt, outcome: outcome)
+
     guard mode == .baseline || researchConsent else { return }
 
     let quality = ocularSummary?.quality
@@ -826,6 +839,41 @@ final class AppModel: ObservableObject {
     }
   }
 
+  private func appendCheckHistory(
+    mode: ScreeningMode,
+    metrics: ScreeningMetrics,
+    startedAt: Date,
+    outcome: ScreeningOutcome?
+  ) async {
+    let entry = CheckHistoryEntry(
+      id: UUID(),
+      startedAt: startedAt,
+      kind: mode == .baseline ? .baseline : .check,
+      outcome: outcome.map(Self.historyOutcome),
+      qualityScore: metrics.qualityScore,
+      completedAllTasks: metrics.completedAllTasks
+    )
+    try? await checkHistoryStore.append(entry)
+    await reloadCheckHistory()
+  }
+
+  private static func historyOutcome(_ outcome: ScreeningOutcome) -> CheckHistoryEntry.Outcome {
+    switch outcome.state {
+    case .signalsDetected: .signalsDetected
+    case .inconclusive: .inconclusive
+    case .noSignalsDetected: .noSignalsDetected
+    }
+  }
+
+  func reloadCheckHistory() async {
+    checkHistory = (try? await checkHistoryStore.list()) ?? []
+  }
+
+  func deleteCheckHistory() async {
+    _ = try? await checkHistoryStore.deleteAll()
+    await reloadCheckHistory()
+  }
+
   func reloadResearchData() async {
     do {
       let sessions = try await researchStore.list()
@@ -883,6 +931,8 @@ final class AppModel: ObservableObject {
       discardPreparedExport()
       rotateParticipantID()
       baselineSessions = 0
+      _ = try? await checkHistoryStore.deleteAll()
+      await reloadCheckHistory()
       await reloadResearchData()
     } catch {
       researchDataError = error.localizedDescription

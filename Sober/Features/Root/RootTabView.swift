@@ -8,7 +8,25 @@ import SwiftUI
 /// exist rather than showing a tab that leads nowhere.
 struct RootTabView: View {
   @EnvironmentObject private var model: AppModel
-  @State private var tab: DSTab = .home
+  @State private var tab: DSTab = RootTabView.initialTab
+
+  /// Debug builds accept `-sober-initial-tab <name>` so a UI test or a manual
+  /// pass can land directly on a destination instead of driving taps to reach
+  /// it. Never compiled into a Release build, and it can only select a tab the
+  /// build actually has.
+  static var initialTab: DSTab {
+    #if DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    if let flagIndex = arguments.firstIndex(of: "-sober-initial-tab"),
+      let raw = arguments[safe: flagIndex + 1],
+      let requested = DSTab(rawValue: raw),
+      DSTab.available.contains(requested)
+    {
+      return requested
+    }
+    #endif
+    return .home
+  }
 
   var body: some View {
     // `safeAreaInset` rather than a ZStack overlay. Overlaying the bar left it
@@ -46,5 +64,12 @@ struct RootTabView: View {
     // so the switch stays exhaustive without weakening the enum.
     HomeView()
     #endif
+  }
+}
+
+extension Array {
+  /// Bounds-checked subscript, used only for reading a launch argument's value.
+  fileprivate subscript(safe index: Int) -> Element? {
+    indices.contains(index) ? self[index] : nil
   }
 }

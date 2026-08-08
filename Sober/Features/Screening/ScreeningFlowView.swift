@@ -209,7 +209,8 @@ struct ScreeningFlowView: View {
         qualityScore: 0,
         completedAllTasks: false
       )
-      presentOutcome(engine.evaluate(selfReport: answer, metrics: metrics))
+      let earlyOutcome = engine.evaluate(selfReport: answer, metrics: metrics)
+      presentOutcome(earlyOutcome)
       Task {
         await model.recordCompletedSession(
           mode: .check,
@@ -217,7 +218,8 @@ struct ScreeningFlowView: View {
           metrics: metrics,
           reactionSummary: nil,
           ocularSummary: nil,
-          startedAt: sessionStartedAt
+          startedAt: sessionStartedAt,
+          outcome: earlyOutcome
         )
       }
       return
@@ -238,7 +240,8 @@ struct ScreeningFlowView: View {
       qualityScore: 0,
       completedAllTasks: false
     )
-    presentOutcome(engine.evaluate(selfReport: answer, metrics: metrics))
+    let unavailableOutcome = engine.evaluate(selfReport: answer, metrics: metrics)
+    presentOutcome(unavailableOutcome)
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -246,7 +249,8 @@ struct ScreeningFlowView: View {
         metrics: metrics,
         reactionSummary: nil,
         ocularSummary: nil,
-        startedAt: sessionStartedAt
+        startedAt: sessionStartedAt,
+        outcome: unavailableOutcome
       )
     }
   }
@@ -283,13 +287,12 @@ struct ScreeningFlowView: View {
     }
 
     let protocolVariant = ocularSummary?.protocolVariant ?? .full
-    presentOutcome(
-      engine.evaluate(
-        selfReport: selfReport,
-        metrics: metrics,
-        personalBaseline: model.personalBaseline(for: protocolVariant)
-      )
+    let scoredOutcome = engine.evaluate(
+      selfReport: selfReport,
+      metrics: metrics,
+      personalBaseline: model.personalBaseline(for: protocolVariant)
     )
+    presentOutcome(scoredOutcome)
     Task {
       await model.recordCompletedSession(
         mode: .check,
@@ -297,7 +300,8 @@ struct ScreeningFlowView: View {
         metrics: metrics,
         reactionSummary: reactionSummary,
         ocularSummary: ocularSummary,
-        startedAt: sessionStartedAt
+        startedAt: sessionStartedAt,
+        outcome: scoredOutcome
       )
     }
   }

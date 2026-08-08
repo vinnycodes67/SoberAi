@@ -177,6 +177,10 @@ struct PrivacyCenterView: View {
             DSCard {
               VStack(alignment: .leading, spacing: DSSpace.xs) {
                 item("Your steady", "The range your checks compare against. Removed by deleting all local data.")
+                item(
+                  "History",
+                  "When you checked, how well the capture went, and which of the three results came out. Entries older than \(CheckHistoryStore.retentionDays) days are removed automatically, and only the most recent \(CheckHistoryStore.maximumEntries) are kept."
+                )
                 item("Session summaries", "Numbers only — no imagery. Removed by deleting all local data.")
                 item("Safety Plan", "Your destination, ride app, and contact. Removed by deleting all local data.")
                 item("Your name and age", "Used only to address you and to check you are old enough.")

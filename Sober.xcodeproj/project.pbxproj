@@ -18,6 +18,7 @@
 		240740F7B4158F40241A1623 /* GuardianCheckInServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */; };
 		2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
 		25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
+		27800BEA0A33A57B9A000FF7 /* CheckHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */; };
 		2B3D0C06779F49543898A3F2 /* DSIntegratedResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */; };
 		2BBAFCA3C3B8F8461D7B215B /* FaceTrackingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */; };
 		2D07B8D0B6262C3C51AC56B9 /* BaselineProfileEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */; };
@@ -31,6 +32,7 @@
 		3F6DC813101ECF9A30552ABC /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
 		3FCEA4BDF29B948140B5BB46 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804D0A298DBB719A4493299F /* ResearchModels.swift */; };
 		40574DCC9B2EFDA9FB9D5434 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
+		40C71064DB2B9FAB175D9BB8 /* CheckHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC6C8AC127FF67AF764965C /* CheckHistoryTests.swift */; };
 		42141DE1E9EE74A5965E13BB /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */; };
 		45A9CFA18E73738D0779B36E /* ResearchDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */; };
@@ -117,6 +119,7 @@
 		F0FE2BEFEA5D3A82B0A9C037 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
 		F1A042548B9083363BADAED4 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4931F024BDBE787378DF6FB9 /* RootTabView.swift */; };
 		F47B4525EB2D96CA0EFA1FE5 /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
+		F47F42240CD0D3CF947DCA4A /* CheckHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */; };
 		F484B3BF63DC3E3462E2D447 /* DSIntegratedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */; };
 		F711B90B52AC65B1474A2205 /* GuardianCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */; };
 		F97EB6201A4427AAD0CA8F3C /* Satoshi-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */; };
@@ -160,6 +163,7 @@
 		41FE4F8F275081E3EC620E82 /* BuildChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildChannel.swift; sourceTree = "<group>"; };
 		47963FDA3614C605DC619806 /* Info-Internal.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info-Internal.plist"; sourceTree = "<group>"; };
 		4931F024BDBE787378DF6FB9 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		4DC6C8AC127FF67AF764965C /* CheckHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckHistoryTests.swift; sourceTree = "<group>"; };
 		4FC54FC880C1A3D97062FCDE /* YourSteadyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourSteadyView.swift; sourceTree = "<group>"; };
 		4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedResultScreen.swift; sourceTree = "<group>"; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
@@ -193,6 +197,7 @@
 		DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineProfileEngine.swift; sourceTree = "<group>"; };
 		E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularSignalAnalyzer.swift; sourceTree = "<group>"; };
 		E5D0277C1F1057B474837F2C /* Sober.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sober.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckHistoryStore.swift; sourceTree = "<group>"; };
 		EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCenterView.swift; sourceTree = "<group>"; };
 		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -210,6 +215,7 @@
 			isa = PBXGroup;
 			children = (
 				3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */,
+				4DC6C8AC127FF67AF764965C /* CheckHistoryTests.swift */,
 				08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */,
 				17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */,
 				BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */,
@@ -436,6 +442,7 @@
 			isa = PBXGroup;
 			children = (
 				DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */,
+				E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */,
 				A51139029ED00CA564F1EB69 /* FaceTrackingService.swift */,
 				CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */,
 				FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */,
@@ -588,6 +595,7 @@
 				2D07B8D0B6262C3C51AC56B9 /* BaselineProfileEngine.swift in Sources */,
 				4F9264D1878E28A209723FC3 /* BuildChannel.swift in Sources */,
 				25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */,
+				27800BEA0A33A57B9A000FF7 /* CheckHistoryStore.swift in Sources */,
 				0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */,
 				95C39A8225B5DB8620C7CEE5 /* DSBaselinePortrait.swift in Sources */,
 				8A7801282589E1B6707C385D /* DSComponents.swift in Sources */,
@@ -641,6 +649,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */,
+				40C71064DB2B9FAB175D9BB8 /* CheckHistoryTests.swift in Sources */,
 				9DBE5A8CA3BCA27B3DEB32F7 /* GuardianModeTests.swift in Sources */,
 				FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */,
 				1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */,
@@ -659,6 +668,7 @@
 				439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */,
 				4F62F042E27D34C126E97BA6 /* BuildChannel.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
+				F47F42240CD0D3CF947DCA4A /* CheckHistoryStore.swift in Sources */,
 				3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */,
 				FF7AD08CAF8E27D323547F73 /* DSBaselinePortrait.swift in Sources */,
 				AE3B1465AE2122A6E021CC4E /* DSComponents.swift in Sources */,

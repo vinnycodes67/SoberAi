@@ -2,10 +2,15 @@ import SwiftUI
 
 /// Past sessions, and the way into Your Steady.
 ///
-/// Sessions are listed as what they were and how well they captured — never as
-/// a verdict. A past check's result is deliberately not restated as a headline
-/// here: a list of outcomes invites reading a trend, and there is no trend to
-/// read. Five measures over a handful of sessions is not a time series.
+/// Each row says what the session was, when, how well it captured, and — for a
+/// check — which of the three states came out. What it deliberately does not do
+/// is aggregate: no streak, no count of concerning results, no chart. A handful
+/// of sessions is not a time series, and a running tally would invite reading a
+/// trend the measurement cannot support.
+///
+/// Entries age out. `CheckHistoryStore` bounds them by both age and count,
+/// because a permanent record of when someone checked themselves is the thing
+/// another person would ask to see.
 struct HistoryView: View {
   @EnvironmentObject private var model: AppModel
 
@@ -34,7 +39,7 @@ struct HistoryView: View {
         header
         steadyEntry
 
-        if model.researchSessions.isEmpty {
+        if model.checkHistory.isEmpty {
           emptyState
         } else {
           filterControl
@@ -45,7 +50,10 @@ struct HistoryView: View {
       .padding(.bottom, DSSpace.xxl)
     }
     .background(DSPalette.background.ignoresSafeArea())
-    .task { await model.reloadResearchData() }
+    .task {
+      await model.reloadCheckHistory()
+      await model.reloadResearchData()
+    }
     .sheet(isPresented: $showingSteady) {
       NavigationStack {
         YourSteadyView()
@@ -106,7 +114,12 @@ struct HistoryView: View {
             DSRow(
               title(for: session),
               detail: detail(for: session),
-              showsChevron: false
+              showsChevron: false,
+              trailing: {
+                if session.outcome == .signalsDetected {
+                  Circle().fill(tint(for: session)).frame(width: 7, height: 7)
+                }
+              }
             )
           }
         }
@@ -118,21 +131,17 @@ struct HistoryView: View {
     DSEmptyState(
       title: "Nothing recorded yet",
       message:
-        "Baseline sessions and checks you complete on this iPhone will appear here. Nothing is uploaded."
+        "Baseline sessions and checks you complete on this iPhone will appear here. Nothing is uploaded, and entries older than \(CheckHistoryStore.retentionDays) days are removed automatically."
     )
   }
 
   // MARK: - Data
 
-  private var visibleSessions: [ResearchSessionEnvelope] {
-    let sorted = model.researchSessions.sorted { $0.startedAt > $1.startedAt }
+  private var visibleSessions: [CheckHistoryEntry] {
     switch filter {
-    case .all:
-      return sorted
-    case .baseline:
-      return sorted.filter { $0.context.sessionKind == .soberBaseline }
-    case .check:
-      return sorted.filter { $0.context.sessionKind == .screeningCheck }
+    case .all: model.checkHistory
+    case .baseline: model.checkHistory.filter { $0.kind == .baseline }
+    case .check: model.checkHistory.filter { $0.kind == .check }
     }
   }
 
@@ -152,23 +161,30 @@ struct HistoryView: View {
     }
   }
 
-  private func title(for session: ResearchSessionEnvelope) -> String {
-    switch session.context.sessionKind {
-    case .soberBaseline: "Baseline session"
-    case .screeningCheck: "Check"
-    case .controlledResearch: "Research session"
+  private func title(for entry: CheckHistoryEntry) -> String {
+    guard entry.kind == .check else { return "Baseline session" }
+    switch entry.outcome {
+    case .signalsDetected: return "Signals detected"
+    case .inconclusive: return "Inconclusive"
+    case .noSignalsDetected: return "No signals detected"
+    case nil: return "Check"
     }
+  }
+
+  /// Only a concerning result is coloured, matching the palette's single rule:
+  /// orange means attention. "No signals detected" gets no colour, because it is
+  /// not a pass and must not read as one.
+  private func tint(for entry: CheckHistoryEntry) -> Color {
+    entry.outcome == .signalsDetected ? DSPalette.accent : DSPalette.textPrimary
   }
 
   /// Date, then how well the capture went. Capture quality is the honest thing
   /// to show about a past session: it says whether the numbers were worth
   /// anything, without restating a verdict out of context.
-  private func detail(for session: ResearchSessionEnvelope) -> String {
-    let when = session.startedAt.formatted(date: .abbreviated, time: .shortened)
-    guard session.completedAt != nil, session.metrics.completedAllTasks else {
-      return "\(when) · not completed"
-    }
-    return "\(when) · \(qualityLabel(session.metrics.qualityScore)) capture"
+  private func detail(for entry: CheckHistoryEntry) -> String {
+    let when = entry.startedAt.formatted(date: .abbreviated, time: .shortened)
+    guard entry.completedAllTasks else { return "\(when) · not completed" }
+    return "\(when) · \(qualityLabel(entry.qualityScore)) capture"
   }
 
   private func qualityLabel(_ score: Double) -> String {
