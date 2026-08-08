@@ -31,6 +31,27 @@ pass() {
   echo "  ok    $1"
 }
 
+# Result privacy is a source-level invariant as well as an archive invariant.
+# External URL actions remain valid because they power Ride, Call, and Message;
+# portable result mechanisms do not belong on the result surface.
+echo "==> Result non-sharing source gate"
+RESULT_SOURCE="Sober/DesignKit/Screens/DSIntegratedResultScreen.swift"
+RESULT_FORBIDDEN=(
+  ShareLink
+  UIActivityViewController
+  Transferable
+  fileExporter
+  ResultReceipt
+  AuthenticatedResult
+)
+for needle in "${RESULT_FORBIDDEN[@]}"; do
+  if grep -q -F -- "$needle" "$RESULT_SOURCE"; then
+    fail "result surface contains portable-proof mechanism: $needle"
+  else
+    pass "result surface omits: $needle"
+  fi
+done
+
 echo "==> Building public Sober target (Release)"
 if ! xcodebuild \
   -project Sober.xcodeproj \
@@ -83,6 +104,16 @@ for needle in "${FORBIDDEN[@]}"; do
   fi
 done
 
+echo
+echo "==> Required coercion-resistant result copy"
+RESULT_PRIVACY_COPY="This result is private context for you. It is not evidence for a parent, partner, employer, school, insurer, or authority."
+result_privacy_copy_count=$(strings -a "$BINARY" | grep -c -F -- "$RESULT_PRIVACY_COPY")
+if [ "$result_privacy_copy_count" -gt 0 ]; then
+  pass "public result explains that it is not portable evidence"
+else
+  fail "public result is missing the required private-context boundary"
+fi
+
 # Internal-only Info.plist keys. Shipping an unused permission string or
 # background mode is an App Review rejection trigger and widens the App Privacy
 # answers to cover a capability the public app does not have.
@@ -105,15 +136,18 @@ for key in "${FORBIDDEN_KEYS[@]}"; do
   fi
 done
 
-# Required keys. The public app still needs camera access, and losing this
-# string would crash the check on first use rather than degrade it.
+# Required keys. Losing either usage string can make the corresponding system
+# permission fail on a physical device rather than degrade gracefully.
 echo
 echo "==> Required Info.plist keys"
-if /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" "$APP/Info.plist" >/dev/null 2>&1; then
-  pass "present: NSCameraUsageDescription"
-else
-  fail "Info.plist is missing NSCameraUsageDescription"
-fi
+REQUIRED_KEYS=(NSCameraUsageDescription NSFaceIDUsageDescription)
+for key in "${REQUIRED_KEYS[@]}"; do
+  if /usr/libexec/PlistBuddy -c "Print :$key" "$APP/Info.plist" >/dev/null 2>&1; then
+    pass "present: $key"
+  else
+    fail "Info.plist is missing $key"
+  fi
+done
 
 # The public v1 intentionally ships with no crash or analytics provider. Check
 # the linked image and embedded frameworks rather than relying on package files

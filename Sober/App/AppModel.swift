@@ -43,6 +43,15 @@ final class AppModel: ObservableObject {
     didSet { privacyStore.saveUserProfile(userProfile) }
   }
 
+  /// Optional system privacy protection for sensitive local screens. The Home
+  /// route, including every get-home action, intentionally never consults this
+  /// state.
+  @Published private(set) var privacyLockEnabled: Bool
+  @Published private(set) var privacyLockIsLocked: Bool
+  @Published private(set) var privacyLockIsAuthenticating = false
+  @Published private(set) var privacyShieldIsVisible = false
+  @Published private(set) var privacyLockError: String?
+
   @Published private(set) var participantID: PseudonymousParticipantID
 
   /// Compile-time capability gate. Injectable so tests can exercise both the
@@ -52,6 +61,8 @@ final class AppModel: ObservableObject {
   private let baselineStore: any BaselineStore
   private let permissionStore: any PermissionStore
   private let privacyStore: any PrivacyStore
+  private let privacyLockAuthenticator: any PrivacyLockAuthenticating
+  private let privacyLockPolicy: PrivacyLockPolicy
   private let guardianStore: any GuardianSessionStoring
   private let guardianAPI: GuardianAPIClient
   private let guardianHomeStore: any GuardianHomeStoring
@@ -61,12 +72,15 @@ final class AppModel: ObservableObject {
   private let baselineEngine = BaselineProfileEngine()
   private var guardianLocationPublishIsInFlight = false
   private var lastGuardianLocationPublishedAt: Date?
+  private var privacyInactiveSince: TimeInterval?
 
   init(
     defaults: UserDefaults = .standard,
     baselineStore: (any BaselineStore)? = nil,
     permissionStore: (any PermissionStore)? = nil,
     privacyStore: (any PrivacyStore)? = nil,
+    privacyLockAuthenticator: any PrivacyLockAuthenticating = SystemPrivacyLockAuthenticator(),
+    privacyLockPolicy: PrivacyLockPolicy = .standard,
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
@@ -86,6 +100,8 @@ final class AppModel: ObservableObject {
     self.baselineStore = resolvedBaselineStore
     self.permissionStore = resolvedPermissionStore
     self.privacyStore = resolvedPrivacyStore
+    self.privacyLockAuthenticator = privacyLockAuthenticator
+    self.privacyLockPolicy = privacyLockPolicy
     self.guardianStore = guardianStore
     self.guardianAPI = guardianAPI
     self.guardianHomeStore = guardianHomeStore
@@ -104,6 +120,8 @@ final class AppModel: ObservableObject {
     researchPreferences = privacySnapshot.researchPreferences
     safetyPlan = privacySnapshot.safetyPlan
     userProfile = privacySnapshot.userProfile
+    privacyLockEnabled = privacySnapshot.privacyLockEnabled
+    privacyLockIsLocked = privacySnapshot.privacyLockEnabled
     participantID = resolvedBaselineStore.participantID
 
     do {
@@ -178,6 +196,133 @@ final class AppModel: ObservableObject {
 
   func requestCameraPermission() async -> CameraPermissionState {
     await permissionStore.requestCameraAuthorization()
+  }
+
+  // MARK: - Privacy Lock
+
+  var privacyLockIsAvailable: Bool {
+    privacyLockAuthenticator.isAvailable
+  }
+
+  /// Turns the optional lock on only after iOS verifies the device owner.
+  /// Turning it off happens from the already-protected Settings route.
+  @discardableResult
+  func setPrivacyLockEnabled(_ isEnabled: Bool) async -> Bool {
+    privacyLockError = nil
+
+    guard isEnabled else {
+      privacyLockEnabled = false
+      privacyLockIsLocked = false
+      privacyShieldIsVisible = false
+      privacyInactiveSince = nil
+      privacyStore.savePrivacyLockEnabled(false)
+      return true
+    }
+
+    guard privacyLockAuthenticator.isAvailable else {
+      privacyLockError = Self.privacyLockMessage(for: .unavailable)
+      return false
+    }
+
+    let result = await performPrivacyAuthentication(
+      reason: "Turn on Privacy Lock for your History, Your Steady, and Settings."
+    )
+    guard result == .success else {
+      privacyLockError = Self.privacyLockMessage(for: result)
+      return false
+    }
+
+    privacyLockEnabled = true
+    privacyLockIsLocked = false
+    privacyShieldIsVisible = false
+    privacyInactiveSince = nil
+    privacyStore.savePrivacyLockEnabled(true)
+    return true
+  }
+
+  /// Unlocks only the private destinations. Failure leaves them closed and has
+  /// no effect on Home or any Ride, Call, or Message action.
+  @discardableResult
+  func unlockProtectedContent() async -> Bool {
+    privacyLockError = nil
+    guard privacyLockEnabled else {
+      privacyLockIsLocked = false
+      return true
+    }
+    guard privacyLockIsLocked else { return true }
+    guard privacyLockAuthenticator.isAvailable else {
+      privacyLockError = Self.privacyLockMessage(for: .unavailable)
+      return false
+    }
+
+    let result = await performPrivacyAuthentication(
+      reason: "Unlock your private Sober history and settings."
+    )
+    guard result == .success else {
+      privacyLockError = Self.privacyLockMessage(for: result)
+      return false
+    }
+
+    privacyLockIsLocked = false
+    privacyShieldIsVisible = false
+    privacyInactiveSince = nil
+    return true
+  }
+
+  /// Hides protected content as soon as iOS starts taking an app-switcher
+  /// snapshot. Authentication is required only if the full inactivity interval
+  /// elapses.
+  func privacySceneBecameInactive(
+    at uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    guard privacyLockEnabled, !privacyLockIsAuthenticating else { return }
+    privacyShieldIsVisible = true
+    if privacyInactiveSince == nil { privacyInactiveSince = uptime }
+  }
+
+  func privacySceneEnteredBackground(
+    at uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    privacySceneBecameInactive(at: uptime)
+  }
+
+  func privacySceneBecameActive(
+    at uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    guard privacyLockEnabled else {
+      privacyShieldIsVisible = false
+      privacyInactiveSince = nil
+      return
+    }
+    guard !privacyLockIsAuthenticating else { return }
+
+    if privacyLockPolicy.requiresAuthentication(inactiveSince: privacyInactiveSince, now: uptime) {
+      privacyLockIsLocked = true
+    }
+    privacyShieldIsVisible = false
+    privacyInactiveSince = nil
+  }
+
+  private func performPrivacyAuthentication(reason: String) async
+    -> PrivacyLockAuthenticationResult
+  {
+    guard !privacyLockIsAuthenticating else { return .cancelled }
+    privacyLockIsAuthenticating = true
+    defer { privacyLockIsAuthenticating = false }
+    return await privacyLockAuthenticator.authenticate(reason: reason)
+  }
+
+  private static func privacyLockMessage(for result: PrivacyLockAuthenticationResult) -> String? {
+    switch result {
+    case .success:
+      return nil
+    case .cancelled:
+      return "Unlock was canceled. Your private screens remain locked."
+    case .unavailable:
+      return "Privacy Lock needs Face ID, Touch ID, or a device passcode set up in iPhone Settings."
+    case .failed:
+      return "Sober could not verify you. Try again."
+    }
   }
 
   var guardianRelationshipIsActive: Bool {
@@ -900,6 +1045,12 @@ final class AppModel: ObservableObject {
     researchPreferences = ResearchPreferences()
     safetyPlan = SafetyPlan()
     userProfile = UserProfile()
+    privacyLockEnabled = false
+    privacyLockIsLocked = false
+    privacyLockIsAuthenticating = false
+    privacyShieldIsVisible = false
+    privacyLockError = nil
+    privacyInactiveSince = nil
     privacyStore.reset()
     defaults.removeObject(forKey: Keys.onboarding)
     defaults.removeObject(forKey: Keys.founderPreview)

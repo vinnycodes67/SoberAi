@@ -228,6 +228,7 @@ final class PersistenceFoundationTests: XCTestCase {
     store.saveResearchPreferences(preferences)
     store.saveSafetyPlan(plan)
     store.saveUserProfile(profile)
+    store.savePrivacyLockEnabled(true)
     store.recordConsent(version: "test-v1", at: Date(timeIntervalSince1970: 100))
 
     XCTAssertEqual(
@@ -236,7 +237,8 @@ final class PersistenceFoundationTests: XCTestCase {
         researchConsent: true,
         researchPreferences: preferences,
         safetyPlan: plan,
-        userProfile: profile
+        userProfile: profile,
+        privacyLockEnabled: true
       )
     )
 
@@ -248,7 +250,8 @@ final class PersistenceFoundationTests: XCTestCase {
         researchConsent: false,
         researchPreferences: ResearchPreferences(),
         safetyPlan: SafetyPlan(),
-        userProfile: UserProfile()
+        userProfile: UserProfile(),
+        privacyLockEnabled: false
       )
     )
     XCTAssertNil(harness.defaults.object(forKey: "sober.consent.version"))
@@ -260,6 +263,34 @@ final class PersistenceFoundationTests: XCTestCase {
     XCTAssertEqual(SystemPermissionStore.map(.restricted), .restricted)
     XCTAssertEqual(SystemPermissionStore.map(.denied), .denied)
     XCTAssertEqual(SystemPermissionStore.map(.authorized), .authorized)
+  }
+
+  func testPrivacyLockPolicyUsesTheFullInactivityWindow() {
+    let policy = PrivacyLockPolicy(inactivityInterval: 30)
+    let start: TimeInterval = 100
+
+    XCTAssertFalse(policy.requiresAuthentication(inactiveSince: nil, now: start))
+    XCTAssertFalse(
+      policy.requiresAuthentication(
+        inactiveSince: start,
+        now: 129.999
+      )
+    )
+    XCTAssertTrue(
+      policy.requiresAuthentication(
+        inactiveSince: start,
+        now: 130
+      )
+    )
+  }
+
+  func testLocalAuthenticationErrorsMapWithoutCreatingACustomFallback() {
+    XCTAssertEqual(SystemPrivacyLockAuthenticator.map(.userCancel), .cancelled)
+    XCTAssertEqual(SystemPrivacyLockAuthenticator.map(.appCancel), .cancelled)
+    XCTAssertEqual(SystemPrivacyLockAuthenticator.map(.systemCancel), .cancelled)
+    XCTAssertEqual(SystemPrivacyLockAuthenticator.map(.biometryNotAvailable), .unavailable)
+    XCTAssertEqual(SystemPrivacyLockAuthenticator.map(.passcodeNotSet), .unavailable)
+    XCTAssertEqual(SystemPrivacyLockAuthenticator.map(.authenticationFailed), .failed)
   }
 
   private func makeSession(

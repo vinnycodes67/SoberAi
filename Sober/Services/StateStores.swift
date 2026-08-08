@@ -132,10 +132,10 @@ struct PrivacySnapshot: Equatable, Sendable {
   var researchPreferences: ResearchPreferences
   var safetyPlan: SafetyPlan
   var userProfile: UserProfile
+  var privacyLockEnabled: Bool = false
 }
 
-/// Owns app-local consent, profile, and safety-plan persistence. Privacy Lock
-/// state will join this boundary during the integration pass.
+/// Owns app-local consent, profile, safety-plan, and Privacy Lock persistence.
 @MainActor
 protocol PrivacyStore: AnyObject {
   func load() -> PrivacySnapshot
@@ -143,6 +143,7 @@ protocol PrivacyStore: AnyObject {
   func saveResearchPreferences(_ preferences: ResearchPreferences)
   func saveSafetyPlan(_ plan: SafetyPlan)
   func saveUserProfile(_ profile: UserProfile)
+  func savePrivacyLockEnabled(_ isEnabled: Bool)
   func recordConsent(version: String, at date: Date)
   func reset()
 }
@@ -154,6 +155,7 @@ final class UserDefaultsPrivacyStore: PrivacyStore {
     static let researchPreferences = "sober.research.preferences"
     static let safetyPlan = "sober.safety.plan"
     static let userProfile = "sober.user.profile"
+    static let privacyLockEnabled = "sober.privacy-lock.enabled"
     static let consentVersion = "sober.consent.version"
     static let consentDate = "sober.consent.date"
   }
@@ -172,7 +174,8 @@ final class UserDefaultsPrivacyStore: PrivacyStore {
       researchPreferences: decode(ResearchPreferences.self, forKey: Keys.researchPreferences)
         ?? ResearchPreferences(),
       safetyPlan: decode(SafetyPlan.self, forKey: Keys.safetyPlan) ?? SafetyPlan(),
-      userProfile: decode(UserProfile.self, forKey: Keys.userProfile) ?? UserProfile()
+      userProfile: decode(UserProfile.self, forKey: Keys.userProfile) ?? UserProfile(),
+      privacyLockEnabled: defaults.bool(forKey: Keys.privacyLockEnabled)
     )
   }
 
@@ -192,6 +195,10 @@ final class UserDefaultsPrivacyStore: PrivacyStore {
     encode(profile, forKey: Keys.userProfile)
   }
 
+  func savePrivacyLockEnabled(_ isEnabled: Bool) {
+    defaults.set(isEnabled, forKey: Keys.privacyLockEnabled)
+  }
+
   func recordConsent(version: String, at date: Date) {
     defaults.set(version, forKey: Keys.consentVersion)
     defaults.set(date, forKey: Keys.consentDate)
@@ -203,6 +210,7 @@ final class UserDefaultsPrivacyStore: PrivacyStore {
       Keys.researchPreferences,
       Keys.safetyPlan,
       Keys.userProfile,
+      Keys.privacyLockEnabled,
       Keys.consentVersion,
       Keys.consentDate,
     ] {

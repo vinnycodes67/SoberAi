@@ -55,6 +55,11 @@ struct HistoryView: View {
       }
       .preferredColorScheme(.dark)
     }
+    .onChange(of: model.privacyShieldIsVisible) { _, isShielded in
+      // A presented sheet sits above its parent. Dismiss it before the app
+      // switcher snapshot so Your Steady cannot remain visible over the shield.
+      if isShielded { showingSteady = false }
+    }
   }
 
   private var header: some View {

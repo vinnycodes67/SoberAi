@@ -17,6 +17,7 @@ struct SoberApp: App {
 struct RootView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.scenePhase) private var scenePhase
   @State private var isShowingLaunch = true
 
   var body: some View {
@@ -38,6 +39,18 @@ struct RootView: View {
     }
     .animation(reduceMotion ? nil : SoberMotion.screen, value: model.hasCompletedOnboarding)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.14), value: isShowingLaunch)
+    .onChange(of: scenePhase) { _, phase in
+      switch phase {
+      case .active:
+        model.privacySceneBecameActive()
+      case .inactive:
+        model.privacySceneBecameInactive()
+      case .background:
+        model.privacySceneEnteredBackground()
+      @unknown default:
+        model.privacySceneBecameInactive()
+      }
+    }
   }
 
   private func finishLaunch() {
