@@ -21,7 +21,7 @@ struct OcularTaskView: View {
       GeometryReader { proxy in
         ZStack {
           RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
+            .fill(StimulusPalette.field)
 
           targetGuides(in: proxy.size)
 
@@ -30,10 +30,10 @@ struct OcularTaskView: View {
               let elapsed = timeline.date.timeIntervalSince(startedAt)
               let target = OcularProtocolSchedule.target(at: elapsed, variant: activeVariant)
               Circle()
-                .fill(Palette.primary)
+                .fill(StimulusPalette.targetPrimary)
                 .frame(width: target.phase == .saccades ? 22 : 26, height: target.phase == .saccades ? 22 : 26)
                 .overlay { Circle().stroke(.white.opacity(0.6), lineWidth: 2) }
-                .shadow(color: Palette.primary.opacity(0.58), radius: 18)
+                .shadow(color: StimulusPalette.targetPrimary.opacity(0.58), radius: 18)
                 .position(
                   x: proxy.size.width * target.x,
                   y: proxy.size.height * target.y
@@ -51,14 +51,19 @@ struct OcularTaskView: View {
                 ZStack {
                   FaceCameraPreview(service: service)
                   Ellipse()
-                    .stroke(service.quality.facePresent ? Palette.primary : Palette.warning, lineWidth: 1.5)
+                    // Face lost is the state worth looking at; face present is
+                    // the quiet default. Both previously mapped to colours that
+                    // are now the same orange.
+                    .stroke(
+                      service.quality.facePresent ? DSPalette.textSecondary : DSPalette.accent,
+                      lineWidth: 1.5)
                     .padding(8)
                 }
                 .frame(width: 78, height: 102)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay {
                   RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Palette.secondary.opacity(0.35), lineWidth: 1)
+                    .stroke(StimulusPalette.guide.opacity(0.35), lineWidth: 1)
                 }
               }
             }
@@ -69,7 +74,7 @@ struct OcularTaskView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
           RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+            .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
         }
       }
       .frame(height: 330)
@@ -141,7 +146,7 @@ struct OcularTaskView: View {
       path.move(to: CGPoint(x: size.width * 0.5, y: size.height * 0.18))
       path.addLine(to: CGPoint(x: size.width * 0.5, y: size.height * 0.82))
     }
-    .stroke(Palette.secondary.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 8]))
+    .stroke(StimulusPalette.guide.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 8]))
   }
 
   private var protocolProgress: some View {
@@ -176,13 +181,13 @@ struct OcularTaskView: View {
   private var activeVariant: OcularProtocolVariant { reduceMotion ? .reducedMotion : .full }
 
   private func progressColor(for phase: OcularPhase) -> Color {
-    guard let startedAt else { return Palette.secondary.opacity(0.22) }
+    guard let startedAt else { return StimulusPalette.guide.opacity(0.22) }
     let current = OcularProtocolSchedule.target(at: Date().timeIntervalSince(startedAt), variant: activeVariant).phase
     let phases = progressPhases
     guard let currentIndex = phases.firstIndex(of: current),
       let phaseIndex = phases.firstIndex(of: phase)
-    else { return Palette.secondary.opacity(0.22) }
-    return phaseIndex <= currentIndex ? Palette.primary : Palette.secondary.opacity(0.22)
+    else { return StimulusPalette.guide.opacity(0.22) }
+    return phaseIndex <= currentIndex ? StimulusPalette.targetPrimary : Palette.secondary.opacity(0.22)
   }
 
   private var canCapture: Bool {

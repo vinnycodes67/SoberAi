@@ -31,10 +31,10 @@ struct ReactionTaskView: View {
       VStack(spacing: 14) {
         ZStack {
           RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
+            .fill(StimulusPalette.field)
             .overlay {
               RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+                .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
             }
 
           if phase == .target {
@@ -51,7 +51,7 @@ struct ReactionTaskView: View {
                   .foregroundStyle(Palette.textSecondary)
               } else if phase == .waiting {
                 Circle()
-                  .fill(Palette.secondary.opacity(0.25))
+                  .fill(StimulusPalette.guide.opacity(0.25))
                   .frame(width: 12, height: 12)
                 Text("Wait…")
                   .font(.subheadline)
@@ -200,8 +200,14 @@ struct ReactionTaskView: View {
     }
   }
 
+  /// The two choice colours the task asks a person to tell apart.
+  ///
+  /// These must come from `StimulusPalette`, not the theme. Both once resolved
+  /// through `Palette`, and repointing `Palette` at DesignKit — where `primary`
+  /// and `accent` are the same orange — collapsed them into one colour and left
+  /// a colour-discrimination task with nothing to discriminate.
   private func symbolColor(_ symbol: ChoiceReactionSymbol) -> Color {
-    symbol.colorName == "Blue" ? Palette.primary : Palette.accent
+    symbol.colorName == "Blue" ? StimulusPalette.targetPrimary : StimulusPalette.targetContrast
   }
 }
 
@@ -228,7 +234,7 @@ struct MotorTrackingTaskView: View {
 
         ZStack {
           RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Palette.cardBackground)
+            .fill(StimulusPalette.field)
 
           Canvas { context, _ in
             var path = Path()
@@ -238,27 +244,27 @@ struct MotorTrackingTaskView: View {
             }
             context.stroke(
               path,
-              with: .color(Palette.secondary.opacity(0.42)),
+              with: .color(StimulusPalette.guide.opacity(0.42)),
               style: StrokeStyle(lineWidth: 18, lineCap: .round)
             )
             context.stroke(
               path,
-              with: .color(Palette.primary.opacity(0.74)),
+              with: .color(StimulusPalette.targetPrimary.opacity(0.74)),
               style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [3, 8])
             )
           }
 
           Circle()
-            .fill(Palette.primary)
+            .fill(StimulusPalette.targetPrimary)
             .frame(width: 54, height: 54)
             .overlay { Circle().stroke(Palette.textPrimary.opacity(0.5), lineWidth: 2) }
-            .shadow(color: Palette.primary.opacity(0.32), radius: 16)
+            .shadow(color: StimulusPalette.targetPrimary.opacity(0.32), radius: 16)
             .position(displayPosition)
         }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
           RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+            .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
         }
         .contentShape(Rectangle())
         .gesture(
@@ -332,7 +338,7 @@ struct TimeEstimateTaskView: View {
 
       ZStack {
         RoundedRectangle(cornerRadius: 24, style: .continuous)
-          .fill(Palette.cardBackground)
+          .fill(StimulusPalette.field)
 
         if startedAt == nil {
           SignalHalo(size: 220, isActive: false)
@@ -341,10 +347,10 @@ struct TimeEstimateTaskView: View {
             let elapsed = timeline.date.timeIntervalSince(startedAt ?? timeline.date)
             ZStack {
               Circle()
-                .stroke(Palette.primary.opacity(0.12), lineWidth: 2)
+                .stroke(StimulusPalette.targetPrimary.opacity(0.12), lineWidth: 2)
                 .frame(width: reduceMotion ? 150 : 150 + sin(elapsed * 1.4) * 12)
               Circle()
-                .fill(Palette.primary)
+                .fill(StimulusPalette.targetPrimary)
                 .frame(width: 12, height: 12)
             }
           }
@@ -353,7 +359,7 @@ struct TimeEstimateTaskView: View {
       .frame(height: 300)
       .overlay {
         RoundedRectangle(cornerRadius: 24, style: .continuous)
-          .stroke(Palette.secondary.opacity(0.2), lineWidth: 1)
+          .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
       }
 
       Button(startedAt == nil ? "Start counting" : "Stop now") {

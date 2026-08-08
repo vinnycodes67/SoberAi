@@ -499,10 +499,11 @@ private struct AnalyzingView: View {
       SignalHalo(size: 238)
       VStack(spacing: 8) {
         Text("Comparing your signals")
-          .font(.system(.title, design: .serif, weight: .semibold))
+          .font(DSFont.title)
+          .dsTitleTracking()
         Text("Reaction · tracking · timing · guided gaze")
-          .font(.caption)
-          .foregroundStyle(Palette.textSecondary)
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
       }
     }
     .soberEntrance()
@@ -528,7 +529,8 @@ private struct BaselineCompleteView: View {
         .soberEntrance(order: 0)
       VStack(spacing: 9) {
         Text(accepted ? "Baseline recorded" : completionState.title)
-          .font(.system(.largeTitle, design: .serif, weight: .semibold))
+          .font(DSFont.hero)
+          .dsHeroTracking()
         Text(
           accepted
             ? (sessions >= 5

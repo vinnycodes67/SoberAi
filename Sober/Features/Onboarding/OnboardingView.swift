@@ -92,8 +92,8 @@ struct OnboardingView: View {
 
         VStack(spacing: 12) {
           Text("Take a beat before you move.")
-            .font(.system(.largeTitle, design: .serif, weight: .semibold))
-            .tracking(-1.2)
+            .font(DSFont.hero)
+            .dsHeroTracking()
             .multilineTextAlignment(.center)
             .foregroundStyle(Palette.textPrimary)
           Text(
