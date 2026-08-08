@@ -28,7 +28,7 @@ struct RootView: View {
       } else {
         Group {
           if model.hasCompletedOnboarding {
-            HomeView()
+            RootTabView()
           } else {
             OnboardingView()
           }

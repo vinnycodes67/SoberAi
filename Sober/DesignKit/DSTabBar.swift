@@ -11,6 +11,20 @@ enum DSTab: String, CaseIterable, Identifiable {
   case circle
   case settings
 
+  /// The destinations a build actually has.
+  ///
+  /// Circle is Guardian, which is not in public v1. The bar iterates this
+  /// rather than `allCases` so a public build cannot render a tab that leads
+  /// nowhere — the plan's rule is to ship fewer real destinations rather than
+  /// a placeholder one.
+  static var available: [DSTab] {
+    #if INTERNAL_BUILD
+    return [.home, .history, .circle, .settings]
+    #else
+    return [.home, .history, .settings]
+    #endif
+  }
+
   var id: String { rawValue }
 
   var title: String {
@@ -32,65 +46,40 @@ enum DSTab: String, CaseIterable, Identifiable {
   }
 }
 
-/// A floating Liquid Glass tab bar.
-///
-/// On iOS 26 the bar and its selection pill are placed inside a single
-/// `GlassEffectContainer`. That is what makes the glass behave the way
-/// Apple's own does: both shapes sample the same backdrop, so the pill
-/// dissolves and re-forms between tabs rather than sliding as an opaque
-/// object across a separate pane. `.interactive()` gives the material its
-/// touch response.
-///
-/// Older systems fall back to layered material, which cannot refract, so it
-/// compensates with an inner lift and a hairline rim.
+/// A floating tab bar.
 ///
 /// ## Usage
 ///
+/// Attach it as a bottom safe-area inset, not as an overlay. As an inset SwiftUI
+/// both keeps the bar clear of the home indicator and insets scrolling content
+/// behind it, so no page needs to reserve clearance by hand:
+///
 /// ```swift
-/// ZStack(alignment: .bottom) {
-///   content
-///   DSTabBar(selection: $tab).padding(.bottom, DSSpace.xs)
+/// content.safeAreaInset(edge: .bottom, spacing: 0) {
+///   DSTabBar(selection: $tab).padding(.top, DSSpace.xs)
 /// }
 /// ```
-///
-/// Give scrolling content `.padding(.bottom, DSSpace.tabBarClearance)` so the
-/// last row is never trapped beneath the bar.
 struct DSTabBar: View {
   @Binding var selection: DSTab
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
   @Namespace private var pill
 
   var body: some View {
-    Group {
-      if #available(iOS 26.0, *), !reduceTransparency {
-        GlassEffectContainer(spacing: DSSpace.xxs) { bar }
-      } else {
-        bar
-      }
-    }
-    .padding(.horizontal, DSSpace.lg)
+    bar
+      .padding(.horizontal, DSSpace.lg)
   }
 
   private var bar: some View {
     HStack(spacing: DSSpace.xxs) {
-      ForEach(DSTab.allCases) { item($0) }
+      ForEach(DSTab.available) { item($0) }
     }
     .padding(5)
     .background { surface }
     .overlay {
       Capsule()
-        .strokeBorder(
-          LinearGradient(
-            colors: [Color.white.opacity(0.22), Color.white.opacity(0.06)],
-            startPoint: .top,
-            endPoint: .bottom
-          ),
-          lineWidth: 0.5
-        )
+        .strokeBorder(DSPalette.separator, lineWidth: 0.5)
     }
-    .shadow(color: .black.opacity(0.44), radius: 20, y: 8)
   }
 
   private func item(_ tab: DSTab) -> some View {
@@ -120,40 +109,27 @@ struct DSTabBar: View {
 
   @ViewBuilder
   private func selectionPill(_ selected: Bool) -> some View {
+    // A solid fill, never a tinted glass. The bar is the glass; giving the pill
+    // its own tinted material stacked it on top of an accent fill and bloomed
+    // into an orange halo that swallowed the adjacent labels.
     if selected {
-      if #available(iOS 26.0, *), !reduceTransparency {
-        Capsule()
-          .fill(DSPalette.accent)
-          .glassEffect(.regular.tint(DSPalette.accent).interactive(), in: Capsule())
-          .matchedGeometryEffect(id: "dsTabSelection", in: pill)
-      } else {
-        Capsule()
-          .fill(DSPalette.accent)
-          .matchedGeometryEffect(id: "dsTabSelection", in: pill)
-      }
+      Capsule()
+        .fill(DSPalette.accent)
+        .matchedGeometryEffect(id: "dsTabSelection", in: pill)
     }
   }
 
-  @ViewBuilder
+  /// Matte, not glass.
+  ///
+  /// The bar was the system's one deliberate exception to "no materials". In
+  /// practice it sampled whatever scrolled behind it — an orange primary button,
+  /// hero type — and smeared it across the bar until the labels were unreadable.
+  /// A material that inverts legibility depending on the content underneath is
+  /// the wrong choice for the one control that is always on screen.
+  ///
+  /// An opaque raised surface with a hairline rim reads the same over every
+  /// screen, which is what a persistent control needs.
   private var surface: some View {
-    if reduceTransparency {
-      Capsule().fill(DSPalette.surfaceRaised)
-    } else if #available(iOS 26.0, *) {
-      Capsule().fill(.clear).glassEffect(.regular, in: Capsule())
-    } else {
-      ZStack {
-        Capsule().fill(.ultraThinMaterial)
-        // Material alone reads flat on a near-black page. A faint vertical
-        // lift restores the sense of a curved surface catching light.
-        Capsule().fill(
-          LinearGradient(
-            colors: [Color.white.opacity(0.07), Color.white.opacity(0.02)],
-            startPoint: .top,
-            endPoint: .bottom
-          )
-        )
-        Capsule().fill(Color.black.opacity(0.18))
-      }
-    }
+    Capsule().fill(DSPalette.surfaceRaised)
   }
 }
