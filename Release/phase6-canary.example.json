@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "synthetic",
+  "release": {
+    "version": "1.0.0",
+    "build": "100",
+    "commit": "1111111111111111111111111111111111111111",
+    "rolloutChannel": "testflight-staged",
+    "rolloutStage": "external-small",
+    "phasedReleaseDay": null,
+    "phasedReleasePercent": null
+  },
+  "policy": {
+    "crashFreeMinimumPercent": 99.5,
+    "checkCompletionMinimumPercent": 70,
+    "baselineExclusionMaximumPercent": 35,
+    "technicalInconclusiveMaximumPercent": 30,
+    "minimumRateSampleSize": 20,
+    "consecutiveBreachesRequired": 2
+  },
+  "approvals": {
+    "founder": true,
+    "engineering": true,
+    "privacyLegal": true,
+    "qa": true
+  },
+  "sources": {
+    "stability": "app-store-connect-aggregate",
+    "checkCompletion": "consented-manual-tally",
+    "baselineExclusions": "consented-manual-tally",
+    "technicalInconclusive": "consented-manual-tally",
+    "supportIssues": "support-aggregate"
+  },
+  "windows": [
+    {
+      "id": "day-1-window-1",
+      "startsAt": "2026-09-01T00:00:00Z",
+      "endsAt": "2026-09-01T06:00:00Z",
+      "crashFreeSessionsPercent": 100,
+      "counts": {
+        "stabilitySampleSize": 25,
+        "checksStarted": 25,
+        "checksCompleted": 21,
+        "baselineReviewed": 25,
+        "baselineExcluded": 4,
+        "conclusionEligibleChecks": 21,
+        "technicalInconclusive": 3
+      },
+      "technicalInconclusiveReasons": {
+        "cameraUnavailable": 0,
+        "permissionDenied": 1,
+        "captureQuality": 1,
+        "interruption": 1,
+        "taskQuality": 0,
+        "otherTechnical": 0
+      },
+      "supportIssues": {
+        "p0": 0,
+        "p1": 0,
+        "p2": 1
+      },
+      "criticalIncidents": {
+        "baselineTruth": 0,
+        "privacy": 0,
+        "dataLoss": 0,
+        "coerciveCopy": 0,
+        "unsafeResult": 0
+      }
+    },
+    {
+      "id": "day-1-window-2",
+      "startsAt": "2026-09-01T06:00:00Z",
+      "endsAt": "2026-09-01T12:00:00Z",
+      "crashFreeSessionsPercent": 100,
+      "counts": {
+        "stabilitySampleSize": 26,
+        "checksStarted": 26,
+        "checksCompleted": 23,
+        "baselineReviewed": 24,
+        "baselineExcluded": 3,
+        "conclusionEligibleChecks": 23,
+        "technicalInconclusive": 4
+      },
+      "technicalInconclusiveReasons": {
+        "cameraUnavailable": 0,
+        "permissionDenied": 1,
+        "captureQuality": 2,
+        "interruption": 0,
+        "taskQuality": 1,
+        "otherTechnical": 0
+      },
+      "supportIssues": {
+        "p0": 0,
+        "p1": 0,
+        "p2": 0
+      },
+      "criticalIncidents": {
+        "baselineTruth": 0,
+        "privacy": 0,
+        "dataLoss": 0,
+        "coerciveCopy": 0,
+        "unsafeResult": 0
+      }
+    }
+  ],
+  "reviews": {
+    "day7": {
+      "due": false,
+      "completed": false,
+      "approved": false
+    },
+    "day30": {
+      "due": false,
+      "completed": false,
+      "approved": false
+    }
+  }
+}

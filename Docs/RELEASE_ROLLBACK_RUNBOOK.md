@@ -40,6 +40,11 @@ Pause TestFlight or phased rollout immediately for any of these:
 - public archive containing Guardian, Circle, Research/founder routes, location,
   notification, local-network, URL-scheme, or relay configuration.
 
+`Scripts/release-ops.mjs canary` encodes these incident classes. `PAUSE` exits
+3 and freezes expansion immediately. `HOLD` exits 2 and keeps the current
+TestFlight cohort or phased-update day fixed while evidence is incomplete or a
+noncritical threshold is investigated.
+
 ## Decision and rollback
 
 1. Name one incident lead and freeze submission/rollout. Preserve the affected
@@ -70,3 +75,10 @@ Before external TestFlight, rehearse with a synthetic device/container:
 No rollback is complete until a clean install and an upgrade install both pass,
 Home/get-home actions remain available, and the archive boundary gate proves the
 public binary has not widened.
+
+For Sober's first App Store version, there is no native App Store phased-release
+control to pause. Stop adding TestFlight cohorts before public release. After a
+manual first public release, use removal from sale only with founder/App Review
+operations and counsel input; it does not remove installed copies. For later
+updates, Apple permits pausing the seven-day phased release for a cumulative 30
+days. Follow `PHASE_6_CANARY_RUNBOOK.md` for the exact channel distinction.

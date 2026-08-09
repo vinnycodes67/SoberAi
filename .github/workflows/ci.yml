@@ -141,6 +141,19 @@ jobs:
       - name: Scan public Release artifact
         run: Scripts/check-public-binary.sh "${RUNNER_TEMP}/boundary"
 
+  release-ops:
+    name: Canary and final-gate policy tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate release policy evaluator
+        run: |
+          node --check Scripts/release-ops.mjs
+          node --test Scripts/tests/release-ops.test.mjs
+
   backend:
     name: Backend tests (v1.1 preservation)
     runs-on: ubuntu-latest

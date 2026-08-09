@@ -141,6 +141,7 @@ Scripts/run-ui-tests.sh
 Scripts/check-release-metadata.sh
 Scripts/check-public-binary.sh
 Scripts/rehearse-app-store-package.sh
+node --test Scripts/tests/release-ops.test.mjs
 npm test --prefix Backend
 git diff --check
 ```
@@ -155,6 +156,10 @@ and rollback rehearsal. Phase 5 owners should use
 [App Review Rehearsal](Docs/APP_REVIEW_REHEARSAL.md), and the
 [Phase 5 Release Checklist](Docs/PHASE_5_RELEASE_CHECKLIST.md) together; an
 unsigned local archive is not proof of Apple validation or TestFlight upload.
+After Apple processing, use the [Phase 6 Canary Runbook](Docs/PHASE_6_CANARY_RUNBOOK.md)
+and [Final Release Handoff](Docs/FINAL_RELEASE_HANDOFF.md). The release-ops
+evaluator accepts only aggregate counts and refuses to mark a synthetic template
+or mismatched candidate ready.
 
 ## Important prototype limits
 

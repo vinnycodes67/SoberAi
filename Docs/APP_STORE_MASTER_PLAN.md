@@ -875,10 +875,15 @@ Exit gate: founder, engineering, design, privacy/legal, and QA sign the same rel
 
 Goal: protect users while learning from the first public build.
 
-- Use phased release.
+- Use staged TestFlight cohorts for the first App Store version; Apple's native
+  seven-day phased release applies only to later version updates.
 - Monitor crash-free sessions, local check completion, baseline exclusions, inconclusive technical reasons, and support issues without collecting measurements/results.
 - Pause rollout on any baseline-truth, privacy, data-loss, coercive-copy, or unsafe-result incident.
 - Conduct a 7-day and 30-day review before expanding features.
+
+Exit gate: the production canary report says `CONTINUE`, both reviews are
+approved, and the final release-readiness command ties every signoff and
+artifact to the same version, build, commit, and archived public app.
 
 ### v1.1 — Guardian qualification program (starts after v1 stability review)
 
