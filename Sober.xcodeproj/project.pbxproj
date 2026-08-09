@@ -92,6 +92,7 @@
 		9B222019430D22DD7B06D15F /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
 		9CDF76D1EE7AA3B9E367503D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */; };
 		9DBE5A8CA3BCA27B3DEB32F7 /* GuardianModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */; };
+		A0C22C75DAD88185B1123392 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */; };
 		A2D6113F96A89F7A087A1D96 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		A4657F61EB270A966DB12398 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
 		A476623DC27596BDEE2C1536 /* DSTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6127949ED5CD1BF168B4251C /* DSTabBar.swift */; };
@@ -110,6 +111,7 @@
 		C74E3D8F49399F2A0F1B8295 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
 		C94BC7151A83E0FAF8F66165 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C562984AD4EE5F0087499CBB /* HistoryView.swift */; };
 		CF746581A660CBD426F30F23 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
+		D119B5036B3E95BCFA80816C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */; };
 		D59C851AEEB911F3B54376CD /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
 		D5D2B38C911487DB3585B946 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6732CF2B5D184B14D10AED /* SettingsView.swift */; };
@@ -233,6 +235,7 @@
 		F69FF16FB9F7B0082399E074 /* SoberComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberComponents.swift; sourceTree = "<group>"; };
 		FA18DBB71AB47CE423D96907 /* AccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityUITests.swift; sourceTree = "<group>"; };
 		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
+		FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Medium.otf"; sourceTree = "<group>"; };
 		FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCheckInServices.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -301,6 +304,7 @@
 			children = (
 				47963FDA3614C605DC619806 /* Info-Internal.plist */,
 				0B3EFD4DB4DBCB29DA687024 /* Info.plist */,
+				FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */,
 				B5546AEA9AF05100D39C8E97 /* App */,
 				6979467F7B883BBAC8250E17 /* Components */,
 				26FAADC19274E05E861374DF /* Design */,
@@ -631,6 +635,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BE6A415DAF213AB35C1B663E /* Assets.xcassets in Resources */,
+				D119B5036B3E95BCFA80816C /* PrivacyInfo.xcprivacy in Resources */,
 				778CF042B4E3088D27699393 /* Satoshi-Bold.otf in Resources */,
 				C20DFEC7378189BB52BE4274 /* Satoshi-LICENSE.txt in Resources */,
 				EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */,
@@ -643,6 +648,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				870CEAC234FC3FCCCF391525 /* Assets.xcassets in Resources */,
+				A0C22C75DAD88185B1123392 /* PrivacyInfo.xcprivacy in Resources */,
 				77D00FA3748836F23469020D /* Satoshi-Bold.otf in Resources */,
 				F97EB6201A4427AAD0CA8F3C /* Satoshi-LICENSE.txt in Resources */,
 				90D6CB428AD2EE567D86CE04 /* Satoshi-Medium.otf in Resources */,

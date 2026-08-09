@@ -114,6 +114,59 @@ else
   fail "Info.plist is missing NSCameraUsageDescription"
 fi
 
+# Submission reconciliation.
+#
+# Every App Store answer has to be true of the artifact, not of the plan. These
+# check the ones that can be read off the binary, so metadata cannot drift from
+# what actually ships.
+echo
+echo "==> App Store answers vs the artifact"
+
+MANIFEST="$APP/PrivacyInfo.xcprivacy"
+if [ -f "$MANIFEST" ]; then
+  pass "present: PrivacyInfo.xcprivacy"
+
+  tracking=$(/usr/libexec/PlistBuddy -c "Print :NSPrivacyTracking" "$MANIFEST" 2>/dev/null)
+  if [ "$tracking" = "false" ]; then
+    pass "manifest declares no tracking"
+  else
+    fail "manifest declares tracking: $tracking"
+  fi
+
+  # Nothing leaves the device, so the collected-data array must stay empty. If
+  # something is ever transmitted, this is the line that should stop the build
+  # until the questionnaire is updated too.
+  if /usr/libexec/PlistBuddy -c "Print :NSPrivacyCollectedDataTypes:0" "$MANIFEST" >/dev/null 2>&1; then
+    fail "manifest declares collected data; App Privacy answers must be updated"
+  else
+    pass "manifest declares no collected data"
+  fi
+else
+  fail "no PrivacyInfo.xcprivacy in the app bundle"
+fi
+
+# No third-party frameworks. The privacy answers cover this app only, and any
+# embedded SDK would bring its own data collection and its own manifest.
+if [ -d "$APP/Frameworks" ] && [ -n "$(ls -A "$APP/Frameworks" 2>/dev/null)" ]; then
+  fail "app embeds frameworks: $(ls "$APP/Frameworks" | tr '\n' ' ')"
+else
+  pass "no embedded third-party frameworks"
+fi
+
+# Category drives which App Review team sees this and which age-rating
+# questions apply. Health & Fitness invites medical-claim scrutiny for an app
+# that explicitly disclaims being a medical device.
+category=$(/usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Info.plist" 2>/dev/null)
+echo "  note  category is ${category:-unset}"
+
+version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist" 2>/dev/null)
+build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Info.plist" 2>/dev/null)
+echo "  note  version ${version:-unset} (${build:-unset})"
+
+# Encryption. CryptoKit signing is used by Guardian, which is inert in public
+# v1, but export compliance is answered about the binary.
+echo "  note  export compliance: answer ITSAppUsesNonExemptEncryption for this build"
+
 # Sensitivity control.
 #
 # An "absent" result only means something if the needle would have been found

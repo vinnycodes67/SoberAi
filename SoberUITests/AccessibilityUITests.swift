@@ -54,16 +54,20 @@ final class AccessibilityUITests: XCTestCase {
     }
   }
 
+  /// Timeouts here are deliberately generous. Laying out three tab destinations
+  /// at AX5 is slow, and on a loaded CI machine this test timed out at 20s while
+  /// passing in 60s on its own — a flake that would train people to ignore the
+  /// suite.
   func testEveryTabRendersAtLargestTextSize() {
     let app = launchApp(
       textSize: Self.ax5, ["-sober-history-fixture", "mixed"])
-    XCTAssertTrue(app.buttons["History"].waitForExistence(timeout: 15))
+    XCTAssertTrue(app.buttons["History"].waitForExistence(timeout: 60))
 
     app.buttons["History"].tap()
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 60))
 
     app.buttons["Settings"].tap()
-    XCTAssertTrue(app.staticTexts["What Sober stores"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["What Sober stores"].waitForExistence(timeout: 60))
   }
 
   // MARK: - VoiceOver content
