@@ -2,7 +2,31 @@ import SwiftUI
 
 @main
 struct SoberApp: App {
-  @StateObject private var model = AppModel()
+  @StateObject private var model = SoberApp.makeModel()
+
+  /// Under `-sober-ui-testing` the app runs against a throwaway defaults suite
+  /// and data directory seeded with the requested fixture, so a UI test never
+  /// inherits the previous run's state or writes into a real install's.
+  private static func makeModel() -> AppModel {
+    guard UITestConfiguration.isActive, let directory = UITestConfiguration.makeDataDirectory()
+    else {
+      return AppModel()
+    }
+    UITestConfiguration.seedHistory(in: directory)
+    UITestConfiguration.seedBaseline(
+      in: directory, participantID: UITestConfiguration.participantID)
+    return AppModel(
+      defaults: UITestConfiguration.makeDefaults(),
+      researchStore: ResearchSessionStore(
+        directoryURL: directory
+          .appendingPathComponent("Sober", isDirectory: true)
+          .appendingPathComponent("Research", isDirectory: true)),
+      checkHistoryStore: CheckHistoryStore(
+        directoryURL: directory
+          .appendingPathComponent("Sober", isDirectory: true)
+          .appendingPathComponent("History", isDirectory: true))
+    )
+  }
 
   var body: some Scene {
     WindowGroup {

@@ -64,4 +64,3 @@ enum GuardianSessionStoreError: LocalizedError {
     "Guardian Mode could not access protected device storage."
   }
 }
-

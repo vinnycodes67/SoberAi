@@ -1,0 +1,148 @@
+name: CI
+
+# The release gates, run on every change.
+#
+# The point of this file is that a release candidate can be rebuilt and verified
+# without anyone remembering a local incantation. Anything a person would
+# otherwise have to know is a step here.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SIMULATOR: platform=iOS Simulator,name=iPhone 17 Pro
+
+jobs:
+  hygiene:
+    name: Hygiene
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Checks the change being introduced, not the whole history. Scanning
+      # everything would fail on day one for content nobody is touching, and a
+      # gate that is red by default stops being read.
+      - name: Whitespace and conflict markers
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+          else
+            base="HEAD~1"
+          fi
+          git diff --check "$base" HEAD
+
+      # Not a substitute for a real secret scanner, but it catches the specific
+      # mistake this repo is exposed to: a provider key pasted into a config or
+      # a plist while wiring up a backend.
+      - name: Secret scan
+        run: |
+          set -o pipefail
+          if grep -rInE \
+            -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
+            -e '(sk|pk)_(live|test)_[A-Za-z0-9]{16,}' \
+            -e 'AKIA[0-9A-Z]{16}' \
+            -e 'ghp_[A-Za-z0-9]{30,}' \
+            --exclude-dir=.git --exclude-dir=node_modules . ; then
+            echo "::error::possible secret committed"
+            exit 1
+          fi
+
+      - name: Font licence present
+        run: test -f Sober/Resources/Fonts/Satoshi-LICENSE.txt
+
+  builds:
+    name: Build ${{ matrix.scheme }} ${{ matrix.configuration }}
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        scheme: [Sober, SoberInternal]
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+
+      # Every combination builds. The public/internal split is compile-time, so
+      # a broken `#if` only shows up in the configuration nobody built locally.
+      - name: Build
+        run: |
+          xcodebuild \
+            -project Sober.xcodeproj \
+            -scheme "${{ matrix.scheme }}" \
+            -configuration "${{ matrix.configuration }}" \
+            -destination 'generic/platform=iOS Simulator' \
+            build
+
+  unit-tests:
+    name: Unit tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: Test
+        run: |
+          xcodebuild \
+            -project Sober.xcodeproj \
+            -scheme Sober \
+            -only-testing:SoberTests \
+            -destination "$SIMULATOR" \
+            test
+
+  ui-tests:
+    name: UI smoke
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: Test
+        run: |
+          xcodebuild \
+            -project Sober.xcodeproj \
+            -scheme Sober \
+            -only-testing:SoberUITests \
+            -destination "$SIMULATOR" \
+            test
+
+  public-boundary:
+    name: Public build boundary
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+
+      # Builds the public Release artifact and asserts no internal route copy,
+      # no internal permission keys, and no relay configuration reach it — then
+      # builds the internal target to prove each check can actually fail.
+      - name: Scan public Release artifact
+        run: Scripts/check-public-binary.sh "${RUNNER_TEMP}/boundary"
+
+  backend:
+    name: Backend tests (v1.1 preservation)
+    runs-on: ubuntu-latest
+    # Guardian is not in public v1. These stay green so the v1.1 work is not
+    # rotting, but they do not gate a v1 release.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test
+        working-directory: Backend
+        run: |
+          npm ci || npm install
+          npm test
