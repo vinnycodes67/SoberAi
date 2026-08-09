@@ -116,6 +116,7 @@ struct AboutPrototypeView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
   @State private var showingReset = false
+  @State private var showingHowResultsWork = false
 
   var body: some View {
     NavigationStack {
@@ -144,6 +145,12 @@ struct AboutPrototypeView: View {
             }
           }
 
+          // The first question a new person has is what the app can actually
+          // say. Putting it behind Settings only would bury it under the
+          // five-session ramp.
+          Button("How results work") { showingHowResultsWork = true }
+            .buttonStyle(DSSecondaryButtonStyle())
+
           Button("Reset prototype") {
             showingReset = true
           }
@@ -157,6 +164,10 @@ struct AboutPrototypeView: View {
         ToolbarItem(placement: .confirmationAction) {
           Button("Done") { dismiss() }
         }
+      }
+      .sheet(isPresented: $showingHowResultsWork) {
+        HowResultsWorkView()
+          .preferredColorScheme(.dark)
       }
       .alert(resetTitle, isPresented: $showingReset) {
         Button("Cancel", role: .cancel) {}

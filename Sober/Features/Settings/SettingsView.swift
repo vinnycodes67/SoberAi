@@ -12,6 +12,7 @@ struct SettingsView: View {
   @State private var showingPlan = false
   @State private var showingAbout = false
   @State private var showingPrivacy = false
+  @State private var showingHowResultsWork = false
   @State private var showingReset = false
 
   var body: some View {
@@ -39,6 +40,10 @@ struct SettingsView: View {
     .sheet(isPresented: $showingPrivacy) {
       PrivacyCenterView()
         .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
+    .sheet(isPresented: $showingHowResultsWork) {
+      HowResultsWorkView()
         .preferredColorScheme(.dark)
     }
     .alert("Delete everything on this iPhone?", isPresented: $showingReset) {
@@ -97,6 +102,12 @@ struct SettingsView: View {
   private var about: some View {
     DSSection("About") {
       DSRows {
+        DSRow(
+          "How results work",
+          detail: "The three answers a check can give, with examples",
+          action: { showingHowResultsWork = true }
+        )
+        DSSeparator()
         DSRow(
           "What this app can and cannot tell you",
           detail: "The limits of a check",

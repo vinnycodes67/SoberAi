@@ -136,22 +136,29 @@ and without drinking.
 > offers the get-home actions. This is deliberate: inventing a verdict without a
 > reference is the failure mode the design exists to prevent.
 >
-> **Reviewing without a baseline.** REVIEW PATH — see below.
+> **Reviewing without a baseline.** Open **Settings > How results work**, or the
+> info button on the home screen. It shows all three result states with labelled
+> examples and explains when each occurs. No baseline, no camera, and no
+> drinking is required to see what the app reports. The examples are static
+> text: nothing is measured, nothing is stored, and readiness is unchanged.
 >
 > **No account, no network.** There is no sign-in and no server. The app makes
 > no network requests. Nothing needs to be provisioned to review it.
 
-**REVIEW PATH — DECISION, and a P0 blocker.**
+**Review path — resolved.**
 
-There is currently no way for a reviewer to see a result. They would have to
-complete five sober baseline sessions before a check does anything, on a device
-in a review lab. The plan already calls for "static How results work examples"
-with clearly labelled sample data, and that item is still open from Phase 1. It
-is now on the critical path for submission, not a nice-to-have.
+`HowResultsWorkView` is reachable from Settings and from the home screen's info
+button in the public build. It is static text, not a rendered outcome: no
+`ScreeningOutcome` is constructed, so an example can never run the scorer.
 
-The internal build's founder previews are the wrong answer — they are compiled
-out of public builds on purpose, and shipping them back for review would undo
-the boundary.
+The internal build's founder previews were the wrong answer — they are compiled
+out of public builds on purpose, and shipping them back for review would have
+undone the boundary.
+
+`ReviewerPathUITests` keeps it honest: all three states present, every card
+individually labelled "Example", and no clearance claim anywhere on the screen.
+That last check is the claims matrix enforced on the surface most likely to
+drift toward reassurance.
 
 ## Export compliance
 
@@ -201,7 +208,7 @@ Run `Scripts/check-public-binary.sh` first; it covers rows 1–5 automatically.
 - [ ] Age rating answered honestly **DECISION**
 - [ ] Export compliance answered **DECISION**
 - [ ] Support and privacy policy URLs live **DECISION**
-- [ ] Reviewer can reach a result without a baseline **P0, open**
+- [x] Reviewer can reach an explanation of results without a baseline
 - [ ] Medical-claim review complete **COUNSEL**
 - [ ] Device gates in `PHASE_4_DEVICE_GATES.md` recorded
 - [ ] Description contains no forbidden claim from the plan's claims matrix
