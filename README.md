@@ -49,11 +49,12 @@ xcodegen generate
 open Sober.xcodeproj
 ```
 
-Select the `Sober` scheme and run on an iPhone simulator. The simulator is useful
-for founder result previews, but a live check correctly becomes inconclusive
-because face tracking is unavailable. For camera calibration and the ocular
-protocol, use an iPhone with TrueDepth and select your Apple development team in
-the target's Signing & Capabilities settings.
+Select the public `Sober` scheme for the local-only v1 surface. Use
+`SoberInternal` only for founder-controlled Guardian, Circle, Research, and
+sample-result review. The simulator is useful for UI review, but a live check
+correctly becomes inconclusive because face tracking is unavailable. For camera
+calibration and the ocular protocol, use an iPhone with TrueDepth and select
+your Apple development team in the target's Signing & Capabilities settings.
 
 ### Run founder-only Guardian Mode
 
@@ -111,16 +112,29 @@ For the quickest review:
 ## Verify it
 
 ```bash
+xcodegen generate
+
 xcodebuild \
   -project Sober.xcodeproj \
   -scheme Sober \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  test
+  test \
+  -only-testing:SoberTests
 
-(cd Backend && npm test)
-(cd Backend && npx wrangler deploy --dry-run)
+Scripts/run-ui-tests.sh
+Scripts/check-release-metadata.sh
+Scripts/check-public-binary.sh
+npm test --prefix Backend
+git diff --check
 ```
+
+The UI script retains compact-device and large-accessibility screenshots inside
+timestamped `.xcresult` bundles under `.artifacts/ui-tests/`. See
+[Phase 3 Integration](Docs/PHASE_3_INTEGRATION.md) for the CI and evidence
+boundary, [Local Data Recovery](Docs/LOCAL_DATA_RECOVERY_RUNBOOK.md) for archive
+failures, and [Release Rollback](Docs/RELEASE_ROLLBACK_RUNBOOK.md) for stop-ship
+and rollback rehearsal.
 
 ## Important prototype limits
 

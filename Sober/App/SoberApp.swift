@@ -2,15 +2,35 @@ import SwiftUI
 
 @main
 struct SoberApp: App {
-  @StateObject private var model = AppModel()
+  @StateObject private var model: AppModel
+
+  init() {
+    #if DEBUG
+    UITestLaunchConfiguration.current.prepare()
+    #endif
+    _model = StateObject(wrappedValue: AppModel())
+  }
 
   var body: some Scene {
     WindowGroup {
-      RootView()
-        .environmentObject(model)
-        .preferredColorScheme(.dark)
-        .tint(DSPalette.accent)
+      appContent
     }
+  }
+
+  @ViewBuilder
+  private var appContent: some View {
+    #if DEBUG
+    RootView()
+      .environmentObject(model)
+      .modifier(UITestEnvironmentModifier(configuration: .current))
+      .preferredColorScheme(.dark)
+      .tint(DSPalette.accent)
+    #else
+    RootView()
+      .environmentObject(model)
+      .preferredColorScheme(.dark)
+      .tint(DSPalette.accent)
+    #endif
   }
 }
 
@@ -18,7 +38,15 @@ struct RootView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
-  @State private var isShowingLaunch = true
+  @State private var isShowingLaunch: Bool
+
+  init() {
+    #if DEBUG
+    _isShowingLaunch = State(initialValue: !UITestLaunchConfiguration.current.isActive)
+    #else
+    _isShowingLaunch = State(initialValue: true)
+    #endif
+  }
 
   var body: some View {
     ZStack {
@@ -27,13 +55,7 @@ struct RootView: View {
           .transition(.opacity)
           .zIndex(1)
       } else {
-        Group {
-          if model.hasCompletedOnboarding {
-            RootTabView()
-          } else {
-            OnboardingView()
-          }
-        }
+        rootContent
         .transition(.opacity)
       }
     }
@@ -51,6 +73,25 @@ struct RootView: View {
         model.privacySceneBecameInactive()
       }
     }
+  }
+
+  @ViewBuilder
+  private var rootContent: some View {
+    #if DEBUG
+    if let destination = UITestLaunchConfiguration.current.directDestination {
+      UITestFixtureView(destination: destination)
+    } else if model.hasCompletedOnboarding {
+      RootTabView()
+    } else {
+      OnboardingView()
+    }
+    #else
+    if model.hasCompletedOnboarding {
+      RootTabView()
+    } else {
+      OnboardingView()
+    }
+    #endif
   }
 
   private func finishLaunch() {

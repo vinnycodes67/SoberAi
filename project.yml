@@ -53,6 +53,7 @@ targets:
     scheme:
       testTargets:
         - SoberTests
+        - SoberUITests
   SoberInternal:
     type: application
     platform: iOS
@@ -112,3 +113,15 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.tests
         GENERATE_INFOPLIST_FILE: YES
+  SoberUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SoberUITests
+    dependencies:
+      - target: Sober
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Sober

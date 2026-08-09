@@ -31,6 +31,13 @@ pass() {
   echo "  ok    $1"
 }
 
+echo "==> Source release metadata"
+if Scripts/check-release-metadata.sh; then
+  pass "source release metadata"
+else
+  fail "source release metadata"
+fi
+
 # Result privacy is a source-level invariant as well as an archive invariant.
 # External URL actions remain valid because they power Ride, Call, and Message;
 # portable result mechanisms do not belong on the result surface.
@@ -149,6 +156,27 @@ for key in "${REQUIRED_KEYS[@]}"; do
   fi
 done
 
+echo
+echo "==> Bundled privacy manifest"
+PRIVACY_MANIFEST="$APP/PrivacyInfo.xcprivacy"
+if [ -f "$PRIVACY_MANIFEST" ] && plutil -lint "$PRIVACY_MANIFEST" >/dev/null 2>&1; then
+  pass "public app contains a valid PrivacyInfo.xcprivacy"
+  privacy_json=$(plutil -convert json -o - "$PRIVACY_MANIFEST" 2>/dev/null || true)
+  for value in \
+    NSPrivacyAccessedAPICategoryUserDefaults \
+    CA92.1 \
+    NSPrivacyAccessedAPICategorySystemBootTime \
+    35F9.1; do
+    if printf '%s' "$privacy_json" | grep -q -F -- "$value"; then
+      pass "bundled manifest declares $value"
+    else
+      fail "bundled manifest is missing $value"
+    fi
+  done
+else
+  fail "public app is missing a valid PrivacyInfo.xcprivacy"
+fi
+
 # The public v1 intentionally ships with no crash or analytics provider. Check
 # the linked image and embedded frameworks rather than relying on package files
 # alone, because a manually embedded binary would otherwise bypass the audit.
@@ -206,6 +234,7 @@ echo
 echo "==> Sensitivity control (internal target must contain every needle)"
 INTERNAL_DD="$DERIVED_DATA-internal"
 INTERNAL_BINARY="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app/SoberInternal"
+INTERNAL_PRIVACY_MANIFEST="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app/PrivacyInfo.xcprivacy"
 
 if xcodebuild \
   -project Sober.xcodeproj \
@@ -222,6 +251,12 @@ if xcodebuild \
       pass "detectable (${count}x internally): \"$needle\""
     fi
   done
+  if [ -f "$INTERNAL_PRIVACY_MANIFEST" ] \
+    && plutil -lint "$INTERNAL_PRIVACY_MANIFEST" >/dev/null 2>&1; then
+    pass "internal app also contains the privacy manifest"
+  else
+    fail "internal app is missing a valid PrivacyInfo.xcprivacy"
+  fi
 else
   fail "could not build SoberInternal; forbidden-string sensitivity is unproven"
 fi

@@ -50,6 +50,17 @@
                ReferencedContainer = "container:Sober.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8DC96E2F1CA53F9524067922"
+               BuildableName = "SoberUITests.xctest"
+               BlueprintName = "SoberUITests"
+               ReferencedContainer = "container:Sober.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

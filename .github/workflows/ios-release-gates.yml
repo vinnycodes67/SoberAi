@@ -1,0 +1,92 @@
+name: iOS release gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "codex/**"
+
+concurrency:
+  group: ios-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-and-contract:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Regenerate project and prove it is committed
+        run: |
+          xcodegen generate
+          git diff --exit-code -- Sober.xcodeproj
+      - name: Prepare compact simulator
+        id: simulator
+        run: Scripts/prepare-ui-simulators.sh >> "$GITHUB_ENV"
+      - name: Run iOS unit and invariant tests
+        run: |
+          xcodebuild \
+            -project Sober.xcodeproj \
+            -scheme Sober \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SOBER_SMALL_UDID" \
+            test \
+            -only-testing:SoberTests
+      - name: Build internal Debug target
+        run: |
+          xcodebuild \
+            -project Sober.xcodeproj \
+            -scheme SoberInternal \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SOBER_SMALL_UDID" \
+            build
+      - name: Preserve internal Guardian backend contracts
+        run: npm test --prefix Backend
+
+  ui-evidence:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Regenerate project
+        run: xcodegen generate
+      - name: Run compact and accessibility UI suites
+        run: Scripts/run-ui-tests.sh
+      - name: Upload retained screenshots and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sober-ui-xcresults
+          path: .artifacts/ui-tests/*.xcresult
+          if-no-files-found: warn
+          retention-days: 14
+
+  release-boundary:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Regenerate project and validate plists
+        run: |
+          xcodegen generate
+          plutil -lint Sober/Info.plist
+          plutil -lint Sober/Info-Internal.plist
+          plutil -lint Sober/PrivacyInfo.xcprivacy
+          git diff --exit-code -- Sober.xcodeproj
+      - name: Validate metadata, secrets, licenses, and Release artifacts
+        run: Scripts/check-public-binary.sh
+      - name: Prove repository generation stayed clean
+        run: git diff --exit-code

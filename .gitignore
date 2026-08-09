@@ -5,3 +5,4 @@ build/
 xcuserdata/
 Docs/*.png
 Backend/.wrangler/
+.artifacts/
