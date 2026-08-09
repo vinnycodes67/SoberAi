@@ -63,6 +63,7 @@ struct DSTabBar: View {
   @Binding var selection: DSTab
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Namespace private var pill
 
   var body: some View {
@@ -94,11 +95,20 @@ struct DSTabBar: View {
       VStack(spacing: 3) {
         Image(systemName: selected ? "\(tab.icon).fill" : tab.icon)
           .font(.system(size: 17, weight: .regular))
-        Text(tab.title).font(DSFont.caption)
+          .accessibilityHidden(true)
+        // Labels are dropped at accessibility sizes. Three scaled words cannot
+        // share one bar: they wrapped mid-word, overlapped the selection pill,
+        // and left the bar unusable. The icon plus the element's accessibility
+        // label still names every destination.
+        if !dynamicTypeSize.isAccessibilitySize {
+          Text(tab.title).font(DSFont.caption)
+        }
       }
       .foregroundStyle(selected ? DSPalette.onAccent : DSPalette.textSecondary)
       .frame(maxWidth: .infinity)
-      .frame(height: 48)
+      // minHeight, not height: the label scales with Dynamic Type and a fixed
+      // box clips it at accessibility sizes.
+      .frame(minHeight: 48)
       .background { selectionPill(selected) }
       .contentShape(Capsule())
     }

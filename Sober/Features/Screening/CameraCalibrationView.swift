@@ -27,8 +27,11 @@ struct CameraCalibrationView: View {
         }
 
         HStack(spacing: 8) {
+          // Needs-adjusting takes the accent; ready goes quiet. Both sides used
+          // to resolve to colours that are now the same orange, so the dot said
+          // nothing either way.
           Circle()
-            .fill(service.quality.isUsable ? Palette.primary : Palette.warning)
+            .fill(service.quality.isUsable ? DSPalette.textSecondary : DSPalette.accent)
             .frame(width: 8, height: 8)
           Text(service.status.label)
             .font(DSFont.footnoteStrong)
@@ -39,10 +42,12 @@ struct CameraCalibrationView: View {
         }
         .foregroundStyle(Palette.textPrimary)
         .padding(12)
-        .soberGlassCapsule(
-          tint: service.quality.isUsable ? Palette.primary : Palette.warning
-        )
+        .soberGlassCapsule()
         .padding(14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Camera status")
+        .accessibilityValue(
+          "\(service.status.label). \(service.quality.isUsable ? "Ready" : "Needs adjusting")")
       }
       .frame(height: 360)
       .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
@@ -177,6 +182,13 @@ struct CameraCalibrationView: View {
         .font(DSFont.footnoteStrong)
       Spacer(minLength: 0)
     }
+    // Ready state was carried by the glyph and its colour alone, so VoiceOver
+    // read six identical tiles and someone with low vision saw six tiles that
+    // differed only in hue. This is the one screen a person has to satisfy
+    // before a check can start.
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(title)
+    .accessibilityValue(ready ? "Ready" : "Needs adjusting")
     .padding(.horizontal, 12)
     .frame(minHeight: 44)
     .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 13, style: .continuous))

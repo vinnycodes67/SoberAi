@@ -202,6 +202,7 @@ struct DSRow<Trailing: View>: View {
         Image(systemName: "chevron.right")
           .font(.system(size: 13, weight: .medium))
           .foregroundStyle(DSPalette.textMuted.opacity(0.6))
+          .accessibilityHidden(true)
       }
     }
     .frame(minHeight: DSHit.minimum)

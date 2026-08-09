@@ -31,7 +31,11 @@ struct DSIntegratedHomeScreen: View {
         }
         #endif
 
-        primaryAction.dsAppear(2)
+        // At accessibility sizes the readiness card alone fills the screen, so
+        // the action moves to a pinned inset instead of sitting below the fold.
+        if !dynamicTypeSize.isAccessibilitySize {
+          primaryAction.dsAppear(2)
+        }
         #if INTERNAL_BUILD
         connectedFeatures.dsAppear(4)
         #endif
@@ -51,6 +55,18 @@ struct DSIntegratedHomeScreen: View {
       .padding(.bottom, DSSpace.xxl)
     }
     .scrollIndicators(.hidden)
+    // The one thing this screen exists to do has to be reachable without
+    // scrolling at every text size. At AX5 the readiness card is taller than the
+    // display, which put "Record a baseline session" out of reach for exactly
+    // the people most likely to need large text.
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if dynamicTypeSize.isAccessibilitySize {
+        primaryAction
+          .padding(.horizontal, DSSpace.margin)
+          .padding(.vertical, DSSpace.sm)
+          .background(DSPalette.background)
+      }
+    }
     .dsPageBackground()
   }
 
@@ -223,6 +239,7 @@ struct DSIntegratedHomeScreen: View {
           Image(systemName: "arrow.up.right")
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(DSPalette.textMuted)
+            .accessibilityHidden(true)
         }
         Text(title)
           .font(DSFont.headline)
