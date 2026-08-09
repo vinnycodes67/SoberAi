@@ -993,6 +993,15 @@ final class AppModel: ObservableObject {
   }
 
   func resetPrototype() {
+    // Capture before clearing `guardianSession` below — the revoke call
+    // needs those credentials, and without this the backend would keep
+    // showing an "active" relationship to the other party after a reset
+    // that promised this "cannot be undone." Best-effort and
+    // fire-and-forget like the other async cleanup below: local state
+    // must not wait on network to actually clear.
+    if let sessionToRevoke = guardianSession {
+      Task { try? await guardianAPI.revoke(session: sessionToRevoke) }
+    }
     hasCompletedOnboarding = false
     baselineSessions = 0
     isFounderPreview = false

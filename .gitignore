@@ -5,3 +5,5 @@ build/
 xcuserdata/
 Docs/*.png
 Backend/.wrangler/
+Training/**/__pycache__/
+Training/**/*.pyc
