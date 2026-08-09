@@ -39,9 +39,13 @@ struct HistoryView: View {
         header
         steadyEntry
 
-        if model.checkHistory.isEmpty {
+        if let error = model.localDataError {
+          loadFailure(error)
+        }
+
+        if model.checkHistory.isEmpty, model.localDataError == nil {
           emptyState
-        } else {
+        } else if !model.checkHistory.isEmpty {
           filterControl
           sessionList
         }
@@ -125,6 +129,23 @@ struct HistoryView: View {
         }
       }
     }
+  }
+
+  /// A read failure is not an empty history. Saying so keeps someone from
+  /// concluding the app deleted their sessions and starting over.
+  private func loadFailure(_ error: AppModel.LocalDataError) -> some View {
+    DSCard {
+      VStack(alignment: .leading, spacing: DSSpace.xs) {
+        Text("Could not load")
+          .font(DSFont.headline)
+          .foregroundStyle(DSPalette.accent)
+        Text(error.message)
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .dsReadingLine()
+      }
+    }
+    .accessibilityElement(children: .combine)
   }
 
   private var emptyState: some View {

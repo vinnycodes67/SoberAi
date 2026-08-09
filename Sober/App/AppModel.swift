@@ -25,6 +25,28 @@ final class AppModel: ObservableObject {
   /// Local History. Independent of research consent and bounded by
   /// `CheckHistoryStore`'s retention window.
   @Published private(set) var checkHistory: [CheckHistoryEntry] = []
+  /// Set when stored data could not be read.
+  ///
+  /// Distinguishing "could not load" from "nothing here" matters more in this
+  /// app than in most. Showing an empty History and a zero baseline after a
+  /// failed read looks exactly like the app losing someone's data, and the
+  /// obvious response -- record five more baseline sessions -- is wasted effort
+  /// on data that is probably still on disk.
+  @Published private(set) var localDataError: LocalDataError?
+
+  enum LocalDataError: Equatable {
+    case history
+    case sessions
+
+    var message: String {
+      switch self {
+      case .history:
+        "Some saved history could not be loaded. It has not been deleted."
+      case .sessions:
+        "Your saved sessions could not be loaded, so your steady is unavailable right now. Nothing has been deleted."
+      }
+    }
+  }
   @Published private(set) var baselineProfile: BaselineProfileSummary?
   @Published private(set) var baselineVariantBreakdown: [OcularProtocolVariant: BaselineProfileSummary] = [:]
   @Published private(set) var researchDataError: String?
@@ -865,8 +887,23 @@ final class AppModel: ObservableObject {
     }
   }
 
+  #if DEBUG
+  /// Sets the measured count directly. Test-only: production code derives this
+  /// from stored sessions and must keep doing so.
+  func setMeasuredBaselineSessionsForTesting(_ count: Int) {
+    baselineSessions = count
+  }
+  #endif
+
   func reloadCheckHistory() async {
-    checkHistory = (try? await checkHistoryStore.list()) ?? []
+    do {
+      checkHistory = try await checkHistoryStore.list()
+      if localDataError == .history { localDataError = nil }
+    } catch {
+      // Keep whatever was already loaded. Replacing it with an empty array
+      // would turn a read failure into apparent deletion.
+      localDataError = .history
+    }
   }
 
   func deleteCheckHistory() async {
@@ -895,8 +932,12 @@ final class AppModel: ObservableObject {
       )
       persist()
       researchDataError = nil
+      if localDataError == .sessions { localDataError = nil }
     } catch {
       researchDataError = error.localizedDescription
+      // The measured count is deliberately left alone here. Recomputing it from
+      // a failed read would zero a baseline that still exists on disk.
+      localDataError = .sessions
     }
   }
 
