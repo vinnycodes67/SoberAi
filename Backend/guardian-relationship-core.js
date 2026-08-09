@@ -1,6 +1,22 @@
 import { sha256Base64URL, verifyCapabilitySignature, validP256Jwk } from "./guardian-crypto.js";
+import {
+  consentView,
+  consentViewsForRole,
+  recordConsentAcceptance,
+  roleForConsent,
+  validConsentAcceptance,
+  validIdempotencyKey,
+} from "./guardian-consents.js";
+import {
+  ensureRelationshipSchema,
+  expiryWarningView,
+  persistRelationshipState,
+  reconcileRelationshipLifecycle,
+  relationshipLifetimeMilliseconds,
+  revokeRelationship,
+  scheduleRelationshipAlarm,
+} from "./guardian-relationship-lifecycle.js";
 
-const relationshipLifetimeMilliseconds = 90 * 24 * 60 * 60 * 1000;
 const alertLifetimeMilliseconds = 24 * 60 * 60 * 1000;
 const nonceLifetimeMilliseconds = 10 * 60 * 1000;
 const allowedAlertFields = new Set(["occurredAt", "result", "source", "messageTemplateVersion"]);
@@ -19,7 +35,7 @@ const locationRetentionMilliseconds = 24 * 60 * 60 * 1000;
 export async function handleRelationshipRequest(storage, request) {
   const url = new URL(request.url);
   const path = url.pathname;
-  const current = await storage.get("state");
+  const current = ensureRelationshipSchema(await storage.get("state"));
 
   if (path.endsWith("/internal/create") && request.method === "POST") {
     if (current) return error(409, "stateConflict");
@@ -27,6 +43,8 @@ export async function handleRelationshipRequest(storage, request) {
     if (!input.ok || !validCreateBody(input.value)) return error(422, "invalidRequest");
     const now = new Date();
     const state = {
+      schemaVersion: 2,
+      contractVersion: "guardian-api-v1",
       relationshipId: input.value.relationshipId,
       relationshipState: "pendingGuardian",
       personDisplayName: input.value.personDisplayName.trim(),
@@ -39,14 +57,20 @@ export async function handleRelationshipRequest(storage, request) {
       createdAt: now.toISOString(),
       activatedAt: null,
       expiresAt: new Date(now.getTime() + relationshipLifetimeMilliseconds).toISOString(),
+      expiredAt: null,
       revokedAt: null,
+      cleanupAt: null,
       nonces: {},
+      consents: {},
+      consentIdempotency: {},
       alerts: {},
       aliases: {},
       activeEventId: null,
       checkInPlan: null,
       locationSharing: null,
+      expiryWarning: null,
     };
+    ensureRelationshipSchema(state);
     await storage.put("state", state);
     return json({
       relationshipId: state.relationshipId,
@@ -76,20 +100,24 @@ export async function handleRelationshipRequest(storage, request) {
     current.guardianPublicKeyJwk = input.value.guardianPublicKeyJwk;
     current.guardianCapabilityId = input.value.guardianCapabilityId;
     current.inviteTokenHash = null;
-    current.activatedAt = new Date().toISOString();
+    const activatedAt = Date.now();
+    current.activatedAt = new Date(activatedAt).toISOString();
+    current.expiresAt = new Date(activatedAt + relationshipLifetimeMilliseconds).toISOString();
+    current.expiredAt = null;
+    current.cleanupAt = null;
+    current.expiryWarning = null;
+    ensureRelationshipSchema(current);
+    // Arm the long-lived warning before activation becomes durable. If the
+    // state write fails, the still-pending invite remains safely retryable.
+    await scheduleRelationshipAlarm(storage, current, activatedAt);
     await storage.put("state", current);
     return json({ relationship: relationshipView(current, "guardian") }, 200);
   }
 
-  if (Date.parse(current.expiresAt) <= Date.now()) {
-    current.relationshipState = "expired";
-    current.inviteTokenHash = null;
-    await storage.put("state", current);
-    return error(404, "notFound");
-  }
+  await reconcileRelationshipLifecycle(storage, current);
 
   const authentication = await verifyCapabilitySignature(request, current, expectedRole(path, request.method));
-  if (!authentication.ok || current.relationshipState === "revoked") return error(404, "notFound");
+  if (!authentication.ok) return error(404, "notFound");
   pruneNonces(current);
   pruneExpiredAlerts(current);
   pruneStaleLocation(current);
@@ -101,6 +129,15 @@ export async function handleRelationshipRequest(storage, request) {
   const alertMatch = path.match(/\/alerts\/([0-9a-f-]{36})(?:\/(acknowledgment))?$/);
   const completionMatch = path.match(/\/check-ins\/(plan[0-9]+-[0-9]{8}-[0-9]{4})\/completion$/);
   const locationMatch = path.match(/\/locations\/([0-9a-f-]{36})$/);
+  const consentMatch = path.match(/\/consents\/([a-z0-9-]+)$/);
+
+  if (request.method === "DELETE" && path.endsWith(`/${current.relationshipId}`)) {
+    if (current.relationshipState !== "revoked") revokeRelationship(current);
+    await persistRelationshipState(storage, current);
+    return new Response(null, { status: 204, headers: responseHeaders() });
+  }
+
+  if (["revoked", "expired"].includes(current.relationshipState)) return error(404, "notFound");
 
   if (request.method === "GET" && path.endsWith(`/${current.relationshipId}`)) {
     await storage.put("state", current);
@@ -115,12 +152,29 @@ export async function handleRelationshipRequest(storage, request) {
     });
   }
 
-  if (request.method === "DELETE" && path.endsWith(`/${current.relationshipId}`)) {
-    current.relationshipState = "revoked";
-    current.revokedAt = new Date().toISOString();
-    current.inviteTokenHash = null;
-    await storage.put("state", current);
-    return new Response(null, { status: 204, headers: responseHeaders() });
+  if (consentMatch && request.method === "PUT") {
+    const consentId = consentMatch[1];
+    const idempotencyKey = request.headers.get("idempotency-key") ?? "";
+    const input = await jsonBody(request);
+    if (!roleForConsent(consentId)
+      || !input.ok
+      || !validConsentAcceptance(input.value, consentId)
+      || !validIdempotencyKey(idempotencyKey)) return error(422, "invalidRequest");
+    if (!["active", "reauthorizationRequired"].includes(current.relationshipState)) {
+      return error(409, "relationshipNotActive");
+    }
+
+    const result = await recordConsentAcceptance({
+      state: current,
+      consentId,
+      role: authentication.role,
+      acceptance: input.value,
+      idempotencyKey,
+      acceptedAt: new Date().toISOString(),
+    });
+    if (!result.ok) return error(409, result.conflict);
+    if (result.changed) await storage.put("state", current);
+    return json({ consent: consentView(result.record) }, 200);
   }
 
   if (request.method === "PUT" && path.endsWith("/check-in-plan/proposal")) {
@@ -329,6 +383,8 @@ export async function handleRelationshipRequest(storage, request) {
 }
 
 function expectedRole(path, method) {
+  const consentMatch = path.match(/\/consents\/([a-z0-9-]+)$/);
+  if (method === "PUT" && consentMatch) return roleForConsent(consentMatch[1]) ?? "invalid";
   if (method === "PUT" && path.endsWith("/check-in-plan/proposal")) return "guardian";
   if (method === "PUT" && path.endsWith("/check-in-plan/decision")) return "person";
   if (method === "PUT" && path.endsWith("/location-sharing")) return "person";
@@ -410,7 +466,9 @@ function relationshipView(state, role) {
     personDisplayName: state.personDisplayName,
     activatedAt: state.activatedAt,
     expiresAt: state.expiresAt,
-    guardianReachability: state.relationshipState === "active" ? "inApp" : "unavailable",
+    guardianReachability: "unavailable",
+    expiryWarning: expiryWarningView(state),
+    consents: consentViewsForRole(state, role),
     ...(role === "guardian" ? { guardianCapabilityId: state.guardianCapabilityId } : {}),
   };
 }

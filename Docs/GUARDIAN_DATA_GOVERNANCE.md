@@ -46,7 +46,8 @@ The server stores public verification keys, never role private keys or bearer se
 | Role public signing key | P-256 public JWK | Reconstructable from private key |
 | Alert event ID | UUID in Durable Object for 24 hours | Pending receipt in Keychain |
 | Installation ID | Keyed digest only | Random this-device-only Keychain value |
-| App Attest key/counter | Keyed key-ID digest, verified public key, environment, monotonic counter | App Attest framework-managed key reference |
+| App Attest key/counter | Keyed key/installation/handle digests, verified public key, environment, monotonic counter | App Attest framework-managed key reference plus opaque server handle |
+| App Attest risk receipt | Environment-scoped ciphertext only while refreshing the risk metric | Never |
 | Invite token | Keyed hash only; raw returned once | Universal-link handoff only |
 | Verification code | Slow password hash only for ten minutes | Entry only; never persisted |
 | Person self phone | Ciphertext during challenge, then keyed digest only | Entry only; discarded after request |
@@ -73,7 +74,8 @@ consent analysis.
 | `guardian_capability_id`, `guardian_public_key`, `guardian_key_state` | Guardian request verification; null before redemption |
 | `person_display_name_ciphertext` | Bounded label visible only to guardian |
 | `person_self_phone_hmac` | Same-phone guardian rejection; no callable phone number |
-| `created_at`, `activated_at`, `updated_at`, `expires_at`, `revoked_at` | Lifecycle and 90-day hard expiry |
+| `created_at`, `activated_at`, `updated_at`, `expires_at`, `expired_at`, `revoked_at`, `cleanup_at` | Lifecycle, 90-day hard expiry, and inactive-audit cleanup |
+| `expiry_warning_state`, `expiry_warning_at`, `expiry_warning_visible_at` | Durable 14-day foreground-visible warning and idempotent alarm delivery |
 | `revoked_by_role`, `revocation_reason_code` | Fixed-enum, non-free-text audit |
 
 Public keys are credentials but not secrets. They are still excluded from logs and client responses
@@ -98,6 +100,9 @@ Each role action stores:
 | `withdrawn_at` | Withdrawal without rewriting history |
 
 No IP, full user agent, handwritten signature, email, or free-text note is collected.
+Consent request fingerprints and idempotency receipts are stored separately from consent records,
+contain only domain-separated request/idempotency digests plus the consent ID, and are deleted on
+revocation or expiry. Raw idempotency keys are not persisted.
 
 ### Phone-verification challenges
 
@@ -167,6 +172,27 @@ The phone-keyed limiter stores only `phone_hmac`, coarse action (`personVerify` 
 phone ciphertext, code, name, payload, consent, or alert data. Limiter unavailability prevents a
 new verification SMS but cannot revoke or authorize an active alert.
 
+### Enrollment attestation
+
+The installation-keyed object defined in `Docs/GUARDIAN_APP_ATTEST.md` stores only:
+
+| Field | Purpose |
+| --- | --- |
+| `schema_version`, `design_version` | Migration and verifier compatibility |
+| `key_handle_hmac`, `key_id_hmac`, `installation_id_hmac` | Keyed routing/equality without raw identifiers |
+| `environment`, `app_id_hash`, `validation_category`, `bundle_version` | Verified app/environment policy |
+| `public_key_spki`, `assertion_counter`, `last_asserted_at` | Assertion verification and monotonic replay prevention |
+| `receipt_ciphertext`, `receipt_updated_at`, `risk_band`, `risk_checked_at` | Optional Apple risk refresh and low-cardinality decision |
+| `state`, `attested_at`, `revoked_at`, `revocation_reason` | Fixed-enum lifecycle |
+| `challenge_id_hmac`, `purpose`, `client_data_hash`, `binding_hmac`, `issued_at`, `expires_at`, `consumed_at`, `attempt_count` | Single-use two-minute challenge |
+| `authorization_idempotency_hmac`, `request_digest_hmac`, `authorization_expires_at` | Exact ten-minute retry after assertion counter advancement |
+| `rotation_parent_hmac`, `rotation_deadline` | Bounded old/new key overlap |
+
+Raw installation/key/handle values, challenge, client data, request digest, attestation, assertion,
+certificate, receipt, and Apple error never enter logs or analytics. The relationship object stores
+only a keyed installation-handle reference, verification time, environment, and risk-band snapshot;
+it does not become the assertion-counter authority.
+
 ## On-device records
 
 Relationship Keychain storage may contain only:
@@ -195,11 +221,15 @@ These are founder-staging maximums. Backups and restored objects cannot extend t
 | Verification phone ciphertext/code hash | 10 minutes | Success, expiry, five failures, or revocation |
 | Person self-phone digest | Active relationship only | Delete within 24 hours of revocation/expiry |
 | Invite token hash | 24 hours | Redemption, expiry, revocation, or relationship deletion |
-| Active relationship and public keys | 90 days | Revocation, expiry, or new two-sided relationship |
+| Active relationship and public keys | 90 days from activation | Revocation, expiry, or new two-sided relationship |
+| Revocation replay verification keys | 30 days | Hard delete with revoked audit; usable only for an exact signed `DELETE` replay |
 | Revoked relationship/consent audit | 30 days | Hard delete after founder dispute/debug window |
 | Active fallback phone | Active verified consent only | Logical revocation immediately; hard delete within 24 hours |
 | APNs token | Eligible relationship/device only | Invalidate immediately; hard delete within 24 hours |
 | App Attest verification state | Active installation, maximum 90 days | Re-attestation, invalidation, or local reset |
+| App Attest challenge / approved authorization | 2 minutes / 10 minutes | Consumption, expiry, or key revocation |
+| App Attest encrypted risk receipt | Active installation, maximum 90 days | Replacement, revocation, or key expiry |
+| App Attest revocation tombstone | 90 days | Rolling hard delete; keyed digests and reason only |
 | Signature nonce | 10 minutes | Replay-window expiry |
 | Alert, alias, and provider digest | 24 hours from canonical event | Hard delete within one hour after expiry |
 | Phone abuse reservation | 24 hours | Rolling deletion |
@@ -237,6 +267,16 @@ without contractual and configuration evidence.
    receive advance warnings, and expiry returns the person's Safety Circle to explicitly unconfigured
    even if the relationship-change push is missed.
 10. Guardian data is never merged into, linked from, or exported with research data.
+
+The relationship alarm is scheduled for 14 days before expiry, then for hard expiry, then—after
+revocation or expiry—for the 30-day audit cleanup deadline. Every delivery recomputes the next
+deadline from durable state. Warning delivery persists a caller-visible state that both signed
+relationship views return during foreground reconciliation. Revocation marks consent withdrawn and
+clears consent idempotency receipts and the display name immediately. Its public keys and capability
+IDs lose all relationship authority immediately and remain only to authenticate an idempotent signed
+`DELETE` replay during the 30-day audit window. Expiry removes those replay credentials immediately.
+The final cleanup deletes the remaining withdrawn-consent audit and alarm; duplicate deliveries do
+not extend retention.
 
 ## Research separation and dictionary versioning
 

@@ -79,6 +79,54 @@ final class GuardianModeTests: XCTestCase {
     XCTAssertEqual(envelope.relationship.relationshipId, session.relationshipID)
   }
 
+  @MainActor
+  func testForegroundRelationshipPollDecodesExpiryWarningAndCallerConsent() async throws {
+    let key = P256.Signing.PrivateKey()
+    let session = GuardianSession(
+      role: .person,
+      relationshipID: "rel_test123",
+      capabilityID: "rcap_person123",
+      privateKey: key.rawRepresentation,
+      inviteCode: nil,
+      activeEventID: nil
+    )
+    let client = GuardianAPIClient(
+      configuration: .init(baseURL: URL(string: "https://guardian.example.test")!),
+      transport: { _ in
+        let data = Data("""
+          {"relationship":{"relationshipId":"rel_test123","state":"active","role":"person","personDisplayName":"Alex","activatedAt":"2026-08-05T12:00:00.000Z","expiresAt":"2026-11-03T12:00:00.000Z","guardianReachability":"unavailable","guardianCapabilityId":null,"expiryWarning":{"state":"visible","startedAt":"2026-10-20T12:00:00.000Z","expiresAt":"2026-11-03T12:00:00.000Z"},"consents":[{"consentId":"guardian-sender-v1","role":"person","documentVersion":"guardian-sender-v1","documentDigest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","acceptedAt":"2026-08-05T12:01:00.000Z","locale":"en-US","appVersion":"1.1.0","withdrawnAt":null}]},"activeAlert":null,"checkInPlan":null,"locationSharing":null,"requestId":"req_test"}
+          """.utf8)
+        return (data, Self.httpResponse(status: 200))
+      }
+    )
+    let store = MemoryGuardianStore(session)
+    let suiteName = "GuardianModeTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer {
+      defaults.removePersistentDomain(forName: suiteName)
+      try? FileManager.default.removeItem(at: directory)
+    }
+    let model = AppModel(
+      defaults: defaults,
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: directory)
+      ),
+      guardianStore: store,
+      guardianAPI: client,
+      automaticallyStartsGuardianServices: false
+    )
+
+    await model.refreshGuardian()
+    let relationship = model.guardianRelationship
+
+    XCTAssertEqual(relationship?.expiryWarning?.state, "visible")
+    XCTAssertNotNil(relationship?.expiryWarning?.expirationDate)
+    XCTAssertEqual(relationship?.consents?.map(\.consentId), ["guardian-sender-v1"])
+    XCTAssertEqual(relationship?.guardianReachability, "unavailable")
+  }
+
   func testAlertRequestContainsOnlyMinimalServerTemplatedFields() async throws {
     let key = P256.Signing.PrivateKey()
     let eventID = UUID().uuidString.lowercased()
@@ -393,7 +441,7 @@ final class GuardianModeTests: XCTestCase {
 
   private static func relationshipResponse(role: String) -> (Data, URLResponse) {
     let data = Data("""
-      {"relationship":{"relationshipId":"rel_test123","state":"active","role":"\(role)","personDisplayName":"Alex","activatedAt":"2026-08-05T12:00:00.000Z","expiresAt":"2026-11-03T12:00:00.000Z","guardianReachability":"inApp","guardianCapabilityId":null},"activeAlert":null,"requestId":"req_test"}
+      {"relationship":{"relationshipId":"rel_test123","state":"active","role":"\(role)","personDisplayName":"Alex","activatedAt":"2026-08-05T12:00:00.000Z","expiresAt":"2026-11-03T12:00:00.000Z","guardianReachability":"unavailable","guardianCapabilityId":null},"activeAlert":null,"requestId":"req_test"}
       """.utf8)
     return (data, httpResponse(status: 200))
   }

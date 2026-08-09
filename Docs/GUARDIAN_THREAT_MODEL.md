@@ -52,7 +52,7 @@ dispatch.
 | Stolen capability or cross-role use | This-device-only P-256 key, role-scoped signed canonical request | Generic non-enumerating rejection | Wrong-key, wrong-role, changed-body, and malformed-signature tests |
 | Request replay | Signed timestamp, 128-bit nonce, ten-minute nonce store, idempotency key | Reject replay; identical event retry returns its existing result | Replay, stale-time, and idempotency-conflict tests |
 | Invite theft or self-guardian setup | Single-use expiring invite, two-sided consent, distinct verified fallback phone | No relationship activation or SMS fallback | Redeem-once, expiry, consent-version, and same-person rejection tests |
-| Verification-SMS pumping | Founder allowlist in Gate 1; App Attest plus phone/IP/device abuse limits before external enrollment | Limiter or attestation outage fails closed | Environment, challenge, assertion, counter replay, wrong-app, and limiter-outage tests |
+| Verification-SMS pumping | Founder allowlist in Gate 1; the frozen `Docs/GUARDIAN_APP_ATTEST.md` assertion gate plus phone/network/installation limits before external enrollment | Limiter or required attestation outage fails closed | Environment, challenge, assertion, counter replay, wrong-app, and limiter-outage tests |
 | Revoked relationship still alerts | Revocation and alert creation serialize in one relationship Durable Object | If revocation commits first, no provider call; if a call began first, no later fallback/ack | Both race orderings tested with provider spies |
 | APNs or SMS ambiguous outcome creates duplicates | Persist event/alarm before provider contact; canonical event ID survives retry and relaunch; `425` maps to `statusUnknown` | No automatic resend on the ambiguous channel | Kill/relaunch, timeout, `425`, and delayed-response tests |
 | Fixed limiter silently drops escalating concern | Coalesce only matching recent content; no legacy three-event rejection on signed relationships | Fourth distinct event is durably handled | Four-distinct-event and alias/fallback reservation tests |
@@ -73,6 +73,9 @@ dispatch.
   and never appears as “failed.”
 - The person sees only `requestingHelp`, `guardianConfirmed`, or `actNow`; direct Call, Message, and
   Ride actions remain available.
+- `actNow` requires a server-owned definitive or unknown result from a real automatic-delivery
+  provider submission. Client fields, local errors, alarms, and simulations cannot create it; the
+  provider-free founder foundation therefore cannot return it.
 - One canonical alert may contain aliases for repeated concerning checks. One notification is not
   one behavioral, clinical, or safety incident.
 

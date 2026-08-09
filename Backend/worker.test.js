@@ -4,21 +4,36 @@ import test from "node:test";
 import { base64URL, canonicalSignatureInput, sha256Hex } from "./guardian-crypto.js";
 import { GuardianRelationship } from "./durable-guardian-relationship.js";
 import { handleGuardianRequest } from "./guardian-handler.js";
+import {
+  handleRelationshipAlarm,
+  inactiveAuditLifetimeMilliseconds,
+  persistRelationshipState,
+  relationshipLifetimeMilliseconds,
+  relationshipWarningLeadMilliseconds,
+} from "./guardian-relationship-lifecycle.js";
 
 const encoder = new TextEncoder();
 const origin = "https://guardian.example.test";
 
 class MemoryStorage {
-  constructor() { this.values = new Map(); }
+  constructor() {
+    this.values = new Map();
+    this.alarm = null;
+  }
   async get(key) {
     const value = this.values.get(key);
     return value == null ? value : structuredClone(value);
   }
   async put(key, value) { this.values.set(key, structuredClone(value)); }
+  async delete(key) { this.values.delete(key); }
+  async deleteAll() { this.values.clear(); }
+  async setAlarm(value) { this.alarm = Number(value); }
+  async getAlarm() { return this.alarm; }
+  async deleteAlarm() { this.alarm = null; }
 }
 
 class MemoryDurableState {
-  constructor() { this.storage = new MemoryStorage(); }
+  constructor(storage = new MemoryStorage()) { this.storage = storage; }
   blockConcurrencyWhile(operation) { return operation(); }
 }
 
@@ -28,6 +43,12 @@ class MemoryNamespace {
   get(id) {
     if (!this.instances.has(id)) this.instances.set(id, new GuardianRelationship(new MemoryDurableState()));
     return this.instances.get(id);
+  }
+  reload(id) {
+    const storage = this.instances.get(id).state.storage;
+    const replacement = new GuardianRelationship(new MemoryDurableState(storage));
+    this.instances.set(id, replacement);
+    return replacement;
   }
 }
 
@@ -132,6 +153,43 @@ async function activeRelationship() {
   return { env, created, redeemed };
 }
 
+function consentBody(consentId, overrides = {}) {
+  return {
+    documentVersion: consentId,
+    documentDigest: "a".repeat(64),
+    locale: "en-US",
+    appVersion: "1.1.0",
+    ...overrides,
+  };
+}
+
+async function putConsent({
+  env,
+  created,
+  redeemed,
+  consentId = "guardian-sender-v1",
+  body = consentBody(consentId),
+  idempotencyKey = crypto.randomUUID(),
+  role = "person",
+  relationshipId = created.body.relationshipId,
+}) {
+  const identity = role === "person" ? created.personKey : redeemed.guardianKey;
+  const capabilityId = role === "person"
+    ? created.body.personCapabilityId
+    : redeemed.body.relationship.guardianCapabilityId;
+  const path = `/v1/guardian-relationships/${relationshipId}/consents/${consentId}`;
+  const response = await handleGuardianRequest(await signedRequest({
+    path,
+    method: "PUT",
+    body,
+    relationshipId,
+    capabilityId,
+    privateKey: identity.privateKey,
+    idempotencyKey,
+  }), env);
+  return { response, body: response.status === 204 ? null : await response.clone().json(), idempotencyKey };
+}
+
 test("founder mode creates a pending relationship and one-time invite", async () => {
   const env = environment();
   const created = await createRelationship(env);
@@ -223,6 +281,188 @@ test("signed relationship reads are role-scoped and replay protected", async () 
   }), env);
   assert.equal(guardianRead.status, 200);
   assert.equal((await guardianRead.json()).relationship.role, "guardian");
+});
+
+test("a role records and retrieves only its exact consent acceptance", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const accepted = await putConsent({ env, created, redeemed });
+  assert.equal(accepted.response.status, 200);
+  assert.deepEqual(Object.keys(accepted.body.consent).sort(), [
+    "acceptedAt", "appVersion", "consentId", "documentDigest", "documentVersion",
+    "locale", "role", "withdrawnAt",
+  ]);
+  assert.equal(accepted.body.consent.consentId, "guardian-sender-v1");
+  assert.equal(accepted.body.consent.role, "person");
+  assert.equal(accepted.body.consent.withdrawnAt, null);
+
+  const guardianAccepted = await putConsent({
+    env,
+    created,
+    redeemed,
+    consentId: "notification-disclosure-v1",
+    role: "guardian",
+  });
+  assert.equal(guardianAccepted.response.status, 200);
+
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const personRead = await handleGuardianRequest(await signedRequest({
+    path,
+    relationshipId: created.body.relationshipId,
+    capabilityId: created.body.personCapabilityId,
+    privateKey: created.personKey.privateKey,
+  }), env);
+  const personRelationship = (await personRead.json()).relationship;
+  assert.deepEqual(personRelationship.consents.map((record) => record.consentId), [
+    "guardian-sender-v1",
+  ]);
+  assert.equal(personRelationship.expiryWarning, null);
+
+  const guardianRead = await handleGuardianRequest(await signedRequest({
+    path,
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  const guardianRelationship = (await guardianRead.json()).relationship;
+  assert.deepEqual(guardianRelationship.consents.map((record) => record.consentId), [
+    "notification-disclosure-v1",
+  ]);
+  assert.equal(guardianRelationship.guardianReachability, "unavailable");
+});
+
+test("consent authorization rejects the wrong role, capability, and relationship", async () => {
+  const first = await activeRelationship();
+  const wrongRole = await putConsent({
+    ...first,
+    consentId: "guardian-sender-v1",
+    role: "guardian",
+  });
+  assert.equal(wrongRole.response.status, 404);
+
+  const path = `/v1/guardian-relationships/${first.created.body.relationshipId}/consents/guardian-sender-v1`;
+  const unknownCapability = await handleGuardianRequest(await signedRequest({
+    path,
+    method: "PUT",
+    body: consentBody("guardian-sender-v1"),
+    relationshipId: first.created.body.relationshipId,
+    capabilityId: "rcap_not_this_relationship",
+    privateKey: first.created.personKey.privateKey,
+    idempotencyKey: crypto.randomUUID(),
+  }), first.env);
+  assert.equal(unknownCapability.status, 404);
+
+  const secondCreated = await createRelationship(first.env);
+  const secondRedeemed = await redeemRelationship(first.env, secondCreated);
+  assert.equal(secondRedeemed.response.status, 200);
+  const wrongRelationshipPath = `/v1/guardian-relationships/${secondCreated.body.relationshipId}/consents/guardian-sender-v1`;
+  const wrongRelationship = await handleGuardianRequest(await signedRequest({
+    path: wrongRelationshipPath,
+    method: "PUT",
+    body: consentBody("guardian-sender-v1"),
+    relationshipId: first.created.body.relationshipId,
+    capabilityId: first.created.body.personCapabilityId,
+    privateKey: first.created.personKey.privateKey,
+    idempotencyKey: crypto.randomUUID(),
+  }), first.env);
+  assert.equal(wrongRelationship.status, 404);
+});
+
+test("consent input is exact and malformed records never persist", async () => {
+  const setup = await activeRelationship();
+  const malformedBodies = [
+    consentBody("guardian-sender-v1", { documentVersion: "guardian-sender-v2" }),
+    consentBody("guardian-sender-v1", { documentDigest: "not-a-sha256-digest" }),
+    consentBody("guardian-sender-v1", { locale: "en_US" }),
+    consentBody("guardian-sender-v1", { appVersion: "1.1.0\u0085debug" }),
+    { ...consentBody("guardian-sender-v1"), note: "free text is forbidden" },
+  ];
+  for (const body of malformedBodies) {
+    const result = await putConsent({ ...setup, body });
+    assert.equal(result.response.status, 422);
+  }
+  const missingIdempotency = await putConsent({ ...setup, idempotencyKey: "" });
+  assert.equal(missingIdempotency.response.status, 422);
+  const controlIdempotency = await putConsent({
+    ...setup,
+    idempotencyKey: "receipt\u0085injection",
+  });
+  assert.equal(controlIdempotency.response.status, 422);
+  const unknownConsent = await putConsent({
+    ...setup,
+    consentId: "unreviewed-consent-v1",
+    body: consentBody("unreviewed-consent-v1"),
+  });
+  assert.equal(unknownConsent.response.status, 404);
+
+  const state = await setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage.get("state");
+  assert.deepEqual(state.consents, {});
+});
+
+test("consent acceptance is replay safe and detects idempotency conflicts", async () => {
+  const setup = await activeRelationship();
+  const idempotencyKey = crypto.randomUUID();
+  const first = await putConsent({ ...setup, idempotencyKey });
+  const replay = await putConsent({ ...setup, idempotencyKey });
+  assert.equal(first.response.status, 200);
+  assert.equal(replay.response.status, 200);
+  assert.equal(replay.body.consent.acceptedAt, first.body.consent.acceptedAt);
+  const persisted = await setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage.get("state");
+  assert.equal(JSON.stringify(persisted.consentIdempotency).includes(idempotencyKey), false);
+
+  const changedReplay = await putConsent({
+    ...setup,
+    idempotencyKey,
+    body: consentBody("guardian-sender-v1", { appVersion: "1.1.1" }),
+  });
+  assert.equal(changedReplay.response.status, 409);
+  assert.equal(changedReplay.body.error.code, "idempotencyConflict");
+
+  const changedAcceptance = await putConsent({
+    ...setup,
+    body: consentBody("guardian-sender-v1", { appVersion: "1.1.1" }),
+  });
+  assert.equal(changedAcceptance.response.status, 409);
+  assert.equal(changedAcceptance.body.error.code, "consentConflict");
+});
+
+test("consent records survive a Durable Object reload", async () => {
+  const setup = await activeRelationship();
+  await putConsent(setup);
+  setup.env.GUARDIAN_RELATIONSHIPS.reload(setup.created.body.relationshipId);
+
+  const path = `/v1/guardian-relationships/${setup.created.body.relationshipId}`;
+  const response = await handleGuardianRequest(await signedRequest({
+    path,
+    relationshipId: setup.created.body.relationshipId,
+    capabilityId: setup.created.body.personCapabilityId,
+    privateKey: setup.created.personKey.privateKey,
+  }), setup.env);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).relationship.consents[0].consentId, "guardian-sender-v1");
+});
+
+test("revoked and expired relationships cannot add consent records", async () => {
+  const revokedSetup = await activeRelationship();
+  const revokedPath = `/v1/guardian-relationships/${revokedSetup.created.body.relationshipId}`;
+  assert.equal((await handleGuardianRequest(await signedRequest({
+    path: revokedPath,
+    method: "DELETE",
+    relationshipId: revokedSetup.created.body.relationshipId,
+    capabilityId: revokedSetup.created.body.personCapabilityId,
+    privateKey: revokedSetup.created.personKey.privateKey,
+  }), revokedSetup.env)).status, 204);
+  assert.equal((await putConsent(revokedSetup)).response.status, 404);
+
+  const expiredSetup = await activeRelationship();
+  const storage = expiredSetup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(expiredSetup.created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  state.expiresAt = new Date(Date.now() - 1).toISOString();
+  await storage.put("state", state);
+  assert.equal((await putConsent(expiredSetup)).response.status, 404);
+  assert.equal((await storage.get("state")).relationshipState, "expired");
 });
 
 test("person creates only a minimal live concerning alert", async () => {
@@ -407,6 +647,226 @@ test("revocation is durable and blocks later alerts", async () => {
     idempotencyKey: eventId,
   }), env);
   assert.equal(blocked.status, 404);
+});
+
+test("activation schedules the relationship warning exactly fourteen days before expiry", async () => {
+  const { env, created } = await activeRelationship();
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  assert.equal(
+    Date.parse(state.expiresAt) - Date.parse(state.activatedAt),
+    relationshipLifetimeMilliseconds
+  );
+  assert.equal(
+    await storage.getAlarm(),
+    Date.parse(state.expiresAt) - relationshipWarningLeadMilliseconds
+  );
+});
+
+test("alarm persistence failure leaves an invite retryable and inert", async () => {
+  const env = environment();
+  const created = await createRelationship(env);
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const setAlarm = storage.setAlarm.bind(storage);
+  storage.setAlarm = async () => { throw new Error("synthetic alarm write failure"); };
+  await assert.rejects(() => redeemRelationship(env, created));
+  assert.equal((await storage.get("state")).relationshipState, "pendingGuardian");
+
+  storage.setAlarm = setAlarm;
+  const retried = await redeemRelationship(env, created);
+  assert.equal(retried.response.status, 200);
+  assert.equal((await storage.get("state")).relationshipState, "active");
+});
+
+test("a stale lifecycle alarm is rescheduled from durable relationship state", async () => {
+  const { env, created } = await activeRelationship();
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  await storage.setAlarm(Date.now() + 1234);
+  await handleRelationshipAlarm(storage, Date.parse(state.activatedAt) + 1000);
+  assert.equal(
+    await storage.getAlarm(),
+    Date.parse(state.expiresAt) - relationshipWarningLeadMilliseconds
+  );
+});
+
+test("an object first observed inside the warning window persists a visible warning", async () => {
+  const { env, created, redeemed } = await activeRelationship();
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  const observedAt = Date.now();
+  state.expiresAt = new Date(observedAt + 7 * 24 * 60 * 60 * 1000).toISOString();
+  state.expiryWarning = null;
+  await storage.put("state", state);
+  env.GUARDIAN_RELATIONSHIPS.reload(created.body.relationshipId);
+
+  await handleRelationshipAlarm(storage, observedAt);
+  const persisted = await storage.get("state");
+  assert.equal(persisted.expiryWarning.state, "visible");
+  assert.equal(await storage.getAlarm(), Date.parse(persisted.expiresAt));
+
+  const path = `/v1/guardian-relationships/${created.body.relationshipId}`;
+  const guardianRead = await handleGuardianRequest(await signedRequest({
+    path,
+    relationshipId: created.body.relationshipId,
+    capabilityId: redeemed.body.relationship.guardianCapabilityId,
+    privateKey: redeemed.guardianKey.privateKey,
+  }), env);
+  const warning = (await guardianRead.json()).relationship.expiryWarning;
+  assert.deepEqual(Object.keys(warning).sort(), ["expiresAt", "startedAt", "state"]);
+  assert.equal(warning.state, "visible");
+});
+
+test("persisting active state already inside fourteen days creates its warning immediately", async () => {
+  const setup = await activeRelationship();
+  const existingStorage = setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage;
+  const state = await existingStorage.get("state");
+  const storage = new MemoryStorage();
+  const createdAt = Date.now();
+  state.expiresAt = new Date(createdAt + 7 * 24 * 60 * 60 * 1000).toISOString();
+  state.expiryWarning = null;
+
+  await persistRelationshipState(storage, state, createdAt);
+
+  const persisted = await storage.get("state");
+  assert.equal(persisted.expiryWarning.state, "visible");
+  assert.equal(await storage.getAlarm(), Date.parse(persisted.expiresAt));
+});
+
+test("duplicate warning alarm delivery is idempotent and retains the expiry alarm", async () => {
+  const { env, created } = await activeRelationship();
+  const storage = env.GUARDIAN_RELATIONSHIPS.instances
+    .get(created.body.relationshipId).state.storage;
+  const state = await storage.get("state");
+  const warningAt = Date.parse(state.expiresAt) - relationshipWarningLeadMilliseconds;
+  await handleRelationshipAlarm(storage, warningAt);
+  const first = await storage.get("state");
+  await handleRelationshipAlarm(storage, warningAt + 5000);
+  const duplicate = await storage.get("state");
+  assert.equal(duplicate.expiryWarning.visibleAt, first.expiryWarning.visibleAt);
+  assert.equal(await storage.getAlarm(), Date.parse(state.expiresAt));
+});
+
+test("the Durable Object alarm handler delegates to lifecycle reconciliation", async () => {
+  const { env, created } = await activeRelationship();
+  const instance = env.GUARDIAN_RELATIONSHIPS.instances.get(created.body.relationshipId);
+  const state = await instance.state.storage.get("state");
+  state.expiresAt = new Date(Date.now() - 1).toISOString();
+  await instance.state.storage.put("state", state);
+  await instance.alarm();
+  assert.equal((await instance.state.storage.get("state")).relationshipState, "expired");
+});
+
+test("the expiry alarm commits expiry, withdraws consent, and removes live authority", async () => {
+  const setup = await activeRelationship();
+  await putConsent(setup);
+  const storage = setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage;
+  const active = await storage.get("state");
+  const expiresAt = Date.parse(active.expiresAt);
+  await handleRelationshipAlarm(storage, expiresAt);
+
+  const expired = await storage.get("state");
+  assert.equal(expired.relationshipState, "expired");
+  assert.equal(expired.expiryWarning.state, "expired");
+  assert.equal(expired.personPublicKeyJwk, null);
+  assert.equal(expired.guardianPublicKeyJwk, null);
+  assert.equal(expired.consents["guardian-sender-v1"].withdrawnAt, expired.expiredAt);
+  assert.equal(
+    await storage.getAlarm(),
+    Date.parse(expired.cleanupAt)
+  );
+});
+
+test("revocation is replay-safe, cancels expiry warning work, and schedules cleanup", async () => {
+  const setup = await activeRelationship();
+  await putConsent(setup);
+  const path = `/v1/guardian-relationships/${setup.created.body.relationshipId}`;
+  const revoke = () => signedRequest({
+    path,
+    method: "DELETE",
+    relationshipId: setup.created.body.relationshipId,
+    capabilityId: setup.created.body.personCapabilityId,
+    privateKey: setup.created.personKey.privateKey,
+  }).then((request) => handleGuardianRequest(request, setup.env));
+  assert.equal((await revoke()).status, 204);
+  assert.equal((await revoke()).status, 204);
+
+  const storage = setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage;
+  const revoked = await storage.get("state");
+  assert.equal(revoked.relationshipState, "revoked");
+  assert.equal(revoked.expiryWarning.state, "revoked");
+  assert.equal(revoked.personDisplayName, "");
+  assert.equal(revoked.consents["guardian-sender-v1"].withdrawnAt, revoked.revokedAt);
+  assert.equal(await storage.getAlarm(), Date.parse(revoked.cleanupAt));
+  assert.equal(
+    Date.parse(revoked.cleanupAt) - Date.parse(revoked.revokedAt),
+    inactiveAuditLifetimeMilliseconds
+  );
+});
+
+test("inactive relationship cleanup deletes durable state and its alarm", async () => {
+  const setup = await activeRelationship();
+  const path = `/v1/guardian-relationships/${setup.created.body.relationshipId}`;
+  await handleGuardianRequest(await signedRequest({
+    path,
+    method: "DELETE",
+    relationshipId: setup.created.body.relationshipId,
+    capabilityId: setup.created.body.personCapabilityId,
+    privateKey: setup.created.personKey.privateKey,
+  }), setup.env);
+  const storage = setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage;
+  const revoked = await storage.get("state");
+  await handleRelationshipAlarm(storage, Date.parse(revoked.cleanupAt));
+  assert.equal(await storage.get("state"), undefined);
+  assert.equal(await storage.getAlarm(), null);
+  await handleRelationshipAlarm(storage, Date.parse(revoked.cleanupAt) + 1000);
+  assert.equal(await storage.getAlarm(), null);
+});
+
+test("actNow is unreachable without a server-owned provider outcome", async () => {
+  const setup = await activeRelationship();
+  const eventId = crypto.randomUUID();
+  const path = `/v1/guardian-relationships/${setup.created.body.relationshipId}/alerts/${eventId}`;
+  const input = {
+    occurredAt: new Date().toISOString(),
+    result: "SIGNALS_DETECTED",
+    source: "liveCheck",
+    messageTemplateVersion: "guardian-help-v1",
+    automaticDeliveryOutcome: "unknown",
+  };
+  const injection = await handleGuardianRequest(await signedRequest({
+    path,
+    method: "PUT",
+    body: input,
+    relationshipId: setup.created.body.relationshipId,
+    capabilityId: setup.created.body.personCapabilityId,
+    privateKey: setup.created.personKey.privateKey,
+    idempotencyKey: eventId,
+  }), setup.env);
+  assert.equal(injection.status, 422);
+
+  delete input.automaticDeliveryOutcome;
+  const created = await handleGuardianRequest(await signedRequest({
+    path,
+    method: "PUT",
+    body: input,
+    relationshipId: setup.created.body.relationshipId,
+    capabilityId: setup.created.body.personCapabilityId,
+    privateKey: setup.created.personKey.privateKey,
+    idempotencyKey: eventId,
+  }), setup.env);
+  assert.equal((await created.json()).alert.personActionState, "requestingHelp");
+  const state = await setup.env.GUARDIAN_RELATIONSHIPS.instances
+    .get(setup.created.body.relationshipId).state.storage.get("state");
+  assert.equal(JSON.stringify(state).includes("actNow"), false);
 });
 
 test("legacy shared-token route is removed from the compiled handler", async () => {
