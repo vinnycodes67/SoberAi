@@ -44,6 +44,17 @@ enum DSTab: String, CaseIterable, Identifiable {
     case .settings: "gearshape"
     }
   }
+
+  /// Privacy Lock protects stored personal context, never the safety route.
+  /// Home contains the live check, result, Ride, Call, and Message actions.
+  var requiresPrivacyLock: Bool {
+    switch self {
+    case .history, .settings:
+      return true
+    case .home, .circle:
+      return false
+    }
+  }
 }
 
 /// A floating tab bar.

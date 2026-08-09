@@ -7,16 +7,11 @@ struct OcularTaskView: View {
   var onRetryCalibration: (() -> Void)?
   var onEndCheck: (() -> Void)?
 
-  /// How long capture has to stay unusable before the run is abandoned. Short
-  /// losses -- a blink, a hand crossing the lens -- are normal and must not
-  /// raise anything.
-  private static let recoveryThreshold: TimeInterval = 3
-
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var startedAt: Date?
   @State private var protocolTask: Task<Void, Never>?
+  @State private var recoveryTask: Task<Void, Never>?
   @State private var finished = false
-  @State private var unusableSince: Date?
   @State private var needsRecovery = false
 
   var body: some View {
@@ -35,19 +30,12 @@ struct OcularTaskView: View {
     // Escalation, not instant interruption: track how long quality has been
     // unusable and only stop the run once it stays that way.
     .onChange(of: service.quality.isUsable) { _, isUsable in
-      guard startedAt != nil, !finished else { return }
       if isUsable {
-        unusableSince = nil
-      } else if unusableSince == nil {
-        unusableSince = Date()
+        recoveryTask?.cancel()
+        recoveryTask = nil
+      } else {
+        scheduleCaptureRecovery()
       }
-    }
-    .onChange(of: service.sampleCount) { _, _ in
-      guard let unusableSince, startedAt != nil, !finished, !needsRecovery else { return }
-      guard Date().timeIntervalSince(unusableSince) >= Self.recoveryThreshold else { return }
-      protocolTask?.cancel()
-      service.pause()
-      needsRecovery = true
     }
   }
 
@@ -176,6 +164,7 @@ struct OcularTaskView: View {
     }
     .onDisappear {
       protocolTask?.cancel()
+      recoveryTask?.cancel()
       if startedAt != nil, !finished { service.pause() }
     }
   }
@@ -240,6 +229,7 @@ struct OcularTaskView: View {
     guard startedAt == nil, canCapture else { return }
     startedAt = Date()
     service.startOcularProtocol(variant: activeVariant)
+    if !service.quality.isUsable { scheduleCaptureRecovery() }
     protocolTask = Task {
       try? await Task.sleep(for: .seconds(OcularProtocolSchedule.totalDuration(for: activeVariant)))
       guard !Task.isCancelled else { return }
@@ -251,6 +241,29 @@ struct OcularTaskView: View {
     guard !finished else { return }
     finished = true
     protocolTask?.cancel()
+    recoveryTask?.cancel()
     onComplete(summary)
   }
+
+  /// This task is independent of sample delivery. When a face disappears,
+  /// sample count may stop changing entirely; waiting for another sample would
+  /// therefore leave recovery stuck forever.
+  private func scheduleCaptureRecovery() {
+    guard startedAt != nil, !finished, !needsRecovery, recoveryTask == nil else { return }
+    recoveryTask = Task {
+      try? await Task.sleep(for: .seconds(CaptureRecoveryPolicy.sustainedLossSeconds))
+      guard !Task.isCancelled, startedAt != nil, !finished, !service.quality.isUsable else {
+        return
+      }
+      protocolTask?.cancel()
+      service.pause()
+      needsRecovery = true
+      recoveryTask = nil
+    }
+  }
+}
+
+enum CaptureRecoveryPolicy {
+  /// Short losses such as a blink or a hand crossing the camera are normal.
+  static let sustainedLossSeconds: TimeInterval = 3
 }

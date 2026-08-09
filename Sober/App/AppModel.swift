@@ -12,19 +12,16 @@ final class AppModel: ObservableObject {
   /// stale `UserDefaults` value survives an upgrade from an internal build.
   @Published private(set) var isFounderPreview: Bool
   @Published var researchConsent: Bool {
-    didSet { defaults.set(researchConsent, forKey: Keys.researchConsent) }
+    didSet { privacyStore.saveResearchConsent(researchConsent) }
   }
   @Published var researchPreferences: ResearchPreferences {
-    didSet {
-      if let data = try? JSONEncoder().encode(researchPreferences) {
-        defaults.set(data, forKey: Keys.researchPreferences)
-      }
-    }
+    didSet { privacyStore.saveResearchPreferences(researchPreferences) }
   }
   @Published private(set) var researchSessions: [ResearchSessionEnvelope] = []
   /// Local History. Independent of research consent and bounded by
   /// `CheckHistoryStore`'s retention window.
   @Published private(set) var checkHistory: [CheckHistoryEntry] = []
+  @Published private(set) var historyDataError: String?
   @Published private(set) var baselineProfile: BaselineProfileSummary?
   @Published private(set) var baselineVariantBreakdown: [OcularProtocolVariant: BaselineProfileSummary] = [:]
   @Published private(set) var researchDataError: String?
@@ -42,21 +39,22 @@ final class AppModel: ObservableObject {
   @Published private(set) var guardianError: String?
   @Published private(set) var guardianIsWorking = false
   @Published var safetyPlan: SafetyPlan {
-    didSet {
-      if let data = try? JSONEncoder().encode(safetyPlan) {
-        defaults.set(data, forKey: Keys.safetyPlan)
-      }
-    }
+    didSet { privacyStore.saveSafetyPlan(safetyPlan) }
   }
 
   /// App-local identity. Deliberately never passed to `ResearchSessionEnvelope`.
   @Published var userProfile: UserProfile {
-    didSet {
-      if let data = try? JSONEncoder().encode(userProfile) {
-        defaults.set(data, forKey: Keys.userProfile)
-      }
-    }
+    didSet { privacyStore.saveUserProfile(userProfile) }
   }
+
+  /// Optional system privacy protection for sensitive local screens. The Home
+  /// route, including every get-home action, intentionally never consults this
+  /// state.
+  @Published private(set) var privacyLockEnabled: Bool
+  @Published private(set) var privacyLockIsLocked: Bool
+  @Published private(set) var privacyLockIsAuthenticating = false
+  @Published private(set) var privacyShieldIsVisible = false
+  @Published private(set) var privacyLockError: String?
 
   @Published private(set) var participantID: PseudonymousParticipantID
 
@@ -64,7 +62,11 @@ final class AppModel: ObservableObject {
   /// public and internal behaviours from a single (Debug) test run.
   let allowsInternalTools: Bool
   private let defaults: UserDefaults
-  private let researchStore: ResearchSessionStore
+  private let baselineStore: any BaselineStore
+  private let permissionStore: any PermissionStore
+  private let privacyStore: any PrivacyStore
+  private let privacyLockAuthenticator: any PrivacyLockAuthenticating
+  private let privacyLockPolicy: PrivacyLockPolicy
   private let checkHistoryStore: CheckHistoryStore
   private let guardianStore: any GuardianSessionStoring
   private let guardianAPI: GuardianAPIClient
@@ -75,10 +77,15 @@ final class AppModel: ObservableObject {
   private let baselineEngine = BaselineProfileEngine()
   private var guardianLocationPublishIsInFlight = false
   private var lastGuardianLocationPublishedAt: Date?
+  private var privacyInactiveSince: TimeInterval?
 
   init(
     defaults: UserDefaults = .standard,
-    researchStore: ResearchSessionStore = ResearchSessionStore(),
+    baselineStore: (any BaselineStore)? = nil,
+    permissionStore: (any PermissionStore)? = nil,
+    privacyStore: (any PrivacyStore)? = nil,
+    privacyLockAuthenticator: any PrivacyLockAuthenticating = SystemPrivacyLockAuthenticator(),
+    privacyLockPolicy: PrivacyLockPolicy = .standard,
     checkHistoryStore: CheckHistoryStore = CheckHistoryStore(),
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
@@ -89,9 +96,18 @@ final class AppModel: ObservableObject {
     automaticallyStartsGuardianServices: Bool = BuildChannel.allowsInternalTools,
     allowsInternalTools: Bool = BuildChannel.allowsInternalTools
   ) {
+    let resolvedBaselineStore = baselineStore ?? LocalBaselineStore(defaults: defaults)
+    let resolvedPermissionStore = permissionStore ?? SystemPermissionStore()
+    let resolvedPrivacyStore = privacyStore ?? UserDefaultsPrivacyStore(defaults: defaults)
+    let privacySnapshot = resolvedPrivacyStore.load()
+
     self.allowsInternalTools = allowsInternalTools
     self.defaults = defaults
-    self.researchStore = researchStore
+    self.baselineStore = resolvedBaselineStore
+    self.permissionStore = resolvedPermissionStore
+    self.privacyStore = resolvedPrivacyStore
+    self.privacyLockAuthenticator = privacyLockAuthenticator
+    self.privacyLockPolicy = privacyLockPolicy
     self.checkHistoryStore = checkHistoryStore
     self.guardianStore = guardianStore
     self.guardianAPI = guardianAPI
@@ -100,47 +116,20 @@ final class AppModel: ObservableObject {
     self.guardianCheckInScheduler = guardianCheckInScheduler
     self.guardianLiveLocation = guardianLiveLocation
     hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarding)
-    // `baselineSessions` is the measured count and nothing else. Inflating it
-    // here made a demo state indistinguishable from a real one on disk, and it
-    // survived "delete all data".
-    baselineSessions = defaults.integer(forKey: Keys.baselines)
+    // Readiness begins empty and is rebuilt only from versioned archive records.
+    // The old UserDefaults counter is deliberately ignored by BaselineStore.
+    baselineSessions = 0
     // A public binary ignores a persisted founder flag rather than trusting it,
     // so an internal build that is later replaced by an App Store build cannot
     // leave the user stranded in the demo state.
     isFounderPreview = allowsInternalTools && defaults.bool(forKey: Keys.founderPreview)
-    researchConsent = defaults.bool(forKey: Keys.researchConsent)
-
-    if let rawParticipantID = defaults.string(forKey: Keys.participantID) {
-      participantID = PseudonymousParticipantID(rawValue: rawParticipantID)
-    } else {
-      let generated = PseudonymousParticipantID.generate()
-      participantID = generated
-      defaults.set(generated.rawValue, forKey: Keys.participantID)
-    }
-
-    if let data = defaults.data(forKey: Keys.researchPreferences),
-      let preferences = try? JSONDecoder().decode(ResearchPreferences.self, from: data)
-    {
-      researchPreferences = preferences
-    } else {
-      researchPreferences = ResearchPreferences()
-    }
-
-    if let data = defaults.data(forKey: Keys.safetyPlan),
-      let storedPlan = try? JSONDecoder().decode(SafetyPlan.self, from: data)
-    {
-      safetyPlan = storedPlan
-    } else {
-      safetyPlan = SafetyPlan()
-    }
-
-    if let data = defaults.data(forKey: Keys.userProfile),
-      let storedProfile = try? JSONDecoder().decode(UserProfile.self, from: data)
-    {
-      userProfile = storedProfile
-    } else {
-      userProfile = UserProfile()
-    }
+    researchConsent = privacySnapshot.researchConsent
+    researchPreferences = privacySnapshot.researchPreferences
+    safetyPlan = privacySnapshot.safetyPlan
+    userProfile = privacySnapshot.userProfile
+    privacyLockEnabled = privacySnapshot.privacyLockEnabled
+    privacyLockIsLocked = privacySnapshot.privacyLockEnabled
+    participantID = resolvedBaselineStore.participantID
 
     do {
       guardianSession = try guardianStore.load()
@@ -173,7 +162,12 @@ final class AppModel: ObservableObject {
     }
 
     Task {
-      await reloadResearchData()
+      if self.baselineStore.deletionPending {
+        await deleteAllResearchData()
+      } else {
+        await reloadResearchData()
+        await reloadCheckHistory()
+      }
       if automaticallyStartsGuardianServices, guardianSession != nil { await refreshGuardian() }
     }
   }
@@ -190,8 +184,8 @@ final class AppModel: ObservableObject {
     return measuredEligibleSessions >= 5
   }
 
-  /// The best eligible-session count across protocol variants, falling back to
-  /// the persisted count before research data has loaded.
+  /// The best eligible-session count across protocol variants. It stays zero
+  /// until the versioned archive has been loaded successfully.
   var measuredEligibleSessions: Int {
     baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions
   }
@@ -202,6 +196,141 @@ final class AppModel: ObservableObject {
       sessions: researchSessions,
       protocolVariant: protocolVariant
     )
+  }
+
+  var cameraPermissionState: CameraPermissionState {
+    permissionStore.cameraAuthorization
+  }
+
+  func requestCameraPermission() async -> CameraPermissionState {
+    await permissionStore.requestCameraAuthorization()
+  }
+
+  // MARK: - Privacy Lock
+
+  var privacyLockIsAvailable: Bool {
+    privacyLockAuthenticator.isAvailable
+  }
+
+  /// Turns the optional lock on only after iOS verifies the device owner.
+  /// Turning it off happens from the already-protected Settings route.
+  @discardableResult
+  func setPrivacyLockEnabled(_ isEnabled: Bool) async -> Bool {
+    privacyLockError = nil
+
+    guard isEnabled else {
+      privacyLockEnabled = false
+      privacyLockIsLocked = false
+      privacyShieldIsVisible = false
+      privacyInactiveSince = nil
+      privacyStore.savePrivacyLockEnabled(false)
+      return true
+    }
+
+    guard privacyLockAuthenticator.isAvailable else {
+      privacyLockError = Self.privacyLockMessage(for: .unavailable)
+      return false
+    }
+
+    let result = await performPrivacyAuthentication(
+      reason: "Turn on Privacy Lock for your History, Your Steady, and Settings."
+    )
+    guard result == .success else {
+      privacyLockError = Self.privacyLockMessage(for: result)
+      return false
+    }
+
+    privacyLockEnabled = true
+    privacyLockIsLocked = false
+    privacyShieldIsVisible = false
+    privacyInactiveSince = nil
+    privacyStore.savePrivacyLockEnabled(true)
+    return true
+  }
+
+  /// Unlocks only the private destinations. Failure leaves them closed and has
+  /// no effect on Home or any Ride, Call, or Message action.
+  @discardableResult
+  func unlockProtectedContent() async -> Bool {
+    privacyLockError = nil
+    guard privacyLockEnabled else {
+      privacyLockIsLocked = false
+      return true
+    }
+    guard privacyLockIsLocked else { return true }
+    guard privacyLockAuthenticator.isAvailable else {
+      privacyLockError = Self.privacyLockMessage(for: .unavailable)
+      return false
+    }
+
+    let result = await performPrivacyAuthentication(
+      reason: "Unlock your private Sober history and settings."
+    )
+    guard result == .success else {
+      privacyLockError = Self.privacyLockMessage(for: result)
+      return false
+    }
+
+    privacyLockIsLocked = false
+    privacyShieldIsVisible = false
+    privacyInactiveSince = nil
+    return true
+  }
+
+  /// Hides protected content as soon as iOS starts taking an app-switcher
+  /// snapshot. Authentication is required only if the full inactivity interval
+  /// elapses.
+  func privacySceneBecameInactive(
+    at uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    guard privacyLockEnabled, !privacyLockIsAuthenticating else { return }
+    privacyShieldIsVisible = true
+    if privacyInactiveSince == nil { privacyInactiveSince = uptime }
+  }
+
+  func privacySceneEnteredBackground(
+    at uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    privacySceneBecameInactive(at: uptime)
+  }
+
+  func privacySceneBecameActive(
+    at uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+  ) {
+    guard privacyLockEnabled else {
+      privacyShieldIsVisible = false
+      privacyInactiveSince = nil
+      return
+    }
+    guard !privacyLockIsAuthenticating else { return }
+
+    if privacyLockPolicy.requiresAuthentication(inactiveSince: privacyInactiveSince, now: uptime) {
+      privacyLockIsLocked = true
+    }
+    privacyShieldIsVisible = false
+    privacyInactiveSince = nil
+  }
+
+  private func performPrivacyAuthentication(reason: String) async
+    -> PrivacyLockAuthenticationResult
+  {
+    guard !privacyLockIsAuthenticating else { return .cancelled }
+    privacyLockIsAuthenticating = true
+    defer { privacyLockIsAuthenticating = false }
+    return await privacyLockAuthenticator.authenticate(reason: reason)
+  }
+
+  private static func privacyLockMessage(for result: PrivacyLockAuthenticationResult) -> String? {
+    switch result {
+    case .success:
+      return nil
+    case .cancelled:
+      return "Unlock was canceled. Your private screens remain locked."
+    case .unavailable:
+      return "Privacy Lock needs Face ID, Touch ID, or a device passcode set up in iPhone Settings."
+    case .failed:
+      return "Sober could not verify you. Try again."
+    }
   }
 
   var guardianRelationshipIsActive: Bool {
@@ -753,8 +882,7 @@ final class AppModel: ObservableObject {
   func completeOnboarding(founderPreview: Bool) {
     isFounderPreview = allowsInternalTools && founderPreview
     hasCompletedOnboarding = true
-    defaults.set("prototype-v2", forKey: Keys.consentVersion)
-    defaults.set(Date(), forKey: Keys.consentDate)
+    privacyStore.recordConsent(version: "prototype-v2", at: Date())
     persist()
   }
 
@@ -832,7 +960,7 @@ final class AppModel: ObservableObject {
     )
 
     do {
-      try await researchStore.append(envelope)
+      try await baselineStore.append(envelope)
       await reloadResearchData()
     } catch {
       researchDataError = error.localizedDescription
@@ -853,8 +981,28 @@ final class AppModel: ObservableObject {
       qualityScore: metrics.qualityScore,
       completedAllTasks: metrics.completedAllTasks
     )
-    try? await checkHistoryStore.append(entry)
-    await reloadCheckHistory()
+    do {
+      try await checkHistoryStore.append(entry)
+      await reloadCheckHistory()
+    } catch let error as CheckHistoryStoreError {
+      checkHistory = []
+      historyDataError = error.localizedDescription
+
+      // Quarantine moved the unreadable source out of the active path. Preserve
+      // it, then retry once so the check that just finished is not silently
+      // omitted from the person's new History archive.
+      guard case .archiveQuarantined = error else { return }
+      do {
+        try await checkHistoryStore.append(entry)
+        checkHistory = try await checkHistoryStore.list()
+      } catch {
+        checkHistory = []
+        historyDataError = error.localizedDescription
+      }
+    } catch {
+      checkHistory = []
+      historyDataError = error.localizedDescription
+    }
   }
 
   private static func historyOutcome(_ outcome: ScreeningOutcome) -> CheckHistoryEntry.Outcome {
@@ -866,17 +1014,35 @@ final class AppModel: ObservableObject {
   }
 
   func reloadCheckHistory() async {
-    checkHistory = (try? await checkHistoryStore.list()) ?? []
+    do {
+      checkHistory = try await checkHistoryStore.list()
+      historyDataError = nil
+    } catch {
+      checkHistory = []
+      historyDataError = error.localizedDescription
+    }
   }
 
   func deleteCheckHistory() async {
-    _ = try? await checkHistoryStore.deleteAll()
-    await reloadCheckHistory()
+    checkHistory = []
+    do {
+      _ = try await checkHistoryStore.deleteAll()
+      historyDataError = nil
+    } catch {
+      historyDataError = error.localizedDescription
+    }
   }
 
   func reloadResearchData() async {
+    let requestedRevision = baselineStore.stateRevision
     do {
-      let sessions = try await researchStore.list()
+      let sessions = try await baselineStore.list()
+      guard requestedRevision == baselineStore.stateRevision,
+        !baselineStore.deletionPending
+      else {
+        clearBaselineState()
+        return
+      }
       researchSessions = sessions
       baselineProfile = baselineEngine.summarize(
         participantID: participantID,
@@ -893,9 +1059,9 @@ final class AppModel: ObservableObject {
         baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? 0,
         baselineProfile?.eligibleSessionCount ?? 0
       )
-      persist()
       researchDataError = nil
     } catch {
+      clearBaselineState()
       researchDataError = error.localizedDescription
     }
   }
@@ -903,7 +1069,7 @@ final class AppModel: ObservableObject {
   func prepareResearchExport() async -> URL? {
     guard researchConsent else { return nil }
     do {
-      let data = try await researchStore.exportData()
+      let data = try await baselineStore.exportData(exportedAt: Date())
       let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("sober-research-export-\(participantID.rawValue).json")
       try data.write(to: url, options: .atomic)
@@ -922,16 +1088,24 @@ final class AppModel: ObservableObject {
     }
   }
 
-  /// Deletes the local archive *and* any export file already written to the
-  /// temporary directory. Leaving the export behind would keep data the user
-  /// was told is gone readable on the device.
+  /// Installs a synchronous deletion barrier, clears in-memory readiness, and
+  /// then removes active, legacy, quarantined, and exported copies. If the file
+  /// operation fails, the barrier remains and the old records cannot reappear.
   func deleteAllResearchData() async {
+    baselineStore.beginDeletion()
+    clearBaselineState()
+    checkHistory = []
+    isFounderPreview = false
+    defaults.removeObject(forKey: Keys.founderPreview)
+    discardPreparedExport()
+
     do {
-      _ = try await researchStore.deleteAll()
-      discardPreparedExport()
-      rotateParticipantID()
-      baselineSessions = 0
-      _ = try? await checkHistoryStore.deleteAll()
+      // History is a separate local archive, but "all local data" remains one
+      // truthful operation. The baseline deletion barrier is already active,
+      // so a failure here cannot make baseline state reappear.
+      _ = try await checkHistoryStore.deleteAll()
+      let receipt = try await baselineStore.deleteAllAndRotateIdentity()
+      participantID = receipt.participantID
       await reloadCheckHistory()
       await reloadResearchData()
     } catch {
@@ -940,34 +1114,35 @@ final class AppModel: ObservableObject {
   }
 
   func discardPreparedExport() {
-    guard let lastExportURL else { return }
-    try? FileManager.default.removeItem(at: lastExportURL)
+    let deterministicURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("sober-research-export-\(participantID.rawValue).json")
+    let candidates = [lastExportURL, deterministicURL].compactMap { $0 }
+    for url in Set(candidates) {
+      try? FileManager.default.removeItem(at: url)
+    }
     self.lastExportURL = nil
   }
 
-  private func rotateParticipantID() {
-    let replacement = PseudonymousParticipantID.generate()
-    participantID = replacement
-    defaults.set(replacement.rawValue, forKey: Keys.participantID)
-  }
-
   func resetPrototype() {
+    baselineStore.beginDeletion()
+    clearBaselineState()
+    checkHistory = []
+    historyDataError = nil
     hasCompletedOnboarding = false
-    baselineSessions = 0
     isFounderPreview = false
     researchConsent = false
     researchPreferences = ResearchPreferences()
     safetyPlan = SafetyPlan()
     userProfile = UserProfile()
-    defaults.removeObject(forKey: Keys.userProfile)
+    privacyLockEnabled = false
+    privacyLockIsLocked = false
+    privacyLockIsAuthenticating = false
+    privacyShieldIsVisible = false
+    privacyLockError = nil
+    privacyInactiveSince = nil
+    privacyStore.reset()
     defaults.removeObject(forKey: Keys.onboarding)
-    defaults.removeObject(forKey: Keys.baselines)
     defaults.removeObject(forKey: Keys.founderPreview)
-    defaults.removeObject(forKey: Keys.safetyPlan)
-    defaults.removeObject(forKey: Keys.consentVersion)
-    defaults.removeObject(forKey: Keys.consentDate)
-    defaults.removeObject(forKey: Keys.researchConsent)
-    defaults.removeObject(forKey: Keys.researchPreferences)
     clearPendingGuardianCheckInCompletion()
     try? guardianStore.delete()
     try? guardianHomeStore.delete()
@@ -988,23 +1163,21 @@ final class AppModel: ObservableObject {
     Task { await deleteAllResearchData() }
   }
 
+  private func clearBaselineState() {
+    researchSessions = []
+    baselineProfile = nil
+    baselineVariantBreakdown = [:]
+    baselineSessions = 0
+  }
+
   private func persist() {
     defaults.set(hasCompletedOnboarding, forKey: Keys.onboarding)
-    defaults.set(baselineSessions, forKey: Keys.baselines)
     defaults.set(isFounderPreview, forKey: Keys.founderPreview)
   }
 
   private enum Keys {
     static let onboarding = "sober.onboarding.complete"
-    static let baselines = "sober.baseline.sessions"
     static let founderPreview = "sober.founder.preview"
-    static let safetyPlan = "sober.safety.plan"
-    static let consentVersion = "sober.consent.version"
-    static let consentDate = "sober.consent.date"
-    static let participantID = "sober.research.participant-id"
-    static let researchConsent = "sober.research.consent"
-    static let researchPreferences = "sober.research.preferences"
-    static let userProfile = "sober.user.profile"
     static let pendingGuardianCheckInCompletionID = "sober.guardian.check-in.pending-id"
     static let pendingGuardianCheckInCompletionDate = "sober.guardian.check-in.pending-date"
     static let guardianLocationSharingEnabled = "sober.guardian.location-sharing.enabled"

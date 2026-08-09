@@ -12,6 +12,35 @@ import Foundation
 /// arguments say, so a launch argument cannot be used to reset a real install.
 enum UITestConfiguration {
 
+  /// Creates the isolated app model used by the co-founder UI suites. Returning
+  /// `nil` for a normal Debug launch keeps the production persistence path
+  /// untouched. The baseline adapter is the same Phase 2 store used by the app,
+  /// pointed at a throwaway archive rather than bypassed with a synthetic count.
+  @MainActor
+  static func makeModel() -> AppModel? {
+    guard isActive, let directory = makeDataDirectory() else { return nil }
+
+    let defaults = makeDefaults()
+    seedHistory(in: directory)
+    seedBaseline(in: directory, participantID: participantID)
+
+    let soberDirectory = directory.appendingPathComponent("Sober", isDirectory: true)
+    let researchArchive = ResearchSessionStore(
+      directoryURL: soberDirectory.appendingPathComponent("Research", isDirectory: true)
+    )
+    let baselineStore = LocalBaselineStore(defaults: defaults, archive: researchArchive)
+
+    return AppModel(
+      defaults: defaults,
+      baselineStore: baselineStore,
+      checkHistoryStore: CheckHistoryStore(
+        directoryURL: soberDirectory.appendingPathComponent("History", isDirectory: true)
+      ),
+      automaticallyStartsGuardianServices: false,
+      allowsInternalTools: false
+    )
+  }
+
   static var isActive: Bool {
     #if DEBUG
     return ProcessInfo.processInfo.arguments.contains("-sober-ui-testing")

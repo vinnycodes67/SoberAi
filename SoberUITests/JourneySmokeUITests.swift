@@ -4,6 +4,7 @@ import XCTest
 ///
 /// Every case runs off a named fixture and an isolated store, so these assert
 /// behaviour rather than whatever the simulator happened to be left in.
+@MainActor
 final class JourneySmokeUITests: XCTestCase {
 
   override func setUp() {

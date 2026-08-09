@@ -3,11 +3,29 @@ import XCTest
 @testable import Sober
 
 final class CheckHistoryStoreTests: XCTestCase {
-  private func makeStore() -> CheckHistoryStore {
+  private struct Archive: Encodable {
+    let schemaVersion: Int
+    let entries: [CheckHistoryEntry]
+  }
+
+  private func makeDirectory() -> URL {
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
-    return CheckHistoryStore(directoryURL: directory)
+    return directory
+  }
+
+  private func makeStore() -> CheckHistoryStore {
+    CheckHistoryStore(directoryURL: makeDirectory())
+  }
+
+  private func write(_ archive: Archive, to directory: URL) throws {
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let encoder = JSONEncoder()
+    encoder.dateEncodingStrategy = .iso8601
+    try encoder.encode(archive).write(
+      to: directory.appendingPathComponent(CheckHistoryStore.currentFileName)
+    )
   }
 
   private func entry(
@@ -67,6 +85,10 @@ final class CheckHistoryStoreTests: XCTestCase {
 
     let listed = try await store.list(now: muchLater)
     XCTAssertTrue(listed.isEmpty)
+
+    // The retention promise applies to the bytes, not only the current view.
+    let listedAtTheOriginalTime = try await store.list(now: writeTime)
+    XCTAssertTrue(listedAtTheOriginalTime.isEmpty)
   }
 
   func testEntryCountIsCapped() async throws {
@@ -103,6 +125,122 @@ final class CheckHistoryStoreTests: XCTestCase {
     XCTAssertEqual(listed.first?.kind, .baseline)
     XCTAssertNil(listed.first?.outcome, "a baseline session has no result to report")
   }
+
+  func testMalformedArchiveIsQuarantinedByteForByte() async throws {
+    let directory = makeDirectory()
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let malformed = Data("{not-valid-json".utf8)
+    let sourceURL = directory.appendingPathComponent(CheckHistoryStore.currentFileName)
+    try malformed.write(to: sourceURL)
+    let store = CheckHistoryStore(directoryURL: directory, quarantineID: { "malformed" })
+
+    do {
+      _ = try await store.list()
+      XCTFail("Expected malformed History to be quarantined")
+    } catch let error as CheckHistoryStoreError {
+      XCTAssertEqual(
+        error,
+        .archiveQuarantined(fileName: "check-history-v1-malformed.json")
+      )
+    }
+
+    XCTAssertFalse(FileManager.default.fileExists(atPath: sourceURL.path))
+    let quarantined = await store.quarantinedArchiveURLs()
+    XCTAssertEqual(quarantined.count, 1)
+    XCTAssertEqual(try Data(contentsOf: XCTUnwrap(quarantined.first)), malformed)
+    let recordsAfterQuarantine = try await store.list()
+    XCTAssertEqual(recordsAfterQuarantine, [])
+  }
+
+  func testUnsupportedStoreVersionIsQuarantined() async throws {
+    let directory = makeDirectory()
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try Data("{\"schemaVersion\":99,\"entries\":[]}".utf8).write(
+      to: directory.appendingPathComponent(CheckHistoryStore.currentFileName)
+    )
+    let store = CheckHistoryStore(directoryURL: directory, quarantineID: { "future" })
+
+    do {
+      _ = try await store.list()
+      XCTFail("Expected future-version History to be quarantined")
+    } catch let error as CheckHistoryStoreError {
+      XCTAssertEqual(
+        error,
+        .archiveQuarantined(fileName: "check-history-v1-future.json")
+      )
+    }
+    let quarantined = await store.quarantinedArchiveURLs()
+    XCTAssertEqual(quarantined.count, 1)
+  }
+
+  func testUnsupportedEntryVersionIsQuarantined() async throws {
+    let directory = makeDirectory()
+    let now = Date(timeIntervalSince1970: 1_770_000_000)
+    let unsupported = CheckHistoryEntry(
+      id: UUID(),
+      startedAt: now,
+      kind: .check,
+      outcome: .inconclusive,
+      qualityScore: 0.5,
+      completedAllTasks: true,
+      schemaVersion: 99
+    )
+    try write(Archive(schemaVersion: 1, entries: [unsupported]), to: directory)
+    let store = CheckHistoryStore(directoryURL: directory, quarantineID: { "record" })
+
+    do {
+      _ = try await store.list(now: now)
+      XCTFail("Expected unsupported History entry to be quarantined")
+    } catch let error as CheckHistoryStoreError {
+      XCTAssertEqual(
+        error,
+        .archiveQuarantined(fileName: "check-history-v1-record.json")
+      )
+    }
+  }
+
+  func testDuplicateIdentifiersQuarantineTheWholeArchive() async throws {
+    let directory = makeDirectory()
+    let now = Date(timeIntervalSince1970: 1_770_000_000)
+    let duplicated = entry(1, now: now)
+    try write(Archive(schemaVersion: 1, entries: [duplicated, duplicated]), to: directory)
+    let store = CheckHistoryStore(directoryURL: directory, quarantineID: { "duplicate" })
+
+    do {
+      _ = try await store.list(now: now)
+      XCTFail("Expected duplicate History identifiers to be quarantined")
+    } catch let error as CheckHistoryStoreError {
+      XCTAssertEqual(
+        error,
+        .archiveQuarantined(fileName: "check-history-v1-duplicate.json")
+      )
+    }
+  }
+
+  func testDeleteAllRemovesCorruptAndQuarantinedCopiesWithoutDecoding() async throws {
+    let directory = makeDirectory()
+    let quarantineDirectory = directory.appendingPathComponent(
+      CheckHistoryStore.quarantineDirectoryName,
+      isDirectory: true
+    )
+    try FileManager.default.createDirectory(
+      at: quarantineDirectory,
+      withIntermediateDirectories: true
+    )
+    try Data("corrupt-active".utf8).write(
+      to: directory.appendingPathComponent(CheckHistoryStore.currentFileName)
+    )
+    try Data("preserved-copy".utf8).write(
+      to: quarantineDirectory.appendingPathComponent("archive.json")
+    )
+    let store = CheckHistoryStore(directoryURL: directory)
+
+    _ = try await store.deleteAll()
+
+    XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    let recordsAfterDeletion = try await store.list()
+    XCTAssertEqual(recordsAfterDeletion, [])
+  }
 }
 
 @MainActor
@@ -121,7 +259,10 @@ final class CheckHistoryRecordingTests: XCTestCase {
     }
     return AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: research),
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: research)
+      ),
       checkHistoryStore: CheckHistoryStore(directoryURL: history),
       automaticallyStartsGuardianServices: false,
       allowsInternalTools: false

@@ -33,7 +33,31 @@ struct RootTabView: View {
     // sitting under the home indicator and let scroll content run beneath it;
     // as an inset, SwiftUI both keeps the bar clear of the safe area and insets
     // the scrolling content behind it automatically.
-    Group {
+    destination
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(DSPalette.background.ignoresSafeArea())
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      DSTabBar(selection: tabSelection)
+        .padding(.top, DSSpace.xs)
+    }
+    .preferredColorScheme(.dark)
+    .onChange(of: model.privacyLockIsLocked) { _, isLocked in
+      if isLocked { requestUnlockForSelectedTab() }
+    }
+  }
+
+  @ViewBuilder
+  private var destination: some View {
+    if tab.requiresPrivacyLock && model.privacyShieldIsVisible {
+      PrivacySnapshotShield()
+    } else if tab.requiresPrivacyLock && model.privacyLockIsLocked {
+      PrivacyLockGateView(
+        isAuthenticating: model.privacyLockIsAuthenticating,
+        error: model.privacyLockError,
+        onUnlock: { Task { await model.unlockProtectedContent() } },
+        onHome: { tab = .home }
+      )
+    } else {
       switch tab {
       case .home:
         HomeView()
@@ -45,13 +69,21 @@ struct RootTabView: View {
         circleDestination
       }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(DSPalette.background.ignoresSafeArea())
-    .safeAreaInset(edge: .bottom, spacing: 0) {
-      DSTabBar(selection: $tab)
-        .padding(.top, DSSpace.xs)
-    }
-    .preferredColorScheme(.dark)
+  }
+
+  private var tabSelection: Binding<DSTab> {
+    Binding(
+      get: { tab },
+      set: { destination in
+        tab = destination
+        requestUnlockForSelectedTab()
+      }
+    )
+  }
+
+  private func requestUnlockForSelectedTab() {
+    guard tab.requiresPrivacyLock, model.privacyLockIsLocked else { return }
+    Task { await model.unlockProtectedContent() }
   }
 
   @ViewBuilder
@@ -64,6 +96,91 @@ struct RootTabView: View {
     // so the switch stays exhaustive without weakening the enum.
     HomeView()
     #endif
+  }
+}
+
+/// 0.5-second shape: one quiet lock, one sentence, one unlock action.
+/// User: someone returning to private history or settings.
+/// Emotional intent: calm control, with a clear path back to Home.
+private struct PrivacyLockGateView: View {
+  let isAuthenticating: Bool
+  let error: String?
+  let onUnlock: () -> Void
+  let onHome: () -> Void
+
+  var body: some View {
+    VStack(spacing: DSSpace.xl) {
+      Spacer(minLength: DSSpace.xl)
+
+      VStack(spacing: DSSpace.md) {
+        Image(systemName: "lock.fill")
+          .font(.system(size: 30, weight: .medium))
+          .foregroundStyle(DSPalette.textSecondary)
+          .accessibilityHidden(true)
+
+        Text("Private screen locked")
+          .font(DSFont.title)
+          .dsTitleTracking()
+          .foregroundStyle(DSPalette.textPrimary)
+          .accessibilityAddTraits(.isHeader)
+
+        Text("Use Face ID, Touch ID, or your device passcode. Home and safety actions stay available without unlocking.")
+          .font(DSFont.body)
+          .foregroundStyle(DSPalette.textSecondary)
+          .multilineTextAlignment(.center)
+          .dsReadingLine()
+          .fixedSize(horizontal: false, vertical: true)
+      }
+
+      if let error {
+        Text(error)
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+
+      VStack(spacing: DSSpace.sm) {
+        Button(action: onUnlock) {
+          if isAuthenticating {
+            ProgressView()
+              .tint(DSPalette.onAccent)
+              .accessibilityLabel("Waiting for iOS verification")
+          } else {
+            Text("Unlock private screens")
+          }
+        }
+        .buttonStyle(DSPrimaryButtonStyle())
+        .disabled(isAuthenticating)
+
+        Button("Go to Home", action: onHome)
+          .buttonStyle(DSTertiaryButtonStyle(tint: DSPalette.textSecondary))
+      }
+
+      Spacer(minLength: DSSpace.xl)
+    }
+    .frame(maxWidth: 520)
+    .padding(.horizontal, DSSpace.margin)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(DSPalette.background.ignoresSafeArea())
+  }
+}
+
+/// Opaque app-switcher snapshot cover for private destinations. It appears as
+/// soon as the scene becomes inactive, before the authentication timeout.
+private struct PrivacySnapshotShield: View {
+  var body: some View {
+    VStack(spacing: DSSpace.sm) {
+      Image(systemName: "lock.fill")
+        .font(.system(size: 22, weight: .medium))
+      Text("Sober")
+        .font(DSFont.headline)
+    }
+    .foregroundStyle(DSPalette.textSecondary)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(DSPalette.background.ignoresSafeArea())
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Private Sober screen hidden")
   }
 }
 

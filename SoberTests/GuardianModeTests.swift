@@ -322,7 +322,10 @@ final class GuardianModeTests: XCTestCase {
     }
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory),
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: directory)
+      ),
       guardianStore: store,
       guardianAPI: client,
       automaticallyStartsGuardianServices: false
@@ -371,7 +374,10 @@ final class GuardianModeTests: XCTestCase {
     }
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: directory),
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: directory)
+      ),
       guardianStore: store,
       guardianAPI: client,
       automaticallyStartsGuardianServices: false

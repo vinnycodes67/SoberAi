@@ -34,7 +34,8 @@ struct DSIntegratedResultScreen: View {
 
         getHome.dsAppear(outcome.state == .signalsDetected ? 3 : 1)
         measurements.dsAppear(outcome.state == .signalsDetected ? 4 : 2)
-        acknowledgement.dsAppear(outcome.state == .signalsDetected ? 5 : 3)
+        privateContext.dsAppear(outcome.state == .signalsDetected ? 5 : 3)
+        acknowledgement.dsAppear(outcome.state == .signalsDetected ? 6 : 4)
 
         Button("Return home", action: onDone)
           .buttonStyle(DSSecondaryButtonStyle())
@@ -44,7 +45,7 @@ struct DSIntegratedResultScreen: View {
           .accessibilityHint(
             canLeave ? "Closes this result" : "Read and acknowledge the safety message first"
           )
-          .dsAppear(outcome.state == .signalsDetected ? 6 : 4)
+          .dsAppear(outcome.state == .signalsDetected ? 7 : 5)
       }
       .padding(.horizontal, DSSpace.margin)
       .padding(.top, DSSpace.xl)
@@ -321,6 +322,28 @@ struct DSIntegratedResultScreen: View {
         .foregroundStyle(DSPalette.textMuted)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.top, DSSpace.sm)
+    }
+  }
+
+  private var privateContext: some View {
+    DSSection("Private to you") {
+      DSCard {
+        VStack(alignment: .leading, spacing: DSSpace.xs) {
+          Text(
+            "This result is private context for you. It is not evidence for a parent, partner, employer, school, insurer, or authority."
+          )
+          .font(DSFont.body)
+          .foregroundStyle(DSPalette.textPrimary)
+          .dsReadingLine()
+
+          Text(
+            "You do not owe anyone this screen. No Sober result can prove sobriety, impairment, honesty, or fitness to drive."
+          )
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .dsReadingLine()
+        }
+      }
     }
   }
 
