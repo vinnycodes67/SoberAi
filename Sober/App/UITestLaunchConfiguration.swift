@@ -15,6 +15,7 @@ struct UITestLaunchConfiguration {
     case history
     case settings
     case privacy
+    case howResults = "how-results-work"
     case resultSignals = "result-signals"
     case resultInconclusive = "result-inconclusive"
     case resultClear = "result-clear"
@@ -24,6 +25,7 @@ struct UITestLaunchConfiguration {
 
   enum DirectDestination: Equatable {
     case privacy
+    case howResults
     case result(FounderScenario)
     case interrupted
     case captureRecovery
@@ -57,6 +59,8 @@ struct UITestLaunchConfiguration {
     switch fixture {
     case .privacy:
       return .privacy
+    case .howResults:
+      return .howResults
     case .resultSignals:
       return .result(.signals)
     case .resultInconclusive:
@@ -200,6 +204,8 @@ struct UITestFixtureView: View {
     switch destination {
     case .privacy:
       PrivacyCenterView()
+    case .howResults:
+      HowResultsWorkView()
     case .result(let scenario):
       ScreeningFlowView(
         configuration: ScreeningLaunch(mode: .check, scenario: scenario)

@@ -116,6 +116,7 @@
 		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
 		C74E3D8F49399F2A0F1B8295 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
 		C94BC7151A83E0FAF8F66165 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C562984AD4EE5F0087499CBB /* HistoryView.swift */; };
+		C95BB01E59852C259B9EB775 /* HowResultsWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */; };
 		CF746581A660CBD426F30F23 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
 		D119B5036B3E95BCFA80816C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */; };
 		D3536C9068EDD8488845AAD3 /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC092ACD54BAE55BF8380675 /* PermissionStore.swift */; };
@@ -129,6 +130,7 @@
 		D93C118F4B3390CAE1922E84 /* ScreeningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */; };
 		DB81A446A6CE180BAA7A76E6 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
 		DBE3C36740FEC98793240D0A /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
+		DCB1000C5637C85C341E85E4 /* HowResultsWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */; };
 		DCF1B99206B155131E297B06 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		DE6D3D78C1F4D890B4D73058 /* UITestLaunchConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9578CA43E138C16E0045DB01 /* UITestLaunchConfiguration.swift */; };
 		E23A809C154FFA56F40F2171 /* InterruptedTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FB5E98C4511B45784899E9 /* InterruptedTaskView.swift */; };
@@ -203,6 +205,7 @@
 		4FC54FC880C1A3D97062FCDE /* YourSteadyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourSteadyView.swift; sourceTree = "<group>"; };
 		4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedResultScreen.swift; sourceTree = "<group>"; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
+		56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowResultsWorkView.swift; sourceTree = "<group>"; };
 		6127949ED5CD1BF168B4251C /* DSTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTabBar.swift; sourceTree = "<group>"; };
 		64D21C92E2C87F13E3587EA3 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
@@ -481,6 +484,7 @@
 			isa = PBXGroup;
 			children = (
 				1CC25F72A27335610F808FA8 /* HomeView.swift */,
+				56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -710,6 +714,7 @@
 				A4657F61EB270A966DB12398 /* GuardianSessionStore.swift in Sources */,
 				C94BC7151A83E0FAF8F66165 /* HistoryView.swift in Sources */,
 				519D1D4EC0B75FFC96D7979B /* HomeView.swift in Sources */,
+				DCB1000C5637C85C341E85E4 /* HowResultsWorkView.swift in Sources */,
 				618AEF43622793DB3C2938F0 /* InterruptedTaskView.swift in Sources */,
 				8C83DCF07328987A65E39935 /* OcularModels.swift in Sources */,
 				DBE3C36740FEC98793240D0A /* OcularSignalAnalyzer.swift in Sources */,
@@ -804,6 +809,7 @@
 				40574DCC9B2EFDA9FB9D5434 /* GuardianSessionStore.swift in Sources */,
 				6AA8A94B439AB5273C1D0097 /* HistoryView.swift in Sources */,
 				906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */,
+				C95BB01E59852C259B9EB775 /* HowResultsWorkView.swift in Sources */,
 				E23A809C154FFA56F40F2171 /* InterruptedTaskView.swift in Sources */,
 				554AD224071C5C26118571A6 /* OcularModels.swift in Sources */,
 				D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */,

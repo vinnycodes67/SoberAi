@@ -8,7 +8,7 @@ deployment target.
 > device, impairment detector, BAC estimator, or safe-to-drive test. Do not use
 > it to decide whether to drive or operate machinery.
 
-## What is included
+## Public v1
 
 - Separate biometric processing and retention consent
 - Five-session starter baseline built from complete, high-quality sober sessions
@@ -21,8 +21,21 @@ deployment target.
 - A transparent weighted prototype scorer that refuses to guess on unusable capture
 - Exactly three result states: signals detected, inconclusive, no signals detected
 - No green/pass/cleared/safe state
+- A read-only **How results work** path that shows all three states without
+  using the camera, scoring a session, or modifying History or the baseline
 - Ride, call, and message actions on every result
-- Safety Circle ride destination with a separate, two-device Guardian Mode
+- Safety Circle ride destination stored only on this iPhone
+- Privacy Lock, local deletion/reset, archive recovery, and a plain-language
+  inventory of what is and is not stored
+- Availability-gated iOS 26 Liquid Glass controls, calm motion, Dynamic Type,
+  Reduce Motion, and Reduce Transparency support with an iOS 17 material fallback
+- Unit, UI, archive, and public-binary checks for the safety boundaries
+
+## Internal v1.1 prototype
+
+The `SoberInternal` target retains unfinished founder-only work that is not a
+public v1 capability:
+
 - Single-use guardian invites and relationship-scoped P-256 signed requests
 - Immediate in-app help requests for live `SIGNALS_DETECTED` results
 - Guardian-proposed daily check-in times with explicit screened-person acceptance or decline
@@ -35,8 +48,10 @@ deployment target.
 - A founder-only Research Center with explicit consent, contextual confounders, local session count, JSON export, and delete-all controls
 - Versioned, pseudonymous research envelopes stored locally with file protection where available
 - Founder previews for all result states using visibly labeled sample data
-- Availability-gated iOS 26 Liquid Glass controls, calm motion, Dynamic Type, Reduce Motion, and Reduce Transparency support with an iOS 17 material fallback
-- Unit tests for safety invariants, ocular quality, research storage/baselines, and alert reliability
+
+Guardian, Circle location sharing, and Research Center are compile-time gated
+from public navigation. They remain blocked from public release until their
+identity, delivery, security, privacy, and physical-device gates are complete.
 
 ## Run it
 
@@ -125,6 +140,7 @@ xcodebuild \
 Scripts/run-ui-tests.sh
 Scripts/check-release-metadata.sh
 Scripts/check-public-binary.sh
+Scripts/rehearse-app-store-package.sh
 npm test --prefix Backend
 git diff --check
 ```
@@ -134,7 +150,11 @@ timestamped `.xcresult` bundles under `.artifacts/ui-tests/`. See
 [Phase 3 Integration](Docs/PHASE_3_INTEGRATION.md) for the CI and evidence
 boundary, [Local Data Recovery](Docs/LOCAL_DATA_RECOVERY_RUNBOOK.md) for archive
 failures, and [Release Rollback](Docs/RELEASE_ROLLBACK_RUNBOOK.md) for stop-ship
-and rollback rehearsal.
+and rollback rehearsal. Phase 5 owners should use
+[App Store Submission](Docs/APP_STORE_SUBMISSION.md),
+[App Review Rehearsal](Docs/APP_REVIEW_REHEARSAL.md), and the
+[Phase 5 Release Checklist](Docs/PHASE_5_RELEASE_CHECKLIST.md) together; an
+unsigned local archive is not proof of Apple validation or TestFlight upload.
 
 ## Important prototype limits
 

@@ -49,6 +49,30 @@ final class JourneySmokeUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Start Sober check"].waitForExistence(timeout: 10))
   }
 
+  func testHowResultsWorkDoesNotCreateHistoryOrABaseline() {
+    let app = launchApp(["-sober-onboarding-complete"])
+
+    let education = app.buttons.matching(
+      NSPredicate(format: "label BEGINSWITH %@", "How results work")
+    ).firstMatch
+    for _ in 0..<5 where !education.exists || !education.isHittable {
+      app.swipeUp()
+    }
+    XCTAssertTrue(education.waitForExistence(timeout: 10))
+    education.tap()
+
+    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["No clear read"].exists)
+    XCTAssertTrue(app.staticTexts["No signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["Examples only. No data is recorded."].exists)
+
+    app.buttons["Done"].tap()
+    XCTAssertTrue(app.buttons["Record a baseline session"].waitForExistence(timeout: 10))
+    app.buttons["History"].tap()
+    XCTAssertTrue(app.staticTexts["Nothing recorded yet"].waitForExistence(timeout: 10))
+  }
+
   // MARK: - History
 
   func testHistoryEmptyStateExplainsItself() {

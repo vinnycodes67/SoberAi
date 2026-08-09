@@ -2,15 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- No tracking. No advertising identifier, no analytics SDK, and no
+	     third-party package of any kind. -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
+
+	<!-- Nothing is collected. "Collect" means transmitted off the device.
+	     Public data stays in this app's container and is removed by Settings >
+	     Delete all local data, or by deleting the app. -->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
+
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
+			<!-- App preferences and locally persisted feature state. -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
@@ -19,6 +27,7 @@
 			</array>
 		</dict>
 		<dict>
+			<!-- Monotonic time supports task timing and lifecycle-safe intervals. -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>

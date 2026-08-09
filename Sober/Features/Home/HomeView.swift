@@ -7,6 +7,7 @@ struct HomeView: View {
   @State private var launch: ScreeningLaunch?
   @State private var showingPlan = false
   @State private var showingAbout = false
+  @State private var showingHowResultsWork = false
   #if INTERNAL_BUILD
   @State private var showingGuardian = false
   @State private var showingCircleMap = false
@@ -55,6 +56,7 @@ struct HomeView: View {
         #endif
       },
       onOpenPlan: { showingPlan = true },
+      onOpenHowResultsWork: { showingHowResultsWork = true },
       onOpenAbout: { showingAbout = true },
       onOpenResearch: {
         #if INTERNAL_BUILD
@@ -75,6 +77,9 @@ struct HomeView: View {
     .sheet(isPresented: $showingPlan) {
       SafetyPlanView(plan: $model.safetyPlan)
         .preferredColorScheme(.dark)
+    }
+    .sheet(isPresented: $showingHowResultsWork) {
+      HowResultsWorkView()
     }
     .sheet(isPresented: $showingAbout) {
       AboutPrototypeView()

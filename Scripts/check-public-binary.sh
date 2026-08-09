@@ -121,6 +121,40 @@ else
   fail "public result is missing the required private-context boundary"
 fi
 
+echo
+echo "==> Public App Review education path"
+REVIEW_PATH_COPY=(
+  "No result is a green light."
+  "Examples only. No data is recorded."
+  "Opening this page does not use the camera, run the scorer, add to History, or count toward your baseline."
+)
+for needle in "${REVIEW_PATH_COPY[@]}"; do
+  count=$(strings -a "$BINARY" | grep -c -F -- "$needle")
+  if [ "$count" -gt 0 ]; then
+    pass "review education is present: \"$needle\""
+  else
+    fail "public Release binary is missing review education: \"$needle\""
+  fi
+done
+
+# The examples must remain an inert explanation. This source gate complements
+# the journey test that proves opening and closing the sheet leaves both the
+# baseline and History empty.
+REVIEW_PATH_SOURCE="Sober/Features/Home/HowResultsWorkView.swift"
+REVIEW_PATH_FORBIDDEN=(
+  "@EnvironmentObject"
+  "ScreeningFlowView("
+  "AppModel("
+  "ScreeningEngine("
+)
+for needle in "${REVIEW_PATH_FORBIDDEN[@]}"; do
+  if grep -q -F -- "$needle" "$REVIEW_PATH_SOURCE"; then
+    fail "review education gained an active screening dependency: $needle"
+  else
+    pass "review education omits active dependency: $needle"
+  fi
+done
+
 # Internal-only Info.plist keys. Shipping an unused permission string or
 # background mode is an App Review rejection trigger and widens the App Privacy
 # answers to cover a capability the public app does not have.
@@ -176,6 +210,38 @@ if [ -f "$PRIVACY_MANIFEST" ] && plutil -lint "$PRIVACY_MANIFEST" >/dev/null 2>&
 else
   fail "public app is missing a valid PrivacyInfo.xcprivacy"
 fi
+
+# Submission reconciliation.
+#
+# Every App Store answer has to be true of the artifact, not of the plan. These
+# check the answers that can be derived from the bundle and binary.
+echo
+echo "==> App Store answers vs the artifact"
+tracking=$(/usr/libexec/PlistBuddy -c "Print :NSPrivacyTracking" "$PRIVACY_MANIFEST" 2>/dev/null || true)
+if [ "$tracking" = "false" ]; then
+  pass "manifest declares no tracking"
+else
+  fail "manifest does not declare tracking false"
+fi
+
+if /usr/libexec/PlistBuddy -c "Print :NSPrivacyCollectedDataTypes:0" "$PRIVACY_MANIFEST" >/dev/null 2>&1; then
+  fail "manifest declares collected data; App Privacy answers must be updated"
+else
+  pass "manifest declares no collected data"
+fi
+
+if [ -d "$APP/Frameworks" ] && [ -n "$(ls -A "$APP/Frameworks" 2>/dev/null)" ]; then
+  fail "app embeds frameworks: $(ls "$APP/Frameworks" | tr '\n' ' ')"
+else
+  pass "no embedded third-party frameworks"
+fi
+
+category=$(/usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Info.plist" 2>/dev/null || true)
+version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist" 2>/dev/null || true)
+build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Info.plist" 2>/dev/null || true)
+echo "  note  category is ${category:-unset}"
+echo "  note  version ${version:-unset} (${build:-unset})"
+echo "  note  export compliance must be answered for the archived binary"
 
 # The public v1 intentionally ships with no crash or analytics provider. Check
 # the linked image and embedded frameworks rather than relying on package files

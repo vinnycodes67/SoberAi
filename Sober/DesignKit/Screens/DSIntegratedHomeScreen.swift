@@ -15,6 +15,7 @@ struct DSIntegratedHomeScreen: View {
   var onOpenMap: () -> Void
   var onOpenGuardian: () -> Void
   var onOpenPlan: () -> Void
+  var onOpenHowResultsWork: () -> Void
   var onOpenAbout: () -> Void
   var onOpenResearch: () -> Void
   var onOpenFounderScenario: (FounderScenario) -> Void
@@ -41,14 +42,15 @@ struct DSIntegratedHomeScreen: View {
         #endif
         safetyPlanRow.dsAppear(3)
         baselineStrip.dsAppear(4)
+        resultEducation.dsAppear(5)
 
         #if INTERNAL_BUILD
         if model.isFounderPreview {
-          founderTools.dsAppear(5)
+          founderTools.dsAppear(6)
         }
         #endif
 
-        evidenceNote.dsAppear(6)
+        evidenceNote.dsAppear(7)
       }
       .padding(.horizontal, DSSpace.margin)
       .padding(.top, DSSpace.sm)
@@ -300,6 +302,18 @@ struct DSIntegratedHomeScreen: View {
         )
       }
       .buttonStyle(DSPressStyle())
+    }
+  }
+
+  private var resultEducation: some View {
+    DSSection("Before a live check") {
+      DSRows {
+        DSRow(
+          "How results work",
+          detail: "See all three possible states without using the camera or recording a session.",
+          action: onOpenHowResultsWork
+        )
+      }
     }
   }
 

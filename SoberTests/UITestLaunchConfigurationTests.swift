@@ -41,6 +41,7 @@ final class UITestLaunchConfigurationTests: XCTestCase {
     XCTAssertNil(configuration(for: "home").directDestination)
     XCTAssertNil(configuration(for: "history").directDestination)
     XCTAssertEqual(configuration(for: "privacy").directDestination, .privacy)
+    XCTAssertEqual(configuration(for: "how-results-work").directDestination, .howResults)
     XCTAssertEqual(configuration(for: "interrupted").directDestination, .interrupted)
     XCTAssertEqual(configuration(for: "capture-recovery").directDestination, .captureRecovery)
   }

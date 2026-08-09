@@ -59,6 +59,18 @@ final class SoberUITests: XCTestCase {
     capture(app, named: "privacy-center")
   }
 
+  func testHowResultsWorkShowsAllStatesAsEducation() {
+    let app = launch(fixture: "how-results-work")
+
+    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["No clear read"].exists)
+    XCTAssertTrue(app.staticTexts["No signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["Examples only. No data is recorded."].exists)
+    XCTAssertFalse(app.buttons["Open Uber"].exists)
+    capture(app, named: "how-results-work")
+  }
+
   func testSignalsResultKeepsNoDriveActionAndSampleDisclosureVisible() {
     let app = launch(fixture: "result-signals")
 
