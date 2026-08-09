@@ -174,7 +174,17 @@ struct DSIntegratedResultScreen: View {
         }
       }
 
-      if guardianAlertState == .actNow || guardianAlertState == .notConfigured {
+      // Only `.actNow`. Retrying from `.notConfigured` calls
+      // `beginConcerningGuardianAlert`, whose guard deterministically re-sets
+      // `.notConfigured` when no Guardian relationship exists — a button that
+      // can never succeed, on the screen where someone is least able to absorb
+      // a dead end. That state's own message already points at calling or
+      // messaging directly.
+      //
+      // Fixed once on the legacy `ResultView` in d3eaeea (origin/main); this
+      // DesignKit replacement was written from the pre-fix version and
+      // reintroduced it.
+      if guardianAlertState == .actNow {
         Button("Try Guardian request again", action: onRetryGuardianAlert)
           .buttonStyle(DSSecondaryButtonStyle())
       }
