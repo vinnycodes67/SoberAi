@@ -50,6 +50,17 @@ struct OnboardingView: View {
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(page == 2 && profileValidation.isBlocked)
           .opacity(page == 2 && profileValidation.isBlocked ? 0.42 : 1)
+
+          // The page-style TabView already supports a swipe-back gesture,
+          // but nothing on screen says so — this is the only visible way
+          // to go back and review or fix an earlier step (most usefully,
+          // your name/age on the profile step) without relying on someone
+          // discovering the swipe.
+          if page > 0 {
+            Button("Back") { page -= 1 }
+              .font(DSFont.subheadlineStrong)
+              .foregroundStyle(Palette.textSecondary)
+          }
         } else {
           // The real baseline is the primary action. The founder demo fabricates
           // a ready baseline, so it is compiled out of public builds entirely

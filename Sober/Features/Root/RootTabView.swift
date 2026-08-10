@@ -89,7 +89,7 @@ struct RootTabView: View {
   @ViewBuilder
   private var circleDestination: some View {
     #if INTERNAL_BUILD
-    CircleMapView()
+    CircleMapView(isTabEmbedded: true)
       .environmentObject(model)
     #else
     // Unreachable: `DSTab.available` omits `.circle` in a public build. Present
