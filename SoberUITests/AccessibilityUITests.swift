@@ -9,6 +9,7 @@ import XCTest
 ///
 /// These assert the load-bearing controls survive, not that the layout is
 /// pretty. Pixel-level checks belong in snapshot tests.
+@MainActor
 final class AccessibilityUITests: XCTestCase {
 
   /// The largest accessibility size. If a screen holds together here it holds

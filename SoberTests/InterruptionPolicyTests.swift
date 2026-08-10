@@ -35,12 +35,17 @@ final class InterruptionPolicyTests: XCTestCase {
   }
 
   /// Every case is classified one way or the other. A step added later without
-  /// a decision would silently default to "safe to background".
+  /// being added to `timedTasks` must still agree with the exhaustive switch.
   func testEveryStepIsClassified() {
-    let classified = Set(ScreeningStep.allCases.map(\.rawValue))
-    XCTAssertEqual(
-      classified.count, ScreeningStep.allCases.count,
-      "each screening step must be considered exactly once")
+    let declaredTimedTasks = Set(ScreeningStep.timedTasks)
+    XCTAssertEqual(declaredTimedTasks.count, ScreeningStep.timedTasks.count)
+    for step in ScreeningStep.allCases {
+      XCTAssertEqual(
+        ScreeningStep.isTimedTask(step),
+        declaredTimedTasks.contains(step),
+        "\(step) disagrees between the timed-task declaration and policy switch"
+      )
+    }
   }
 
   func testEveryTimedTaskNamesItselfForTheRecoveryScreen() {
@@ -50,5 +55,9 @@ final class InterruptionPolicyTests: XCTestCase {
         name == "that task",
         "\(step) falls back to generic copy; the recovery screen should name it")
     }
+  }
+
+  func testCaptureLossUsesAThreeSecondGracePeriod() {
+    XCTAssertEqual(CaptureRecoveryPolicy.sustainedLossSeconds, 3)
   }
 }

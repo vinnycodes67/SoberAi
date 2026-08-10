@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Settings and the Privacy Center.
 ///
@@ -54,6 +55,15 @@ struct SettingsView: View {
         "This removes your Safety Plan, your recorded sessions, and your measured baseline. You would start a new baseline from zero. This cannot be undone."
       )
     }
+    .onChange(of: model.privacyShieldIsVisible) { _, isShielded in
+      // Sheets are separate presentation layers. Close every Settings sheet
+      // before iOS captures the app-switcher snapshot.
+      guard isShielded else { return }
+      showingPlan = false
+      showingAbout = false
+      showingPrivacy = false
+      showingReset = false
+    }
   }
 
   private var header: some View {
@@ -90,6 +100,14 @@ struct SettingsView: View {
   private var privacy: some View {
     DSSection("Privacy") {
       DSRows {
+        DSRow(
+          "Privacy Lock",
+          detail: model.privacyLockEnabled
+            ? "On · protects History, Your Steady, and Settings"
+            : "Off · optional device-owner protection",
+          action: { showingPrivacy = true }
+        )
+        DSSeparator()
         DSRow(
           "What Sober stores",
           detail: "Every kind of data, where it lives, and when it goes",
@@ -156,6 +174,8 @@ struct SettingsView: View {
 struct PrivacyCenterView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.openURL) private var openURL
+  @State private var isChangingPrivacyLock = false
 
   var body: some View {
     NavigationStack {
@@ -174,6 +194,8 @@ struct PrivacyCenterView: View {
             .foregroundStyle(DSPalette.textSecondary)
             .dsReadingLine()
           }
+
+          privacyLock
 
           DSSection("Never stored") {
             DSCard {
@@ -201,13 +223,19 @@ struct PrivacyCenterView: View {
 
           DSSection("Permissions") {
             DSRows {
-              DSValueRow(label: "Camera", value: "Required for a check")
+              DSValueRow(label: "Camera", value: cameraPermissionLabel)
               DSSeparator()
               DSValueRow(label: "Location", value: "Not used", tint: DSPalette.textMuted)
               DSSeparator()
               DSValueRow(label: "Notifications", value: "Not used", tint: DSPalette.textMuted)
               DSSeparator()
               DSValueRow(label: "Contacts", value: "Not used", tint: DSPalette.textMuted)
+            }
+
+            if cameraPermissionNeedsSettings {
+              Button("Open iPhone Settings", action: openSystemSettings)
+                .buttonStyle(DSTertiaryButtonStyle())
+                .padding(.top, DSSpace.xs)
             }
           }
 
@@ -233,6 +261,94 @@ struct PrivacyCenterView: View {
         }
       }
     }
+  }
+
+  private var privacyLock: some View {
+    DSSection("Privacy Lock") {
+      DSCard(highlighted: model.privacyLockEnabled) {
+        VStack(alignment: .leading, spacing: DSSpace.sm) {
+          Toggle(isOn: privacyLockBinding) {
+            VStack(alignment: .leading, spacing: DSSpace.xxs) {
+              Text("Lock private screens")
+                .font(DSFont.headline)
+                .foregroundStyle(DSPalette.textPrimary)
+              Text(model.privacyLockEnabled ? "On" : "Off")
+                .font(DSFont.footnoteStrong)
+                .foregroundStyle(DSPalette.textSecondary)
+            }
+          }
+          .tint(DSPalette.accent)
+          .disabled(
+            isChangingPrivacyLock
+              || (!model.privacyLockEnabled && !model.privacyLockIsAvailable)
+          )
+
+          Text(
+            "After Sober has been away for 30 seconds, iOS protects History, Your Steady, and Settings with Face ID, Touch ID, or your device passcode. Home, Ride, Call, and Message stay available."
+          )
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .dsReadingLine()
+
+          if isChangingPrivacyLock {
+            HStack(spacing: DSSpace.xs) {
+              ProgressView().tint(DSPalette.textSecondary)
+              Text("Waiting for iOS verification")
+                .font(DSFont.footnote)
+                .foregroundStyle(DSPalette.textMuted)
+            }
+            .accessibilityElement(children: .combine)
+          } else if !model.privacyLockIsAvailable && !model.privacyLockEnabled {
+            Text("Set up a device passcode, Face ID, or Touch ID in iPhone Settings to turn this on.")
+              .font(DSFont.footnote)
+              .foregroundStyle(DSPalette.textMuted)
+              .dsReadingLine()
+          }
+
+          if let error = model.privacyLockError {
+            Text(error)
+              .font(DSFont.footnote)
+              .foregroundStyle(DSPalette.textSecondary)
+              .dsReadingLine()
+          }
+        }
+      }
+    }
+  }
+
+  private var privacyLockBinding: Binding<Bool> {
+    Binding(
+      get: { model.privacyLockEnabled },
+      set: { isEnabled in
+        guard !isChangingPrivacyLock else { return }
+        isChangingPrivacyLock = true
+        Task {
+          _ = await model.setPrivacyLockEnabled(isEnabled)
+          isChangingPrivacyLock = false
+        }
+      }
+    )
+  }
+
+  private var cameraPermissionLabel: String {
+    switch model.cameraPermissionState {
+    case .notDetermined: "Asked when you start a check"
+    case .restricted: "Restricted by iPhone settings"
+    case .denied: "Off"
+    case .authorized: "On · used only during a check"
+    }
+  }
+
+  private var cameraPermissionNeedsSettings: Bool {
+    switch model.cameraPermissionState {
+    case .restricted, .denied: true
+    case .notDetermined, .authorized: false
+    }
+  }
+
+  private func openSystemSettings() {
+    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+    openURL(url)
   }
 
   private func item(_ title: String, _ detail: String) -> some View {

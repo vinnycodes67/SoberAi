@@ -21,7 +21,7 @@ Read off the Release build:
 | Network endpoints | None configured | boundary scan + `NoNetworkInPublicBuildTests` |
 | Third-party SDKs | None | boundary scan, no `Frameworks/` |
 | Privacy manifest | Present, no tracking, no collected data | `PrivacyInfo.xcprivacy` |
-| Required-reason APIs | `UserDefaults` (CA92.1) | privacy manifest |
+| Required-reason APIs | `UserDefaults` (CA92.1), system boot time (35F9.1) | privacy manifest |
 | Account system | None | there is no sign-in |
 | Deployment target | iOS 17 | `project.yml` |
 | Devices | iPhone only | `TARGETED_DEVICE_FAMILY = 1` |
@@ -51,13 +51,16 @@ or transmitted.
 
 ## Age rating
 
-**DECISION.** The questionnaire asks about alcohol, tobacco, and drug references.
-Sober's entire subject is impairment after drinking, so "Infrequent/Mild" is not
-defensible — answer honestly and accept the rating that follows.
+**DECISION.** Complete Apple's current age-rating questionnaire against the
+submitted build. Sober's entire subject is impairment after drinking, so the
+alcohol-reference answers must describe the real frequency and prominence of
+that content. Accept the computed regional ratings, then use Apple's higher
+rating override if founder and counsel decide the computed result understates
+the product's context. Do not hard-code an old single-number expectation:
+Apple's current ratings can vary by operating system version and region.
 
-Do not attempt to rate this 4+. An app about deciding whether you are too
-impaired to drive that carries a children's rating is a worse outcome than a
-17+ badge.
+An unrated app cannot be published. Record the completed questionnaire and the
+regional result in `PHASE_5_RELEASE_CHECKLIST.md`.
 
 ## Category
 
@@ -68,9 +71,12 @@ medical-device scrutiny, to an app that explicitly disclaims being a medical
 device, a BAC estimator, or a diagnostic. It also raises the bar on every claim
 in the description.
 
-Utilities or Lifestyle describes what this actually is — a private self-check
-and a way home — without inviting that reading. Confirm with counsel before
-changing, since category and claims interact.
+Utilities or Lifestyle may describe what this actually is — a private
+self-check and a way home — without inviting that reading. Confirm with counsel
+before changing, since category and claims interact. If Health & Fitness is
+kept, also answer App Store Connect's regulated-medical-device status honestly;
+the app currently disclaims that status and has no validation supporting a
+medical-device claim.
 
 ## Metadata
 
@@ -136,29 +142,28 @@ and without drinking.
 > offers the get-home actions. This is deliberate: inventing a verdict without a
 > reference is the failure mode the design exists to prevent.
 >
-> **Reviewing without a baseline.** Open **Settings > How results work**, or the
-> info button on the home screen. It shows all three result states with labelled
-> examples and explains when each occurs. No baseline, no camera, and no
-> drinking is required to see what the app reports. The examples are static
-> text: nothing is measured, nothing is stored, and readiness is unchanged.
+> **Reviewing without a baseline.** Finish onboarding, then on Home open
+> **How results work** under **Before a live check**. This public, read-only
+> page shows the exact names and safety explanation for all three result states.
+> It is explicitly labelled as examples, invokes neither camera nor scorer, and
+> does not create History or baseline data. Tap **Done** to return Home.
 >
 > **No account, no network.** There is no sign-in and no server. The app makes
 > no network requests. Nothing needs to be provisioned to review it.
 
-**Review path — resolved.**
+**REVIEW PATH — implemented locally; clean-device evidence still required.**
 
-`HowResultsWorkView` is reachable from Settings and from the home screen's info
-button in the public build. It is static text, not a rendered outcome: no
-`ScreeningOutcome` is constructed, so an example can never run the scorer.
+The public Home screen now exposes **How results work** before a baseline exists.
+Release-binary checks require its safety and sample-data disclosures, and UI
+coverage asserts that opening and closing it leaves the baseline at zero and
+History empty. The internal build's founder previews remain compiled out of
+public navigation; they are not the App Review path.
 
-The internal build's founder previews were the wrong answer — they are compiled
-out of public builds on purpose, and shipping them back for review would have
-undone the boundary.
-
-`ReviewerPathUITests` keeps it honest: all three states present, every card
-individually labelled "Example", and no clearance claim anywhere on the screen.
-That last check is the claims matrix enforced on the surface most likely to
-drift toward reassurance.
+`ReviewerPathUITests` also enforces the claims matrix on this screen: all three
+states present, every card labelled as an example, and no clearance claim
+anywhere. It is the surface most likely to drift toward reassurance, and the
+check allows a negated mention because "no result is a green light" is the
+point of the page.
 
 ## Export compliance
 
@@ -186,7 +191,20 @@ Do not claim full VoiceOver support until gate A1 is recorded on a device.
 
 ## Screenshots
 
-Blocked until the visual and copy freeze. Constraints:
+Use between 1 and 10 screenshots per required display size. For a 6.9-inch
+iPhone portrait set, App Store Connect currently accepts 1260×2736, 1290×2796,
+or 1320×2868 pixels. Capture the highest-resolution source available and let
+App Store Connect scale it only where Apple permits. The proposed five-frame
+story is:
+
+1. Home: private check plus immediate get-home action.
+2. How results work: the three-state, no-green-light explanation.
+3. Live task instruction or calibration on a physical TrueDepth iPhone.
+4. One real result with its complete safety limitation visible.
+5. Privacy Center or incomplete Your Steady state.
+
+Creative export is blocked until the visual/copy freeze and physical-device
+capture. Constraints:
 
 - Only real states. No mocked verdicts, no invented numbers.
 - Never show a result in a way that implies clearance. "No signals detected"
@@ -194,15 +212,19 @@ Blocked until the visual and copy freeze. Constraints:
 - Include the get-home surface — it is the day-one value.
 - Include Your Steady before it is established. The honest incomplete state is
   part of the pitch, not a flaw to hide.
+- Do not use internal founder previews as public screenshots.
 
 ## Pre-submission checklist
 
-Run `Scripts/check-public-binary.sh` first; it covers rows 1–5 automatically.
+Run `Scripts/rehearse-app-store-package.sh` first; it creates an unsigned device
+archive and re-runs the public artifact checks. Then complete the signed and
+App Store Connect gates in `PHASE_5_RELEASE_CHECKLIST.md`.
 
-- [ ] Public Release artifact: no internal routes, permissions, or endpoints
-- [ ] Privacy manifest present, no tracking, no collected data
-- [ ] No embedded third-party frameworks
-- [ ] Camera usage string present and accurate
+- [x] Local public Release artifact: no internal routes, permissions, or endpoints
+- [x] Privacy manifest present, no tracking, no collected data
+- [x] No embedded third-party frameworks
+- [x] Camera and Face ID usage strings present and accurate
+- [x] Public read-only result education path implemented
 - [ ] Version and build incremented
 - [ ] Category decided **DECISION**
 - [ ] Age rating answered honestly **DECISION**
@@ -212,3 +234,12 @@ Run `Scripts/check-public-binary.sh` first; it covers rows 1–5 automatically.
 - [ ] Medical-claim review complete **COUNSEL**
 - [ ] Device gates in `PHASE_4_DEVICE_GATES.md` recorded
 - [ ] Description contains no forbidden claim from the plan's claims matrix
+- [ ] Signed archive validated, uploaded, and processed in App Store Connect
+
+## Official Apple references
+
+- [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- [Set an app age rating](https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating)
+- [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy)
+- [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications)
+- [Upload builds](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds)

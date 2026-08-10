@@ -10,23 +10,29 @@
 	<array/>
 
 	<!-- Nothing is collected. "Collect" means transmitted off the device.
-	     Everything Sober stores stays in this app's container and is removed by
-	     Settings > Delete all local data, or by deleting the app. The public
-	     build makes no network requests at all, which is pinned by
-	     NoNetworkInPublicBuildTests. -->
+	     Public data stays in this app's container and is removed by Settings >
+	     Delete all local data, or by deleting the app. -->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
 
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
-			<!-- Onboarding state, the measured baseline count, and the Safety
-			     Plan. Read and written only by this app. -->
+			<!-- App preferences and locally persisted feature state. -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- Monotonic time supports task timing and lifecycle-safe intervals. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
 			</array>
 		</dict>
 	</array>

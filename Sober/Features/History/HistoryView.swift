@@ -43,6 +43,8 @@ struct HistoryView: View {
           loadFailure(error)
         }
 
+        // Suppressed when a read failed: showing "Nothing recorded yet" beside
+        // a load warning tells someone their data is gone and also not gone.
         if model.checkHistory.isEmpty, model.localDataError == nil {
           emptyState
         } else if !model.checkHistory.isEmpty {
@@ -66,6 +68,11 @@ struct HistoryView: View {
           .navigationBarTitleDisplayMode(.inline)
       }
       .preferredColorScheme(.dark)
+    }
+    .onChange(of: model.privacyShieldIsVisible) { _, isShielded in
+      // A presented sheet sits above its parent. Dismiss it before the app
+      // switcher snapshot so Your Steady cannot remain visible over the shield.
+      if isShielded { showingSteady = false }
     }
   }
 

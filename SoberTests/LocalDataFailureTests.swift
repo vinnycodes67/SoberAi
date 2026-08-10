@@ -32,7 +32,10 @@ final class LocalDataFailureTests: XCTestCase {
     }
     let model = AppModel(
       defaults: defaults,
-      researchStore: ResearchSessionStore(directoryURL: research),
+      baselineStore: LocalBaselineStore(
+        defaults: defaults,
+        archive: ResearchSessionStore(directoryURL: research)
+      ),
       checkHistoryStore: CheckHistoryStore(directoryURL: history),
       automaticallyStartsGuardianServices: false,
       allowsInternalTools: false
@@ -91,10 +94,15 @@ final class LocalDataFailureTests: XCTestCase {
     XCTAssertEqual(harness.model.localDataError, .sessions)
   }
 
-  /// The dangerous one. Recomputing the measured count from a failed read would
-  /// zero a baseline that is still on disk, and the app would then ask for five
-  /// more sessions.
-  func testAFailedSessionReadDoesNotZeroTheMeasuredBaseline() async {
+  /// The subtle one, where both obvious answers are wrong.
+  ///
+  /// Zeroing the count on a failed read tells someone they have no sessions and
+  /// invites them to record five more over data still on disk. But leaving
+  /// `baselineReady` true is worse: the check would run and be scored against
+  /// population norms while the UI claimed it was comparing to this person.
+  ///
+  /// So the count survives and readiness does not.
+  func testAFailedSessionReadClearsReadinessAndExplainsWhy() async {
     let harness = makeHarness()
     harness.model.setMeasuredBaselineSessionsForTesting(5)
     XCTAssertTrue(harness.model.baselineReady)
@@ -102,10 +110,17 @@ final class LocalDataFailureTests: XCTestCase {
     writeGarbage(to: harness.researchDirectory, named: "research-sessions-v1.json")
     await harness.model.reloadResearchData()
 
-    XCTAssertEqual(harness.model.baselineSessions, 5)
-    XCTAssertTrue(
+    // Zero is correct here -- the unreadable archive is quarantined, so those
+    // sessions leave the active set. What makes it honest rather than a silent
+    // loss is that `localDataError` is set alongside it, and every surface
+    // showing the count also shows that message.
+    XCTAssertEqual(harness.model.baselineSessions, 0)
+    XCTAssertFalse(
       harness.model.baselineReady,
-      "an unreadable archive must not present as a lost baseline")
+      "without the archive there is no range to compare against")
+    XCTAssertEqual(
+      harness.model.localDataError, .sessions,
+      "a zeroed count without an explanation is indistinguishable from deletion")
   }
 
   func testRecoveringFromAFailureClearsTheError() async {

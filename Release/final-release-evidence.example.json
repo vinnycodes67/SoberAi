@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "template",
+  "candidate": {
+    "version": "1.0.0",
+    "build": "100",
+    "commit": "1111111111111111111111111111111111111111",
+    "bundleIdentifier": "com.soberprototype.app",
+    "archiveSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "gates": {
+    "phase4DeviceEvidenceComplete": false,
+    "phase5SignoffsComplete": false,
+    "signedArchiveValidated": false,
+    "appStoreConnectProcessed": false,
+    "privacyPolicyLiveAndLinked": false,
+    "supportUrlLive": false,
+    "legalApproved": false,
+    "metadataApproved": false,
+    "screenshotsApproved": false,
+    "privacyAnswersReconciled": false,
+    "noOpenP0OrHighRiskP1": false,
+    "controlledRolloutCompleted": false,
+    "phase6CanaryContinue": false,
+    "day7ReviewApproved": false,
+    "day30ReviewApproved": false,
+    "rollbackOwnerAssigned": false
+  },
+  "signoffs": {
+    "founder": false,
+    "engineering": false,
+    "design": false,
+    "privacyLegal": false,
+    "qa": false
+  },
+  "evidence": {
+    "phase4ChecklistPath": "Docs/PHASE_4_DEVICE_GATES.md",
+    "phase5ChecklistPath": "Docs/PHASE_5_RELEASE_CHECKLIST.md",
+    "phase6CanaryReportPath": ".artifacts/release/phase6-canary-report.json",
+    "archiveAppPath": ".artifacts/release/Sober.xcarchive/Products/Applications/Sober.app",
+    "privacyPolicyURL": "https://example.invalid/privacy",
+    "supportURL": "https://example.invalid/support",
+    "appStoreConnectBuildURL": "https://example.invalid/app-store-connect-build"
+  }
+}

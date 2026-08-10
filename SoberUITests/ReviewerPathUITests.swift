@@ -8,8 +8,12 @@ import XCTest
 /// to guess what the app does.
 ///
 /// This is also the screen that has to hold the line on claims. If a "safe to
-/// drive" or "you are sober" phrasing ever creeps into the examples, it will
-/// reach both a reviewer and every user, so it is asserted rather than trusted.
+/// drive" or "you are sober" phrasing ever creeps into the examples, it reaches
+/// both a reviewer and every user, so it is asserted rather than trusted.
+///
+/// `Scripts/check-public-binary.sh` separately requires this page's copy to be
+/// present in the Release binary. That proves the strings ship; this proves they
+/// are reachable and say the right thing.
 final class ReviewerPathUITests: XCTestCase {
 
   override func setUp() {
@@ -17,6 +21,7 @@ final class ReviewerPathUITests: XCTestCase {
     continueAfterFailure = false
   }
 
+  /// Reached from Settings. Home offers it too, before a baseline exists.
   private func launchToExamples() -> XCUIApplication {
     let app = XCUIApplication()
     app.launchArguments = [
@@ -29,34 +34,31 @@ final class ReviewerPathUITests: XCTestCase {
     return app
   }
 
-  /// All three states are shown without running a check.
   func testExamplesAreReachableWithoutABaseline() {
     let app = launchToExamples()
 
-    XCTAssertTrue(
-      app.staticTexts["A check has three possible answers."].waitForExistence(timeout: 60))
+    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 60))
     XCTAssertTrue(app.staticTexts["Signals detected"].exists)
     XCTAssertTrue(app.staticTexts["No clear read"].exists)
     XCTAssertTrue(app.staticTexts["No signals detected"].exists)
   }
 
-  /// Every example is labelled. A screenshot of one card has to carry its own
-  /// disclaimer, so the badge is per-card rather than once per screen.
+  /// Every card is labelled. A screenshot of one card has to carry its own
+  /// disclaimer rather than relying on a heading further up the page.
   func testEveryExampleIsLabelledAsAnExample() {
     let app = launchToExamples()
-    XCTAssertTrue(
-      app.staticTexts["A check has three possible answers."].waitForExistence(timeout: 60))
+    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 60))
 
-    let badges = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Example"))
+    let badges = app.staticTexts.matching(
+      NSPredicate(format: "label BEGINSWITH[c] %@", "Example "))
     XCTAssertEqual(badges.count, 3, "each of the three example cards must be labelled")
   }
 
-  /// The claims matrix, enforced on the one screen most likely to drift toward
+  /// The claims matrix, enforced on the surface most likely to drift toward
   /// reassurance.
   func testExamplesMakeNoClearanceClaim() {
     let app = launchToExamples()
-    XCTAssertTrue(
-      app.staticTexts["A check has three possible answers."].waitForExistence(timeout: 60))
+    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 60))
 
     let forbidden = ["safe to drive", "you are sober", "you're sober", "passed", "cleared"]
     for phrase in forbidden {
@@ -64,14 +66,12 @@ final class ReviewerPathUITests: XCTestCase {
         NSPredicate(format: "label CONTAINS[c] %@", phrase))
       for index in 0..<matches.count {
         let text = matches.element(boundBy: index).label
-        // "does not mean you're sober or safe to drive" is the point of the
-        // screen, as is "none of the three says you are safe to drive". Only an
-        // unnegated claim is a failure.
+        // A negated mention is the point of the page — "cannot establish
+        // sobriety or driving safety" has to be allowed. Only a bare claim is a
+        // failure.
         let negators = ["not", "cannot", "never", "none", "n't", "no result"]
         let negated = negators.contains { text.range(of: $0, options: .caseInsensitive) != nil }
-        XCTAssertTrue(
-          negated,
-          "\"\(phrase)\" appears without negation in: \(text)")
+        XCTAssertTrue(negated, "\"\(phrase)\" appears without negation in: \(text)")
       }
     }
   }

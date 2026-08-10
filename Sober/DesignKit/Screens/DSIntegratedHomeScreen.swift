@@ -15,6 +15,7 @@ struct DSIntegratedHomeScreen: View {
   var onOpenMap: () -> Void
   var onOpenGuardian: () -> Void
   var onOpenPlan: () -> Void
+  var onOpenHowResultsWork: () -> Void
   var onOpenAbout: () -> Void
   var onOpenResearch: () -> Void
   var onOpenFounderScenario: (FounderScenario) -> Void
@@ -41,14 +42,15 @@ struct DSIntegratedHomeScreen: View {
         #endif
         safetyPlanRow.dsAppear(3)
         baselineStrip.dsAppear(4)
+        resultEducation.dsAppear(5)
 
         #if INTERNAL_BUILD
         if model.isFounderPreview {
-          founderTools.dsAppear(5)
+          founderTools.dsAppear(6)
         }
         #endif
 
-        evidenceNote.dsAppear(6)
+        evidenceNote.dsAppear(7)
       }
       .padding(.horizontal, DSSpace.margin)
       .padding(.top, DSSpace.sm)
@@ -126,6 +128,18 @@ struct DSIntegratedHomeScreen: View {
             Text("\(model.baselineSessions) of 5 baseline sessions recorded")
               .font(DSFont.footnote)
               .foregroundStyle(DSPalette.textMuted)
+
+            // An unreadable archive is quarantined, so the count above drops to
+            // zero. Without this line that reads as "your sessions are gone",
+            // and the reasonable response is to record five more rather than to
+            // recover the file.
+            if model.localDataError == .sessions {
+              Text(AppModel.LocalDataError.sessions.message)
+                .font(DSFont.footnote)
+                .foregroundStyle(DSPalette.accent)
+                .dsReadingLine()
+                .padding(.top, DSSpace.xxs)
+            }
           }
           .padding(.top, DSSpace.lg)
         }
@@ -300,6 +314,18 @@ struct DSIntegratedHomeScreen: View {
         )
       }
       .buttonStyle(DSPressStyle())
+    }
+  }
+
+  private var resultEducation: some View {
+    DSSection("Before a live check") {
+      DSRows {
+        DSRow(
+          "How results work",
+          detail: "See all three possible states without using the camera or recording a session.",
+          action: onOpenHowResultsWork
+        )
+      }
     }
   }
 

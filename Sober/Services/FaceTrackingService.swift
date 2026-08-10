@@ -95,6 +95,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
 
   private(set) var session = ARSession()
 
+  private let permissionStore: any PermissionStore
   private let analyzer = OcularSignalAnalyzer()
   private var samples: [OcularSample] = []
   private let maximumSamples = 1_800
@@ -107,7 +108,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
   private var lastFaceSeenAt: TimeInterval?
   private var activeProtocolVariant: OcularProtocolVariant = .full
 
-  override init() {
+  init(permissionStore: any PermissionStore = SystemPermissionStore()) {
+    self.permissionStore = permissionStore
     super.init()
     session.delegate = self
     if !isSupported {
@@ -223,15 +225,15 @@ final class FaceTrackingService: NSObject, ObservableObject {
   }
 
   private func runSessionIfAuthorized() {
-    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    switch permissionStore.cameraAuthorization {
     case .authorized:
       startAuthorizedSession()
     case .notDetermined:
       status = .searching
       Task { [weak self] in
-        let granted = await AVCaptureDevice.requestAccess(for: .video)
         guard let self else { return }
-        if granted {
+        let nextState = await self.permissionStore.requestCameraAuthorization()
+        if nextState == .authorized {
           self.startAuthorizedSession()
         } else {
           self.markPermissionDenied()

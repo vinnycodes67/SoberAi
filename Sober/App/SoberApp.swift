@@ -2,46 +2,58 @@ import SwiftUI
 
 @main
 struct SoberApp: App {
-  @StateObject private var model = SoberApp.makeModel()
+  @StateObject private var model: AppModel
 
-  /// Under `-sober-ui-testing` the app runs against a throwaway defaults suite
-  /// and data directory seeded with the requested fixture, so a UI test never
-  /// inherits the previous run's state or writes into a real install's.
-  private static func makeModel() -> AppModel {
-    guard UITestConfiguration.isActive, let directory = UITestConfiguration.makeDataDirectory()
-    else {
-      return AppModel()
+  init() {
+    #if DEBUG
+    if let fixtureModel = UITestConfiguration.makeModel() {
+      _model = StateObject(wrappedValue: fixtureModel)
+      return
     }
-    UITestConfiguration.seedHistory(in: directory)
-    UITestConfiguration.seedBaseline(
-      in: directory, participantID: UITestConfiguration.participantID)
-    return AppModel(
-      defaults: UITestConfiguration.makeDefaults(),
-      researchStore: ResearchSessionStore(
-        directoryURL: directory
-          .appendingPathComponent("Sober", isDirectory: true)
-          .appendingPathComponent("Research", isDirectory: true)),
-      checkHistoryStore: CheckHistoryStore(
-        directoryURL: directory
-          .appendingPathComponent("Sober", isDirectory: true)
-          .appendingPathComponent("History", isDirectory: true))
-    )
+    UITestLaunchConfiguration.current.prepare()
+    #endif
+    _model = StateObject(wrappedValue: AppModel())
   }
 
   var body: some Scene {
     WindowGroup {
-      RootView()
-        .environmentObject(model)
-        .preferredColorScheme(.dark)
-        .tint(DSPalette.accent)
+      appContent
     }
+  }
+
+  @ViewBuilder
+  private var appContent: some View {
+    #if DEBUG
+    RootView()
+      .environmentObject(model)
+      .modifier(UITestEnvironmentModifier(configuration: .current))
+      .preferredColorScheme(.dark)
+      .tint(DSPalette.accent)
+    #else
+    RootView()
+      .environmentObject(model)
+      .preferredColorScheme(.dark)
+      .tint(DSPalette.accent)
+    #endif
   }
 }
 
 struct RootView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var isShowingLaunch = true
+  @Environment(\.scenePhase) private var scenePhase
+  @State private var isShowingLaunch: Bool
+
+  init() {
+    #if DEBUG
+    _isShowingLaunch = State(
+      initialValue: !UITestConfiguration.isActive
+        && !UITestLaunchConfiguration.current.isActive
+    )
+    #else
+    _isShowingLaunch = State(initialValue: true)
+    #endif
+  }
 
   var body: some View {
     ZStack {
@@ -50,18 +62,43 @@ struct RootView: View {
           .transition(.opacity)
           .zIndex(1)
       } else {
-        Group {
-          if model.hasCompletedOnboarding {
-            RootTabView()
-          } else {
-            OnboardingView()
-          }
-        }
+        rootContent
         .transition(.opacity)
       }
     }
     .animation(reduceMotion ? nil : SoberMotion.screen, value: model.hasCompletedOnboarding)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.14), value: isShowingLaunch)
+    .onChange(of: scenePhase) { _, phase in
+      switch phase {
+      case .active:
+        model.privacySceneBecameActive()
+      case .inactive:
+        model.privacySceneBecameInactive()
+      case .background:
+        model.privacySceneEnteredBackground()
+      @unknown default:
+        model.privacySceneBecameInactive()
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var rootContent: some View {
+    #if DEBUG
+    if let destination = UITestLaunchConfiguration.current.directDestination {
+      UITestFixtureView(destination: destination)
+    } else if model.hasCompletedOnboarding {
+      RootTabView()
+    } else {
+      OnboardingView()
+    }
+    #else
+    if model.hasCompletedOnboarding {
+      RootTabView()
+    } else {
+      OnboardingView()
+    }
+    #endif
   }
 
   private func finishLaunch() {

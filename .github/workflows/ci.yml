@@ -16,13 +16,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  SIMULATOR: platform=iOS Simulator,name=iPhone 17 Pro
-
 jobs:
   hygiene:
     name: Hygiene
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,28 +38,19 @@ jobs:
           fi
           git diff --check "$base" HEAD
 
-      # Not a substitute for a real secret scanner, but it catches the specific
-      # mistake this repo is exposed to: a provider key pasted into a config or
-      # a plist while wiring up a backend.
-      - name: Secret scan
-        run: |
-          set -o pipefail
-          if grep -rInE \
-            -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
-            -e '(sk|pk)_(live|test)_[A-Za-z0-9]{16,}' \
-            -e 'AKIA[0-9A-Z]{16}' \
-            -e 'ghp_[A-Za-z0-9]{30,}' \
-            --exclude-dir=.git --exclude-dir=node_modules . ; then
-            echo "::error::possible secret committed"
-            exit 1
-          fi
+      - name: Release metadata, licences, and secrets
+        run: Scripts/check-release-metadata.sh
 
-      - name: Font licence present
-        run: test -f Sober/Resources/Fonts/Satoshi-LICENSE.txt
+      - name: Validate plists and shell scripts
+        run: |
+          plutil -lint Sober/Info.plist
+          plutil -lint Sober/Info-Internal.plist
+          plutil -lint Sober/PrivacyInfo.xcprivacy
+          bash -n Scripts/*.sh
 
   builds:
     name: Build ${{ matrix.scheme }} ${{ matrix.configuration }}
-    runs-on: macos-15
+    runs-on: macos-26
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +58,8 @@ jobs:
         configuration: [Debug, Release]
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
       - run: brew install xcodegen
       - run: xcodegen generate
 
@@ -86,49 +76,83 @@ jobs:
 
   unit-tests:
     name: Unit tests
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
       - run: brew install xcodegen
-      - run: xcodegen generate
+      - name: Regenerate project and prove it is committed
+        run: |
+          xcodegen generate
+          git diff --exit-code -- Sober.xcodeproj
+      - name: Prepare compact simulator
+        run: Scripts/prepare-ui-simulators.sh >> "$GITHUB_ENV"
       - name: Test
         run: |
           xcodebuild \
             -project Sober.xcodeproj \
             -scheme Sober \
             -only-testing:SoberTests \
-            -destination "$SIMULATOR" \
+            -destination "platform=iOS Simulator,id=$SOBER_SMALL_UDID" \
             test
 
   ui-tests:
-    name: UI smoke
-    runs-on: macos-15
+    name: UI evidence
+    runs-on: macos-26
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
       - run: brew install xcodegen
-      - run: xcodegen generate
-      - name: Test
+      - name: Regenerate project and prove it is committed
         run: |
-          xcodebuild \
-            -project Sober.xcodeproj \
-            -scheme Sober \
-            -only-testing:SoberUITests \
-            -destination "$SIMULATOR" \
-            test
+          xcodegen generate
+          git diff --exit-code -- Sober.xcodeproj
+      - name: Run compact and accessibility suites
+        run: Scripts/run-ui-tests.sh
+      - name: Upload retained screenshots and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sober-ui-xcresults
+          path: .artifacts/ui-tests/*.xcresult
+          if-no-files-found: warn
+          retention-days: 14
 
   public-boundary:
     name: Public build boundary
-    runs-on: macos-15
+    runs-on: macos-26
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26.5
+        run: sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
       - run: brew install xcodegen
-      - run: xcodegen generate
+      - name: Regenerate project and prove it is committed
+        run: |
+          xcodegen generate
+          git diff --exit-code -- Sober.xcodeproj
 
       # Builds the public Release artifact and asserts no internal route copy,
       # no internal permission keys, and no relay configuration reach it — then
       # builds the internal target to prove each check can actually fail.
       - name: Scan public Release artifact
         run: Scripts/check-public-binary.sh "${RUNNER_TEMP}/boundary"
+
+  release-ops:
+    name: Canary and final-gate policy tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate release policy evaluator
+        run: |
+          node --check Scripts/release-ops.mjs
+          node --test Scripts/tests/release-ops.test.mjs
 
   backend:
     name: Backend tests (v1.1 preservation)

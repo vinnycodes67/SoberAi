@@ -1,0 +1,105 @@
+#!/bin/bash
+# Static release metadata, license, and repository secret gate.
+
+set -uo pipefail
+
+cd "$(dirname "$0")/.." || exit 1
+
+failures=0
+
+fail() {
+  echo "  FAIL  $1"
+  failures=$((failures + 1))
+}
+
+pass() {
+  echo "  ok    $1"
+}
+
+MANIFEST="Sober/PrivacyInfo.xcprivacy"
+
+echo "==> Privacy manifest"
+if plutil -lint "$MANIFEST" >/dev/null 2>&1; then
+  pass "PrivacyInfo.xcprivacy is valid"
+else
+  fail "PrivacyInfo.xcprivacy is not a valid property list"
+fi
+
+tracking=$(/usr/libexec/PlistBuddy -c "Print :NSPrivacyTracking" "$MANIFEST" 2>/dev/null || true)
+if [ "$tracking" = "false" ]; then
+  pass "tracking is declared false"
+else
+  fail "tracking must be declared false"
+fi
+
+manifest_json=$(plutil -convert json -o - "$MANIFEST" 2>/dev/null || true)
+for value in \
+  NSPrivacyAccessedAPICategoryUserDefaults \
+  CA92.1 \
+  NSPrivacyAccessedAPICategorySystemBootTime \
+  35F9.1; do
+  if printf '%s' "$manifest_json" | grep -q -F -- "$value"; then
+    pass "manifest declares $value"
+  else
+    fail "manifest is missing $value"
+  fi
+done
+
+if printf '%s' "$manifest_json" | grep -q -F -- '"NSPrivacyCollectedDataTypes":[]'; then
+  pass "no collected-data categories are declared"
+else
+  fail "public v1 manifest must declare an empty collected-data array"
+fi
+
+if printf '%s' "$manifest_json" | grep -q -F -- '"NSPrivacyTrackingDomains":[]'; then
+  pass "no tracking domains are declared"
+else
+  fail "public v1 manifest must declare an empty tracking-domain array"
+fi
+
+echo
+echo "==> Third-party asset license"
+FONT_LICENSE="Sober/Resources/Fonts/Satoshi-LICENSE.txt"
+if [ -s "$FONT_LICENSE" ]; then
+  pass "Satoshi license is present"
+else
+  fail "Satoshi license is missing or empty"
+fi
+
+for font in Satoshi-Regular.otf Satoshi-Medium.otf Satoshi-Bold.otf; do
+  if [ -s "Sober/Resources/Fonts/$font" ]; then
+    pass "$font is present"
+  else
+    fail "$font is missing or empty"
+  fi
+done
+
+echo
+echo "==> Repository secret scan"
+# Keep the scanner's own signatures out of its input, otherwise the rule text
+# is indistinguishable from a credential. Generated build products and local
+# configuration are already excluded by .gitignore.
+secret_pattern='-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|sk_live_[A-Za-z0-9]{16,}|xox[baprs]-[A-Za-z0-9-]{12,}'
+secret_hits=$(
+  git ls-files -co --exclude-standard -z \
+    | while IFS= read -r -d '' file; do
+        [ "$file" = "Scripts/check-release-metadata.sh" ] && continue
+        printf '%s\0' "$file"
+      done \
+    | xargs -0 grep -I -n -E -- "$secret_pattern" 2>/dev/null \
+    || true
+)
+if [ -n "$secret_hits" ]; then
+  printf '%s\n' "$secret_hits"
+  fail "credential-like content was found"
+else
+  pass "no private-key or production-token signatures found"
+fi
+
+echo
+if [ "$failures" -ne 0 ]; then
+  echo "FAILED: $failures release-metadata violation(s)"
+  exit 1
+fi
+
+echo "PASSED: privacy declarations, licenses, and repository secret scan"

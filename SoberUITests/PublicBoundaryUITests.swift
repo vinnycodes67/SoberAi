@@ -10,6 +10,7 @@ import XCTest
 /// Both checks are needed. The binary scan would pass if a route existed but
 /// reused copy that already ships; this would pass if a route were unreachable
 /// but its copy still shipped.
+@MainActor
 final class PublicBoundaryUITests: XCTestCase {
 
   override func setUp() {

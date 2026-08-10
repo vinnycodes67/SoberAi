@@ -31,6 +31,34 @@ pass() {
   echo "  ok    $1"
 }
 
+echo "==> Source release metadata"
+if Scripts/check-release-metadata.sh; then
+  pass "source release metadata"
+else
+  fail "source release metadata"
+fi
+
+# Result privacy is a source-level invariant as well as an archive invariant.
+# External URL actions remain valid because they power Ride, Call, and Message;
+# portable result mechanisms do not belong on the result surface.
+echo "==> Result non-sharing source gate"
+RESULT_SOURCE="Sober/DesignKit/Screens/DSIntegratedResultScreen.swift"
+RESULT_FORBIDDEN=(
+  ShareLink
+  UIActivityViewController
+  Transferable
+  fileExporter
+  ResultReceipt
+  AuthenticatedResult
+)
+for needle in "${RESULT_FORBIDDEN[@]}"; do
+  if grep -q -F -- "$needle" "$RESULT_SOURCE"; then
+    fail "result surface contains portable-proof mechanism: $needle"
+  else
+    pass "result surface omits: $needle"
+  fi
+done
+
 echo "==> Building public Sober target (Release)"
 if ! xcodebuild \
   -project Sober.xcodeproj \
@@ -83,6 +111,50 @@ for needle in "${FORBIDDEN[@]}"; do
   fi
 done
 
+echo
+echo "==> Required coercion-resistant result copy"
+RESULT_PRIVACY_COPY="This result is private context for you. It is not evidence for a parent, partner, employer, school, insurer, or authority."
+result_privacy_copy_count=$(strings -a "$BINARY" | grep -c -F -- "$RESULT_PRIVACY_COPY")
+if [ "$result_privacy_copy_count" -gt 0 ]; then
+  pass "public result explains that it is not portable evidence"
+else
+  fail "public result is missing the required private-context boundary"
+fi
+
+echo
+echo "==> Public App Review education path"
+REVIEW_PATH_COPY=(
+  "No result is a green light."
+  "Examples only. No data is recorded."
+  "Opening this page does not use the camera, run the scorer, add to History, or count toward your baseline."
+)
+for needle in "${REVIEW_PATH_COPY[@]}"; do
+  count=$(strings -a "$BINARY" | grep -c -F -- "$needle")
+  if [ "$count" -gt 0 ]; then
+    pass "review education is present: \"$needle\""
+  else
+    fail "public Release binary is missing review education: \"$needle\""
+  fi
+done
+
+# The examples must remain an inert explanation. This source gate complements
+# the journey test that proves opening and closing the sheet leaves both the
+# baseline and History empty.
+REVIEW_PATH_SOURCE="Sober/Features/Home/HowResultsWorkView.swift"
+REVIEW_PATH_FORBIDDEN=(
+  "@EnvironmentObject"
+  "ScreeningFlowView("
+  "AppModel("
+  "ScreeningEngine("
+)
+for needle in "${REVIEW_PATH_FORBIDDEN[@]}"; do
+  if grep -q -F -- "$needle" "$REVIEW_PATH_SOURCE"; then
+    fail "review education gained an active screening dependency: $needle"
+  else
+    pass "review education omits active dependency: $needle"
+  fi
+done
+
 # Internal-only Info.plist keys. Shipping an unused permission string or
 # background mode is an App Review rejection trigger and widens the App Privacy
 # answers to cover a capability the public app does not have.
@@ -94,6 +166,7 @@ FORBIDDEN_KEYS=(
   UIBackgroundModes
   NSAppTransportSecurity
   SoberGuardianAPIURL
+  CFBundleURLTypes
 )
 
 for key in "${FORBIDDEN_KEYS[@]}"; do
@@ -104,68 +177,114 @@ for key in "${FORBIDDEN_KEYS[@]}"; do
   fi
 done
 
-# Required keys. The public app still needs camera access, and losing this
-# string would crash the check on first use rather than degrade it.
+# Required keys. Losing either usage string can make the corresponding system
+# permission fail on a physical device rather than degrade gracefully.
 echo
 echo "==> Required Info.plist keys"
-if /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription" "$APP/Info.plist" >/dev/null 2>&1; then
-  pass "present: NSCameraUsageDescription"
+REQUIRED_KEYS=(NSCameraUsageDescription NSFaceIDUsageDescription)
+for key in "${REQUIRED_KEYS[@]}"; do
+  if /usr/libexec/PlistBuddy -c "Print :$key" "$APP/Info.plist" >/dev/null 2>&1; then
+    pass "present: $key"
+  else
+    fail "Info.plist is missing $key"
+  fi
+done
+
+echo
+echo "==> Bundled privacy manifest"
+PRIVACY_MANIFEST="$APP/PrivacyInfo.xcprivacy"
+if [ -f "$PRIVACY_MANIFEST" ] && plutil -lint "$PRIVACY_MANIFEST" >/dev/null 2>&1; then
+  pass "public app contains a valid PrivacyInfo.xcprivacy"
+  privacy_json=$(plutil -convert json -o - "$PRIVACY_MANIFEST" 2>/dev/null || true)
+  for value in \
+    NSPrivacyAccessedAPICategoryUserDefaults \
+    CA92.1 \
+    NSPrivacyAccessedAPICategorySystemBootTime \
+    35F9.1; do
+    if printf '%s' "$privacy_json" | grep -q -F -- "$value"; then
+      pass "bundled manifest declares $value"
+    else
+      fail "bundled manifest is missing $value"
+    fi
+  done
 else
-  fail "Info.plist is missing NSCameraUsageDescription"
+  fail "public app is missing a valid PrivacyInfo.xcprivacy"
 fi
 
 # Submission reconciliation.
 #
 # Every App Store answer has to be true of the artifact, not of the plan. These
-# check the ones that can be read off the binary, so metadata cannot drift from
-# what actually ships.
+# check the answers that can be derived from the bundle and binary.
 echo
 echo "==> App Store answers vs the artifact"
-
-MANIFEST="$APP/PrivacyInfo.xcprivacy"
-if [ -f "$MANIFEST" ]; then
-  pass "present: PrivacyInfo.xcprivacy"
-
-  tracking=$(/usr/libexec/PlistBuddy -c "Print :NSPrivacyTracking" "$MANIFEST" 2>/dev/null)
-  if [ "$tracking" = "false" ]; then
-    pass "manifest declares no tracking"
-  else
-    fail "manifest declares tracking: $tracking"
-  fi
-
-  # Nothing leaves the device, so the collected-data array must stay empty. If
-  # something is ever transmitted, this is the line that should stop the build
-  # until the questionnaire is updated too.
-  if /usr/libexec/PlistBuddy -c "Print :NSPrivacyCollectedDataTypes:0" "$MANIFEST" >/dev/null 2>&1; then
-    fail "manifest declares collected data; App Privacy answers must be updated"
-  else
-    pass "manifest declares no collected data"
-  fi
+tracking=$(/usr/libexec/PlistBuddy -c "Print :NSPrivacyTracking" "$PRIVACY_MANIFEST" 2>/dev/null || true)
+if [ "$tracking" = "false" ]; then
+  pass "manifest declares no tracking"
 else
-  fail "no PrivacyInfo.xcprivacy in the app bundle"
+  fail "manifest does not declare tracking false"
 fi
 
-# No third-party frameworks. The privacy answers cover this app only, and any
-# embedded SDK would bring its own data collection and its own manifest.
+if /usr/libexec/PlistBuddy -c "Print :NSPrivacyCollectedDataTypes:0" "$PRIVACY_MANIFEST" >/dev/null 2>&1; then
+  fail "manifest declares collected data; App Privacy answers must be updated"
+else
+  pass "manifest declares no collected data"
+fi
+
 if [ -d "$APP/Frameworks" ] && [ -n "$(ls -A "$APP/Frameworks" 2>/dev/null)" ]; then
   fail "app embeds frameworks: $(ls "$APP/Frameworks" | tr '\n' ' ')"
 else
   pass "no embedded third-party frameworks"
 fi
 
-# Category drives which App Review team sees this and which age-rating
-# questions apply. Health & Fitness invites medical-claim scrutiny for an app
-# that explicitly disclaims being a medical device.
-category=$(/usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Info.plist" 2>/dev/null)
+category=$(/usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Info.plist" 2>/dev/null || true)
+version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist" 2>/dev/null || true)
+build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Info.plist" 2>/dev/null || true)
 echo "  note  category is ${category:-unset}"
-
-version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist" 2>/dev/null)
-build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Info.plist" 2>/dev/null)
 echo "  note  version ${version:-unset} (${build:-unset})"
+echo "  note  export compliance must be answered for the archived binary"
 
-# Encryption. CryptoKit signing is used by Guardian, which is inert in public
-# v1, but export compliance is answered about the binary.
-echo "  note  export compliance: answer ITSAppUsesNonExemptEncryption for this build"
+# The public v1 intentionally ships with no crash or analytics provider. Check
+# the linked image and embedded frameworks rather than relying on package files
+# alone, because a manually embedded binary would otherwise bypass the audit.
+echo
+echo "==> No-provider telemetry audit"
+FORBIDDEN_PROVIDERS=(
+  Firebase
+  Crashlytics
+  Sentry
+  PostHog
+  Mixpanel
+  Amplitude
+  Datadog
+  NewRelic
+  Instabug
+  Bugsnag
+  AppCenter
+)
+
+LINKED_IMAGE=$(otool -L "$BINARY" 2>/dev/null || true)
+BUNDLED_FRAMEWORKS=$(find "$APP" -path '*/Frameworks/*' -print 2>/dev/null || true)
+BINARY_STRINGS=$(strings -a "$BINARY" 2>/dev/null || true)
+for provider in "${FORBIDDEN_PROVIDERS[@]}"; do
+  if printf '%s\n%s\n%s\n' "$LINKED_IMAGE" "$BUNDLED_FRAMEWORKS" "$BINARY_STRINGS" \
+    | grep -qi -F -- "$provider"; then
+    fail "telemetry provider is linked or embedded: $provider"
+  else
+    pass "no provider artifact: $provider"
+  fi
+done
+
+# Public v1 has no push or remote-notification contract. The simulator product
+# may be unsigned; when entitlements are present, assert the deferred keys are
+# absent from the signed payload as well.
+ENTITLEMENTS=$(codesign -d --entitlements :- "$APP" 2>/dev/null || true)
+for key in aps-environment com.apple.developer.usernotifications.communication; do
+  if printf '%s' "$ENTITLEMENTS" | grep -q -F -- "$key"; then
+    fail "public app contains deferred entitlement: $key"
+  else
+    pass "absent entitlement: $key"
+  fi
+done
 
 # Sensitivity control.
 #
@@ -181,6 +300,7 @@ echo
 echo "==> Sensitivity control (internal target must contain every needle)"
 INTERNAL_DD="$DERIVED_DATA-internal"
 INTERNAL_BINARY="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app/SoberInternal"
+INTERNAL_PRIVACY_MANIFEST="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app/PrivacyInfo.xcprivacy"
 
 if xcodebuild \
   -project Sober.xcodeproj \
@@ -197,6 +317,12 @@ if xcodebuild \
       pass "detectable (${count}x internally): \"$needle\""
     fi
   done
+  if [ -f "$INTERNAL_PRIVACY_MANIFEST" ] \
+    && plutil -lint "$INTERNAL_PRIVACY_MANIFEST" >/dev/null 2>&1; then
+    pass "internal app also contains the privacy manifest"
+  else
+    fail "internal app is missing a valid PrivacyInfo.xcprivacy"
+  fi
 else
   fail "could not build SoberInternal; forbidden-string sensitivity is unproven"
 fi
@@ -207,4 +333,4 @@ if [ "$failures" -ne 0 ]; then
   exit 1
 fi
 
-echo "PASSED: public build exposes no internal routes, permissions, or relay configuration"
+echo "PASSED: public build exposes no internal routes, permissions, relay configuration, or telemetry provider"

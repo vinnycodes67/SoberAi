@@ -27,7 +27,7 @@ struct CaptureRecoveryOverlay: View {
 
       VStack(alignment: .leading, spacing: DSSpace.sm) {
         DSEyebrow("Capture stopped")
-        Text("Sober lost your face.")
+        Text("The camera lost a usable reading.")
           .font(DSFont.hero)
           .dsHeroTracking()
           .foregroundStyle(DSPalette.textPrimary)
