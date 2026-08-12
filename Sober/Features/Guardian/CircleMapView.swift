@@ -7,6 +7,16 @@ import UIKit
 // User: a guardian checking that someone arrived safely, or the person controlling their own sharing.
 // Emotional intent: calm awareness with unmistakable freshness and privacy state—not surveillance theater.
 struct CircleMapView: View {
+  /// True when this view is the Circle tab's own content (`RootTabView`),
+  /// which already reserves bottom space for the floating tab bar via its
+  /// own `safeAreaInset`. False (the default) is the full-screen-modal
+  /// presentation from `HomeView`, where there's no tab bar to clear and a
+  /// "Done" button is the only way to leave. Ignoring the safe area for a
+  /// full-bleed map only makes sense in the modal case — as tab content it
+  /// punched the map (and the empty-state card sitting on top of it)
+  /// straight under the tab bar.
+  var isTabEmbedded = false
+
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
   @State private var position: MapCameraPosition = .automatic
@@ -27,8 +37,10 @@ struct CircleMapView: View {
       .navigationBarTitleDisplayMode(.inline)
       .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
       .toolbar {
-        ToolbarItem(placement: .confirmationAction) {
-          Button("Done") { dismiss() }
+        if !isTabEmbedded {
+          ToolbarItem(placement: .confirmationAction) {
+            Button("Done") { dismiss() }
+          }
         }
       }
       .task(id: model.guardianSession?.relationshipID) {
@@ -71,7 +83,7 @@ struct CircleMapView: View {
       MapCompass()
       MapScaleView()
     }
-    .ignoresSafeArea(edges: .bottom)
+    .ignoresSafeArea(edges: isTabEmbedded ? [] : .bottom)
   }
 
   private var emptyMapState: some View {
