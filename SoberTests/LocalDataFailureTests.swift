@@ -59,21 +59,27 @@ final class LocalDataFailureTests: XCTestCase {
 
   /// The entries already on screen stay there. Replacing them with an empty
   /// array on a failed refresh is the behaviour that reads as deletion.
-  func testAFailedRefreshDoesNotClearLoadedHistory() async {
+  /// The entries already on screen stay there. Replacing them with an empty
+  /// array on a failed refresh is the behaviour that reads as deletion.
+  ///
+  /// Seeded through the store directly rather than `recordCompletedSession`,
+  /// which spawns async work whose completion this test does not control --
+  /// that made it pass alone and fail in a full run.
+  func testAFailedRefreshDoesNotClearLoadedHistory() async throws {
     let harness = makeHarness()
-    await harness.model.recordCompletedSession(
-      mode: .check,
-      selfReport: .no,
-      metrics: ScreeningMetrics(
-        reactionTimeMilliseconds: 420, reactionMisses: 0, trackingError: 0.2,
-        timeEstimateError: 0.1, gazeSmoothness: 0.2, qualityScore: 0.9,
-        completedAllTasks: true),
-      reactionSummary: nil,
-      ocularSummary: nil,
-      startedAt: Date(),
-      outcome: ScreeningOutcome(
-        state: .noSignalsDetected, qualityScore: 0.9, riskScore: 0.1, details: [])
+    let store = CheckHistoryStore(directoryURL: harness.historyDirectory)
+    try await store.append(
+      CheckHistoryEntry(
+        id: UUID(),
+        startedAt: Date(),
+        kind: .check,
+        outcome: .noSignalsDetected,
+        qualityScore: 0.9,
+        completedAllTasks: true
+      )
     )
+
+    await harness.model.reloadCheckHistory()
     XCTAssertEqual(harness.model.checkHistory.count, 1)
 
     writeGarbage(to: harness.historyDirectory, named: "check-history-v1.json")

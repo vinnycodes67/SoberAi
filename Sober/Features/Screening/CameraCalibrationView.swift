@@ -26,7 +26,7 @@ struct CameraCalibrationView: View {
           unsupportedPreview
         }
 
-        HStack(spacing: 8) {
+        HStack(spacing: DSSpace.xs) {
           // Needs-adjusting takes the accent; ready goes quiet. Both sides used
           // to resolve to colours that are now the same orange, so the dot said
           // nothing either way.
@@ -41,18 +41,18 @@ struct CameraCalibrationView: View {
             .tracking(1)
         }
         .foregroundStyle(Palette.textPrimary)
-        .padding(12)
+        .padding(DSSpace.sm)
         .soberGlassCapsule()
-        .padding(14)
+        .padding(DSSpace.sm)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Camera status")
         .accessibilityValue(
           "\(service.status.label). \(service.quality.isUsable ? "Ready" : "Needs adjusting")")
       }
       .frame(height: 360)
-      .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous))
       .overlay {
-        RoundedRectangle(cornerRadius: 26, style: .continuous)
+        RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
           .stroke(
             service.quality.isUsable ? Palette.primary.opacity(0.8) : Palette.secondary.opacity(0.28),
             lineWidth: service.quality.isUsable ? 2 : 1
@@ -60,7 +60,7 @@ struct CameraCalibrationView: View {
       }
       .animation(reduceMotion ? nil : SoberMotion.progress, value: service.quality.isUsable)
 
-      LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+      LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DSSpace.xs) {
         qualityTile("Face", icon: "faceid", ready: service.quality.facePresent)
         qualityTile("Centered", icon: "viewfinder", ready: service.quality.centered)
         qualityTile("Distance", icon: "arrow.up.left.and.arrow.down.right", ready: service.quality.distanceAcceptable)
@@ -157,7 +157,7 @@ struct CameraCalibrationView: View {
   private var unsupportedPreview: some View {
     ZStack {
       Palette.cardBackground
-      VStack(spacing: 16) {
+      VStack(spacing: DSSpace.md) {
         Image(systemName: "camera.fill")
           .font(.system(size: 42))
           .foregroundStyle(Palette.textSecondary)
@@ -167,13 +167,13 @@ struct CameraCalibrationView: View {
           .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .multilineTextAlignment(.center)
-          .padding(.horizontal, 30)
+          .padding(.horizontal, DSSpace.xl)
       }
     }
   }
 
   private func qualityTile(_ title: String, icon: String, ready: Bool) -> some View {
-    HStack(spacing: 9) {
+    HStack(spacing: DSSpace.xs) {
       Image(systemName: ready ? "checkmark.circle.fill" : icon)
         .foregroundStyle(ready ? Palette.primary : Palette.textSecondary)
         .frame(width: 20)
@@ -189,11 +189,11 @@ struct CameraCalibrationView: View {
     .accessibilityElement(children: .combine)
     .accessibilityLabel(title)
     .accessibilityValue(ready ? "Ready" : "Needs adjusting")
-    .padding(.horizontal, 12)
+    .padding(.horizontal, DSSpace.sm)
     .frame(minHeight: 44)
-    .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+    .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: DSRadius.small, style: .continuous))
     .overlay {
-      RoundedRectangle(cornerRadius: 13, style: .continuous)
+      RoundedRectangle(cornerRadius: DSRadius.small, style: .continuous)
         .stroke((ready ? Palette.primary : Palette.secondary).opacity(0.3), lineWidth: 1)
     }
     .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: ready)

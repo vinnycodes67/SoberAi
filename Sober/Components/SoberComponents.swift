@@ -26,11 +26,16 @@ enum SoberMotion {
   }
 }
 
+/// The app's name in a screen's top bar.
+///
+/// "Sober", matching the launch reveal and the Home header. The lowercase
+/// "sober." this replaces was left from the serif identity, so someone moving
+/// launch → onboarding → Home saw the name spelled two different ways in the
+/// first ten seconds.
 struct SoberWordmark: View {
   var body: some View {
-    Text("sober.")
-      .font(DSFont.title)
-      .dsTitleTracking()
+    Text("Sober")
+      .font(DSFont.headline)
       .foregroundStyle(DSPalette.textPrimary)
       .accessibilityAddTraits(.isHeader)
   }
@@ -44,15 +49,7 @@ struct SoberWordmark: View {
 struct SoberCard<Content: View>: View {
   @ViewBuilder let content: Content
 
-  var body: some View {
-    content
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(DSSpace.md)
-      .background(
-        RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
-          .fill(DSPalette.surface)
-      )
-  }
+  var body: some View { DSCard { content } }
 }
 
 /// The one filled action on a screen.
@@ -68,19 +65,7 @@ struct PrimaryActionButtonStyle: ButtonStyle {
   @Environment(\.isEnabled) private var isEnabled
 
   func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(DSFont.headline)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: DSHit.primary)
-      .foregroundStyle(DSPalette.onAccent)
-      .background(
-        RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
-          .fill(tint)
-      )
-      .opacity(configuration.isPressed ? 0.88 : 1)
-      .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : 0.99)
-      .animation(reduceMotion ? nil : DSMotion.quick, value: configuration.isPressed)
-      .contentShape(RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous))
+    DSPrimaryButtonStyle().makeBody(configuration: configuration)
   }
 }
 
@@ -89,20 +74,8 @@ struct PrimaryActionButtonStyle: ButtonStyle {
 struct SecondaryActionButtonStyle: ButtonStyle {
   var tint: Color = DSPalette.textPrimary
 
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
   func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(DSFont.headline)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: DSHit.control)
-      .foregroundStyle(tint)
-      .background(
-        RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
-          .fill(configuration.isPressed ? DSPalette.surfaceRaised : DSPalette.surface)
-      )
-      .animation(reduceMotion ? nil : DSMotion.quick, value: configuration.isPressed)
-      .contentShape(RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous))
+    DSSecondaryButtonStyle().makeBody(configuration: configuration)
   }
 }
 
@@ -152,29 +125,6 @@ struct ScreenHeader: View {
   }
 }
 
-private struct SoberEntranceModifier: ViewModifier {
-  let order: Int
-
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var isVisible = false
-
-  func body(content: Content) -> some View {
-    content
-      .opacity(isVisible ? 1 : 0)
-      .offset(y: reduceMotion || isVisible ? 0 : 6)
-      .onAppear {
-        guard !isVisible else { return }
-        if reduceMotion {
-          isVisible = true
-        } else {
-          withAnimation(DSMotion.entrance(order)) {
-            isVisible = true
-          }
-        }
-      }
-  }
-}
-
 /// Circular and capsule chrome.
 ///
 /// Both were Liquid Glass with a material fallback. They are now plain raised
@@ -192,15 +142,6 @@ private struct SoberSurfaceShapeModifier<S: Shape>: ViewModifier {
   }
 }
 
-private struct SoberFlatBackground: View {
-  var body: some View {
-    DSPalette.background
-      .ignoresSafeArea()
-      .allowsHitTesting(false)
-      .accessibilityHidden(true)
-  }
-}
-
 extension View {
   /// The page ground.
   ///
@@ -208,13 +149,9 @@ extension View {
   /// behind every legacy screen. Beyond the visual mismatch, it kept a
   /// per-frame redraw running during the tasks, where the whole point is that
   /// nothing on screen competes with the stimulus.
-  func soberBackground() -> some View {
-    background { SoberFlatBackground() }
-  }
+  func soberBackground() -> some View { dsPageBackground() }
 
-  func soberEntrance(order: Int = 0) -> some View {
-    modifier(SoberEntranceModifier(order: order))
-  }
+  func soberEntrance(order: Int = 0) -> some View { dsAppear(order) }
 
   func soberGlassCircle(tint: Color? = nil) -> some View {
     modifier(SoberSurfaceShapeModifier(shape: Circle(), tint: tint))

@@ -11,7 +11,7 @@ struct SafetyPlanView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: DSSpace.md) {
           ScreenHeader(
             eyebrow: "Safety Circle",
             title: "Plan your way home.",
@@ -21,7 +21,7 @@ struct SafetyPlanView: View {
 
           SoberCard {
             Toggle(isOn: $plan.isActive) {
-              VStack(alignment: .leading, spacing: 3) {
+              VStack(alignment: .leading, spacing: DSSpace.xxs) {
                 Text("Safety Circle").font(DSFont.headline)
                 Text(plan.isActive ? "Ride and contact plan active" : "Safety Circle paused")
                   .font(DSFont.footnote)
@@ -32,7 +32,7 @@ struct SafetyPlanView: View {
           }
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: DSSpace.md) {
               fieldLabel("Who is taking the check?")
               TextField("Your first name", text: $plan.userName)
                 .textContentType(.name)
@@ -50,7 +50,7 @@ struct SafetyPlanView: View {
           }
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: DSSpace.md) {
               fieldLabel("Ride destination")
               Picker("Preferred ride", selection: $plan.preferredRide) {
                 Text("Uber").tag("Uber")
@@ -85,10 +85,10 @@ struct SafetyPlanView: View {
           )
           .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
-          .padding(.horizontal, 4)
+          .padding(.horizontal, DSSpace.xxs)
         }
         .soberEntrance()
-        .padding(22)
+        .padding(DSSpace.margin)
       }
       .soberBackground()
       .navigationTitle("Safety Circle")
@@ -112,11 +112,11 @@ struct SafetyPlanView: View {
 struct SoberTextFieldStyle: TextFieldStyle {
   func _body(configuration: TextField<Self._Label>) -> some View {
     configuration
-      .padding(.horizontal, 14)
+      .padding(.horizontal, DSSpace.sm)
       .frame(minHeight: 48)
-      .background(Palette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .background(Palette.surface, in: RoundedRectangle(cornerRadius: DSRadius.small, style: .continuous))
       .overlay {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
+        RoundedRectangle(cornerRadius: DSRadius.small, style: .continuous)
           .stroke(Palette.secondary.opacity(0.25), lineWidth: 1)
       }
   }

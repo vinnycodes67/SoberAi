@@ -50,7 +50,7 @@ struct OcularTaskView: View {
 
       GeometryReader { proxy in
         ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
+          RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
             .fill(StimulusPalette.field)
 
           targetGuides(in: proxy.size)
@@ -87,23 +87,23 @@ struct OcularTaskView: View {
                     .stroke(
                       service.quality.facePresent ? DSPalette.textSecondary : DSPalette.accent,
                       lineWidth: 1.5)
-                    .padding(8)
+                    .padding(DSSpace.xs)
                 }
                 .frame(width: 78, height: 102)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous))
                 .overlay {
-                  RoundedRectangle(cornerRadius: 16, style: .continuous)
+                  RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
                     .stroke(StimulusPalette.guide.opacity(0.35), lineWidth: 1)
                 }
               }
             }
             Spacer()
           }
-          .padding(12)
+          .padding(DSSpace.sm)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous))
         .overlay {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
+          RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
             .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
         }
       }
@@ -113,7 +113,7 @@ struct OcularTaskView: View {
 
       if reduceMotion {
         SoberCard {
-          VStack(alignment: .leading, spacing: 10) {
+          VStack(alignment: .leading, spacing: DSSpace.xs) {
             Label("Reduced Motion is enabled", systemImage: "figure.walk.motion")
               .font(DSFont.headline)
             Text("This variant uses a static hold and jump targets only. It still records a live visual sample when the camera is usable.")
@@ -181,8 +181,8 @@ struct OcularTaskView: View {
   }
 
   private var protocolProgress: some View {
-    VStack(spacing: 9) {
-      HStack(spacing: 7) {
+    VStack(spacing: DSSpace.xs) {
+      HStack(spacing: DSSpace.xs) {
         ForEach(progressPhases, id: \.self) { phase in
           Capsule()
             .fill(progressColor(for: phase))

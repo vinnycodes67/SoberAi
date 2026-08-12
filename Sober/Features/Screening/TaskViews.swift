@@ -28,12 +28,12 @@ struct ReactionTaskView: View {
         detail: "Wait for the cue, then choose its exact match. Early, incorrect, and missed responses are recorded."
       )
 
-      VStack(spacing: 14) {
+      VStack(spacing: DSSpace.sm) {
         ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
+          RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
             .fill(StimulusPalette.field)
             .overlay {
-              RoundedRectangle(cornerRadius: 24, style: .continuous)
+              RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
                 .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
             }
 
@@ -42,7 +42,7 @@ struct ReactionTaskView: View {
               .shadow(color: symbolColor(target).opacity(0.42), radius: 22)
               .accessibilityLabel("Target: \(target.accessibilityLabel)")
           } else {
-            VStack(spacing: 12) {
+            VStack(spacing: DSSpace.sm) {
               if phase == .intro {
                 Text("6 choices")
                   .font(DSFont.title)
@@ -66,23 +66,23 @@ struct ReactionTaskView: View {
         }
         .frame(height: 200)
 
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DSSpace.xs) {
           ForEach(ChoiceReactionSymbol.allCases, id: \.rawValue) { choice in
             Button {
               choiceTapped(choice)
             } label: {
-              HStack(spacing: 10) {
+              HStack(spacing: DSSpace.xs) {
                 reactionSymbol(choice, size: 28)
                 Text(choice.accessibilityLabel)
                   .font(DSFont.footnoteStrong)
                   .foregroundStyle(Palette.textPrimary)
                 Spacer(minLength: 0)
               }
-              .padding(.horizontal, 12)
+              .padding(.horizontal, DSSpace.sm)
               .frame(minHeight: 54)
-              .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+              .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous))
               .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
                   .stroke(symbolColor(choice).opacity(0.4), lineWidth: 1)
               }
             }
@@ -233,7 +233,7 @@ struct MotorTrackingTaskView: View {
         let displayPosition = fingerPosition == .zero ? start : fingerPosition
 
         ZStack {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
+          RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
             .fill(StimulusPalette.field)
 
           Canvas { context, _ in
@@ -261,9 +261,9 @@ struct MotorTrackingTaskView: View {
             .shadow(color: StimulusPalette.targetPrimary.opacity(0.32), radius: 16)
             .position(displayPosition)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous))
         .overlay {
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
+          RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
             .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
         }
         .contentShape(Rectangle())
@@ -303,7 +303,7 @@ struct MotorTrackingTaskView: View {
       }
       .frame(height: 330)
 
-      HStack(spacing: 9) {
+      HStack(spacing: DSSpace.xs) {
         Image(systemName: "arrow.right")
           .foregroundStyle(Palette.primary)
         Text("If you lift early, the path resets. That is expected.")
@@ -337,7 +337,7 @@ struct TimeEstimateTaskView: View {
       )
 
       ZStack {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
+        RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
           .fill(StimulusPalette.field)
 
         if startedAt == nil {
@@ -358,7 +358,7 @@ struct TimeEstimateTaskView: View {
       }
       .frame(height: 300)
       .overlay {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
+        RoundedRectangle(cornerRadius: DSRadius.large, style: .continuous)
           .stroke(StimulusPalette.guide.opacity(0.2), lineWidth: 1)
       }
 

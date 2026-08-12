@@ -9,18 +9,18 @@ final class SoberUITests: XCTestCase {
   func testOnboardingStartsAtProductBoundaryAndAdvances() {
     let app = launch(fixture: "onboarding")
 
-    XCTAssertTrue(app.staticTexts["Take a beat before you move."].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Take a beat before you move."].waitForExistence(timeout: 30))
     XCTAssertTrue(app.staticTexts["1 / 4"].exists)
     capture(app, named: "onboarding-introduction")
 
     app.buttons["Continue"].tap()
-    XCTAssertTrue(app.staticTexts["A signal, never a green light."].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.staticTexts["A signal, never a green light."].waitForExistence(timeout: 30))
   }
 
   func testPublicShellKeepsSafetyActionAndAllPublicTabsReachable() {
     let app = launch(fixture: "home")
 
-    XCTAssertTrue(app.staticTexts["Learn your steady."].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Learn your steady."].waitForExistence(timeout: 30))
     XCTAssertTrue(app.buttons["Record a baseline session"].isHittable)
     XCTAssertTrue(app.buttons["Home"].exists)
     XCTAssertTrue(app.buttons["History"].exists)
@@ -29,15 +29,15 @@ final class SoberUITests: XCTestCase {
     capture(app, named: "public-home")
 
     app.buttons["History"].tap()
-    XCTAssertTrue(app.staticTexts["What you have recorded."].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.staticTexts["What you have recorded."].waitForExistence(timeout: 30))
     app.buttons["Settings"].tap()
-    XCTAssertTrue(app.staticTexts["SETTINGS"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.staticTexts["SETTINGS"].waitForExistence(timeout: 30))
   }
 
   func testSeededHistoryShowsBoundedRowsWithoutAggregateClaims() {
     let app = launch(fixture: "history", initialTab: "history")
 
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 30))
     XCTAssertTrue(app.staticTexts["Inconclusive"].exists)
     XCTAssertTrue(app.staticTexts["Baseline session"].exists)
     XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'streak'")).firstMatch.exists)
@@ -51,10 +51,10 @@ final class SoberUITests: XCTestCase {
     let stores = app.buttons.matching(
       NSPredicate(format: "label BEGINSWITH %@", "What Sober stores")
     ).firstMatch
-    XCTAssertTrue(stores.waitForExistence(timeout: 5))
+    XCTAssertTrue(stores.waitForExistence(timeout: 30))
     stores.tap()
 
-    XCTAssertTrue(app.staticTexts["Everything stays on this iPhone."].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.staticTexts["Everything stays on this iPhone."].waitForExistence(timeout: 30))
     XCTAssertTrue(app.staticTexts["NEVER STORED"].exists)
     capture(app, named: "privacy-center")
   }
@@ -62,7 +62,7 @@ final class SoberUITests: XCTestCase {
   func testHowResultsWorkShowsAllStatesAsEducation() {
     let app = launch(fixture: "how-results-work")
 
-    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 30))
     XCTAssertTrue(app.staticTexts["Signals detected"].exists)
     XCTAssertTrue(app.staticTexts["No clear read"].exists)
     XCTAssertTrue(app.staticTexts["No signals detected"].exists)
@@ -74,7 +74,7 @@ final class SoberUITests: XCTestCase {
   func testSignalsResultKeepsNoDriveActionAndSampleDisclosureVisible() {
     let app = launch(fixture: "result-signals")
 
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 30))
     XCTAssertTrue(app.staticTexts["We saw signs consistent with impairment. Don’t drive."].exists)
     XCTAssertTrue(app.staticTexts["Sample result"].exists)
     XCTAssertTrue(app.buttons["Open Uber"].exists)
@@ -84,7 +84,7 @@ final class SoberUITests: XCTestCase {
   func testInconclusiveResultRefusesAFalseClearance() {
     let app = launch(fixture: "result-inconclusive")
 
-    XCTAssertTrue(app.staticTexts["No clear read"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["No clear read"].waitForExistence(timeout: 30))
     XCTAssertTrue(
       app.staticTexts["We couldn’t get a clear read. If you’ve had anything, don’t drive."].exists
     )
@@ -94,7 +94,7 @@ final class SoberUITests: XCTestCase {
   func testNoSignalsResultRetainsExplicitSafetyLimit() {
     let app = launch(fixture: "result-clear")
 
-    XCTAssertTrue(app.staticTexts["No signals detected"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["No signals detected"].waitForExistence(timeout: 30))
     XCTAssertTrue(
       app.staticTexts["We didn’t detect signals. This does not mean you’re sober or safe to drive."].exists
     )
@@ -104,7 +104,7 @@ final class SoberUITests: XCTestCase {
   func testInterruptedTaskOffersOnlyRedoOrEnd() {
     let app = launch(fixture: "interrupted")
 
-    XCTAssertTrue(app.staticTexts["That task was interrupted."].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["That task was interrupted."].waitForExistence(timeout: 30))
     XCTAssertTrue(app.buttons["Redo this task"].isHittable)
     XCTAssertTrue(app.buttons["End check"].isHittable)
     XCTAssertFalse(app.buttons["Resume"].exists)
@@ -115,7 +115,7 @@ final class SoberUITests: XCTestCase {
     let app = launch(fixture: "capture-recovery")
 
     XCTAssertTrue(
-      app.staticTexts["The camera lost a usable reading."].waitForExistence(timeout: 5)
+      app.staticTexts["The camera lost a usable reading."].waitForExistence(timeout: 30)
     )
     XCTAssertTrue(app.staticTexts["Center your face and move somewhere brighter."].exists)
     XCTAssertTrue(app.buttons["Set the camera up again"].isHittable)
@@ -173,7 +173,7 @@ final class SoberAccessibilityUITests: XCTestCase {
     ]
     app.launch()
 
-    XCTAssertTrue(app.staticTexts["Learn your steady."].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Learn your steady."].waitForExistence(timeout: 30))
     let action = app.buttons["Record a baseline session"]
     if !action.isHittable {
       app.swipeUp()

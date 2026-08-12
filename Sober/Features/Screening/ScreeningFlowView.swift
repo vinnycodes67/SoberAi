@@ -218,8 +218,8 @@ struct ScreeningFlowView: View {
           }
           .accessibilityLabel("Exit check")
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, DSSpace.md)
+        .padding(.top, DSSpace.xxs)
       }
 
       if let interruptedStep {
@@ -435,17 +435,17 @@ struct FlowContainer<Content: View>: View {
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 24) {
+      VStack(alignment: .leading, spacing: DSSpace.lg) {
         if let progress {
           StepProgress(current: progress, total: 5)
-            .padding(.trailing, 54)
+            .padding(.trailing, DSSpace.xxl)
         }
         content
       }
       .soberEntrance()
-      .padding(.horizontal, 22)
-      .padding(.top, 58)
-      .padding(.bottom, 24)
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.top, DSSpace.xxl)
+      .padding(.bottom, DSSpace.lg)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .soberBackground()
@@ -504,7 +504,7 @@ private struct SelfReportView: View {
           "Be honest with yourself. Your answer stays on this iPhone and overrides the task result."
       )
 
-      VStack(spacing: 10) {
+      VStack(spacing: DSSpace.xs) {
         answerButton("Yes", value: .yes)
         answerButton("I’m not sure", value: .unsure)
         answerButton("No", value: .no)
@@ -512,7 +512,7 @@ private struct SelfReportView: View {
 
       if let selection, selection != .no {
         SoberCard {
-          HStack(alignment: .top, spacing: 12) {
+          HStack(alignment: .top, spacing: DSSpace.sm) {
             Image(systemName: "hand.raised.fill")
               .foregroundStyle(Palette.warning)
             Text(
@@ -526,7 +526,7 @@ private struct SelfReportView: View {
 
       if isVoiceOverEnabled {
         SoberCard {
-          VStack(alignment: .leading, spacing: 8) {
+          VStack(alignment: .leading, spacing: DSSpace.xs) {
             Text("I can’t do the visual tasks")
               .font(DSFont.headline)
             Text("The visual tasks need sight and a steady drag. You can skip them and still get to the safer next step.")
@@ -568,13 +568,13 @@ private struct SelfReportView: View {
           .foregroundStyle(selection == value ? Palette.primary : Palette.textSecondary)
       }
       .foregroundStyle(Palette.textPrimary)
-      .padding(.horizontal, 18)
+      .padding(.horizontal, DSSpace.md)
       .frame(minHeight: 58)
       .background(
-        Palette.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        Palette.cardBackground, in: RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
       )
       .overlay {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
           .stroke(
             selection == value ? Palette.primary : Palette.secondary.opacity(0.2), lineWidth: 1)
       }
@@ -587,9 +587,9 @@ private struct AnalyzingView: View {
   let onComplete: () -> Void
 
   var body: some View {
-    VStack(spacing: 26) {
+    VStack(spacing: DSSpace.lg) {
       SignalHalo(size: 238)
-      VStack(spacing: 8) {
+      VStack(spacing: DSSpace.xs) {
         Text("Comparing your signals")
           .font(DSFont.title)
           .dsTitleTracking()
@@ -615,11 +615,11 @@ private struct BaselineCompleteView: View {
   let onDone: () -> Void
 
   var body: some View {
-    VStack(spacing: 24) {
+    VStack(spacing: DSSpace.lg) {
       Spacer()
       SignalHalo(tone: Palette.item0, size: 210, isActive: false)
         .soberEntrance(order: 0)
-      VStack(spacing: 9) {
+      VStack(spacing: DSSpace.xs) {
         Text(accepted ? "Baseline recorded" : completionState.title)
           .font(DSFont.hero)
           .dsHeroTracking()
@@ -647,7 +647,7 @@ private struct BaselineCompleteView: View {
         .buttonStyle(PrimaryActionButtonStyle())
         .soberEntrance(order: 3)
     }
-    .padding(22)
+    .padding(DSSpace.margin)
     .soberBackground()
   }
 }

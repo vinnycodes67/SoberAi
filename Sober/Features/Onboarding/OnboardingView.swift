@@ -17,7 +17,7 @@ struct OnboardingView: View {
   private static let pageCount = 4
 
   var body: some View {
-    VStack(spacing: 0) {
+    VStack(spacing: DSSpace.xxs) {
       HStack {
         SoberWordmark()
         Spacer()
@@ -27,8 +27,8 @@ struct OnboardingView: View {
           .contentTransition(.numericText())
           .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: page)
       }
-      .padding(.horizontal, 22)
-      .padding(.top, 12)
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.top, DSSpace.sm)
 
       TabView(selection: $page) {
         introduction.tag(0)
@@ -39,7 +39,7 @@ struct OnboardingView: View {
       .tabViewStyle(.page(indexDisplayMode: .never))
       .animation(reduceMotion ? nil : SoberMotion.screen, value: page)
 
-      VStack(spacing: 14) {
+      VStack(spacing: DSSpace.sm) {
         StepProgress(current: page, total: Self.pageCount)
 
         if page < Self.pageCount - 1 {
@@ -71,8 +71,8 @@ struct OnboardingView: View {
           #endif
         }
       }
-      .padding(.horizontal, 22)
-      .padding(.bottom, 18)
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.bottom, DSSpace.md)
     }
     .soberBackground()
     .sheet(isPresented: $showingRetentionPolicy) {
@@ -85,12 +85,12 @@ struct OnboardingView: View {
 
   private var introduction: some View {
     ScrollView {
-      VStack(spacing: 30) {
+      VStack(spacing: DSSpace.xl) {
         SignalHalo(size: 244)
-          .padding(.top, 28)
+          .padding(.top, DSSpace.lg)
           .soberEntrance(order: 0)
 
-        VStack(spacing: 12) {
+        VStack(spacing: DSSpace.sm) {
           Text("Take a beat before you move.")
             .font(DSFont.hero)
             .dsHeroTracking()
@@ -102,17 +102,17 @@ struct OnboardingView: View {
           .font(DSFont.body)
           .multilineTextAlignment(.center)
           .foregroundStyle(Palette.textSecondary)
-          .padding(.horizontal, 14)
+          .padding(.horizontal, DSSpace.sm)
         }
         .soberEntrance(order: 1)
       }
-      .padding(.horizontal, 22)
+      .padding(.horizontal, DSSpace.margin)
     }
   }
 
   private var boundaries: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 24) {
+      VStack(alignment: .leading, spacing: DSSpace.lg) {
         ScreenHeader(
           eyebrow: "What Sober is",
           title: "A signal, never a green light.",
@@ -121,7 +121,7 @@ struct OnboardingView: View {
         )
         .soberEntrance(order: 0)
 
-        VStack(spacing: 10) {
+        VStack(spacing: DSSpace.xs) {
           boundaryRow(
             icon: "hand.raised.fill", title: "No pass state",
             detail: "Every result keeps the safest choice visible.")
@@ -135,7 +135,7 @@ struct OnboardingView: View {
         }
         .soberEntrance(order: 1)
       }
-      .padding(22)
+      .padding(DSSpace.margin)
     }
   }
 
@@ -160,7 +160,7 @@ struct OnboardingView: View {
 
   private var profile: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 22) {
+      VStack(alignment: .leading, spacing: DSSpace.margin) {
         ScreenHeader(
           eyebrow: "Your details",
           title: profileTitle,
@@ -169,7 +169,7 @@ struct OnboardingView: View {
         .soberEntrance(order: 0)
 
         SoberCard {
-          VStack(alignment: .leading, spacing: 18) {
+          VStack(alignment: .leading, spacing: DSSpace.md) {
             field(
               title: "Name",
               prompt: "First name",
@@ -188,9 +188,9 @@ struct OnboardingView: View {
         .soberEntrance(order: 1)
 
         if profileValidation.isOutOfOrdinary {
-          VStack(alignment: .leading, spacing: 8) {
+          VStack(alignment: .leading, spacing: DSSpace.xs) {
             ForEach(profileValidation.flags, id: \.self) { flag in
-              HStack(alignment: .top, spacing: 9) {
+              HStack(alignment: .top, spacing: DSSpace.xs) {
                 Image(systemName: flag.isBlocking ? "exclamationmark.circle.fill" : "info.circle")
                   .foregroundStyle(flag.isBlocking ? Palette.accent : Palette.textSecondary)
                 Text(flag.message)
@@ -204,7 +204,7 @@ struct OnboardingView: View {
           .soberEntrance(order: 2)
         }
       }
-      .padding(22)
+      .padding(DSSpace.margin)
     }
   }
 
@@ -216,7 +216,7 @@ struct OnboardingView: View {
     contentType: UITextContentType? = nil,
     autocapitalize: Bool = false
   ) -> some View {
-    VStack(alignment: .leading, spacing: 6) {
+    VStack(alignment: .leading, spacing: DSSpace.xxs) {
       Text(title).font(DSFont.headline)
       TextField(prompt, text: text)
         .keyboardType(keyboard)
@@ -225,7 +225,7 @@ struct OnboardingView: View {
         .autocorrectionDisabled(autocapitalize)
         .font(DSFont.body)
         .foregroundStyle(Palette.textPrimary)
-        .padding(.vertical, 8)
+        .padding(.vertical, DSSpace.xs)
         .overlay(alignment: .bottom) {
           Rectangle()
             .fill(Palette.secondary.opacity(0.28))
@@ -237,7 +237,7 @@ struct OnboardingView: View {
 
   private var consent: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 22) {
+      VStack(alignment: .leading, spacing: DSSpace.margin) {
         ScreenHeader(
           eyebrow: "Your biometric data",
           title: "Processed here. Gone right after.",
@@ -246,7 +246,7 @@ struct OnboardingView: View {
         .soberEntrance(order: 0)
 
         SoberCard {
-          VStack(spacing: 18) {
+          VStack(spacing: DSSpace.md) {
             consentToggle(
               title: "Camera processing",
               detail: "I consent to on-device eye and face landmark processing during a check.",
@@ -274,18 +274,18 @@ struct OnboardingView: View {
           .foregroundStyle(Palette.textSecondary)
           .soberEntrance(order: 3)
       }
-      .padding(22)
+      .padding(DSSpace.margin)
     }
   }
 
   private func boundaryRow(icon: String, title: String, detail: String) -> some View {
     SoberCard {
-      HStack(alignment: .top, spacing: 14) {
+      HStack(alignment: .top, spacing: DSSpace.sm) {
         Image(systemName: icon)
           .font(DSFont.title)
           .foregroundStyle(Palette.primary)
           .frame(width: 32, height: 32)
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DSSpace.xxs) {
           Text(title).font(DSFont.headline)
           Text(detail)
             .font(DSFont.subheadline)
@@ -301,7 +301,7 @@ struct OnboardingView: View {
     isOn: Binding<Bool>
   ) -> some View {
     Toggle(isOn: isOn) {
-      VStack(alignment: .leading, spacing: 5) {
+      VStack(alignment: .leading, spacing: DSSpace.xxs) {
         Text(title).font(DSFont.headline)
         Text(detail)
           .font(DSFont.subheadline)
@@ -375,7 +375,7 @@ struct RetentionPolicyView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: DSSpace.margin) {
           ScreenHeader(
             eyebrow: "Prototype policy",
             title: "Short memory by design.",
@@ -399,7 +399,7 @@ struct RetentionPolicyView: View {
             controlPolicy
           )
         }
-        .padding(22)
+        .padding(DSSpace.margin)
       }
       .soberBackground()
       .toolbar {
@@ -411,7 +411,7 @@ struct RetentionPolicyView: View {
   }
 
   private func policySection(_ title: String, _ detail: String) -> some View {
-    VStack(alignment: .leading, spacing: 7) {
+    VStack(alignment: .leading, spacing: DSSpace.xs) {
       Text(title).font(DSFont.headline)
       Text(detail)
         .foregroundStyle(Palette.textSecondary)

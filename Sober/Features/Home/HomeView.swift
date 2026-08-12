@@ -126,7 +126,7 @@ struct AboutPrototypeView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: DSSpace.margin) {
           SignalHalo(size: 130, isActive: false)
             .frame(maxWidth: .infinity)
 
@@ -138,7 +138,7 @@ struct AboutPrototypeView: View {
           )
 
           SoberCard {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: DSSpace.sm) {
               aboutRow("No safe-to-drive state", "checkmark.shield")
               aboutRow("Self-report hard gate", "hand.raised")
               aboutRow("Quality-gated results", "waveform.badge.magnifyingglass")
@@ -162,7 +162,7 @@ struct AboutPrototypeView: View {
           .foregroundStyle(Palette.textSecondary)
           .frame(maxWidth: .infinity)
         }
-        .padding(22)
+        .padding(DSSpace.margin)
       }
       .soberBackground()
       .toolbar {
