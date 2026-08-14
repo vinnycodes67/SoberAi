@@ -10,7 +10,7 @@
 6. **Camera calibration:** On a TrueDepth iPhone, confirm the mirrored preview and all six quality indicators respond to position, light, distance, and motion.
 7. **Live task loop:** Complete the reaction choices and all four ocular phases; confirm the interaction remains understandable and nonjudgmental.
 8. **Research Center:** Review explicit research consent, context/confounders, five-session baseline quality, JSON export, and delete-all behavior.
-9. **Founder previews:** Review all three outcomes, especially **No signals detected**.
+9. **Founder previews:** Review all three outcomes, especially **No changes detected**.
 10. **Intervention:** Confirm a concerning result begins the parent alert immediately and clearly separates relay acceptance from carrier delivery.
 11. **Dismissal:** Confirm the result requires a four-second dwell plus explicit acknowledgement.
 12. **Language:** Search for any phrase that could be interpreted as permission to drive.

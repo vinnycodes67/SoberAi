@@ -49,11 +49,12 @@ an Apple account, validate a legal claim, or fabricate a physical-device result.
 
 ## Current closure blockers
 
-As of August 9, 2026, this branch cannot produce `READY` because:
+As of August 13, 2026, this branch cannot produce `READY` because:
 
 - no paired physical iPhone or completed Phase 4 device matrix is available;
-- no Apple signing team or App Store Connect build has been supplied;
-- no live support or privacy-policy URL has been supplied and linked in-app;
+- no project signing team, distribution archive, or App Store Connect build has been supplied;
+- deploy-ready support/privacy pages and an in-app policy now exist, but no live
+  public HTTPS URLs have been supplied;
 - category, age rating, export compliance, and medical-claim review need founder
   and counsel decisions;
 - screenshots and five-owner Phase 5 signoff are incomplete;

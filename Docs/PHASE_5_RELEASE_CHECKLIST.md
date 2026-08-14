@@ -8,27 +8,27 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 
 | Field | Value |
 | --- | --- |
-| Commit | |
-| Marketing version | |
-| Build number | |
+| Commit | Release-readiness work started from `486a790c64a6722ee4b711a0bdfbb12067f82572`; replace with the exact signed candidate commit before distribution |
+| Marketing version | `0.2.0` |
+| Build number | `2` |
 | Bundle identifier | `com.soberprototype.app` |
-| Archive SHA-256 | |
+| Archive SHA-256 | Local unsigned rehearsal: `6373e7bb5bbd9f29e232ee4d3befad6f6559925ecd0b5a93bfbcf93160bee651` |
 | Apple team | |
 | App Store Connect app record | |
 | TestFlight processed-build link | |
-| Rehearsal device / iOS | |
-| Rehearsal date / tester | |
+| Rehearsal device / iOS | Simulator: iPhone SE (3rd generation) and iPhone 17 Pro Max, iOS 26.5; physical device still open |
+| Rehearsal date / tester | August 13, 2026 / Codex local automation |
 
 ## Engineering artifact
 
-- [ ] `xcodegen generate` leaves `Sober.xcodeproj` unchanged
-- [ ] Debug and Release build for `Sober` and `SoberInternal`
-- [ ] Unit tests pass
-- [ ] Targeted App Review-path UI tests pass
-- [ ] Backend preservation tests pass
-- [ ] `Scripts/check-release-metadata.sh` passes
-- [ ] `Scripts/check-public-binary.sh` passes
-- [ ] `Scripts/rehearse-app-store-package.sh` passes; archive path and hash recorded
+- [x] `xcodegen generate` leaves `Sober.xcodeproj` unchanged
+- [x] Debug and Release build for `Sober` and `SoberInternal`
+- [x] Unit tests pass
+- [x] Targeted App Review-path UI tests pass
+- [x] Backend preservation tests pass
+- [x] `Scripts/check-release-metadata.sh` passes
+- [x] `Scripts/check-public-binary.sh` passes
+- [x] `Scripts/rehearse-app-store-package.sh` passes; archive path and hash recorded
 - [ ] Signed public archive contains camera and Face ID descriptions
 - [ ] Signed public archive contains no location, background, push, Guardian URL,
       third-party telemetry framework, or internal navigation
@@ -38,9 +38,9 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 
 - [ ] Clean public install starts at onboarding
 - [ ] Home offers the first genuine baseline session and immediate get-home action
-- [ ] Home → **How results work** exposes all three states as read-only examples
-- [ ] Closing examples leaves baseline at zero and History empty
-- [ ] Privacy Center matches the archived permissions and data flow
+- [x] Home → **How results work** exposes all three states as read-only examples
+- [x] Closing examples leaves baseline at zero and History empty
+- [x] Privacy Center matches the archived permissions and data flow
 - [ ] Delete all local data followed by relaunch recreates no synthetic state
 - [ ] Airplane-mode journey completes without a network error
 - [ ] Clean-device recording and screenshots retained
@@ -61,7 +61,7 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 ## Privacy, safety, and legal
 
 - [ ] App Privacy answers reconciled against the signed archived binary
-- [ ] `Data Not Collected` remains true: no off-device transmission or SDK added
+- [x] `Data Not Collected` remains true: no off-device transmission or SDK added
 - [ ] Camera frames are confirmed memory-only and absent from retained artifacts
 - [ ] Retention and deletion language matches implementation
 - [ ] Medical/impairment claims reviewed by qualified counsel
@@ -81,18 +81,56 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 - [ ] External TestFlight, if used, has privacy and legal approval
 - [ ] Phased release and rollback owner confirmed
 
-## Stop-ship blockers as of August 9, 2026
+## Stop-ship blockers as of August 13, 2026
 
-- No Apple Developer team, signing identity, or App Store Connect credential has
-  been supplied in this workspace.
-- No current signed physical-device or TestFlight evidence is recorded.
-- No live support URL or privacy policy URL has been supplied; Apple requires
-  the privacy policy in metadata and accessible within the app.
+- One Apple Development identity is installed, but no project team, distribution
+  archive, or App Store Connect record has been supplied in this workspace.
+- No current signed physical-device or TestFlight evidence is recorded. Both a
+  TrueDepth iPhone and a supported non-TrueDepth iPhone are needed because the
+  App Store binary is installable on both and intentionally behaves differently.
+- Matching support and privacy pages exist in `SupportSite/`, and the privacy
+  policy is accessible in-app, but no stable public HTTPS URLs have been supplied.
 - Category, age questionnaire, export compliance, and medical-claim language
   still require founder/counsel decisions.
 - Phase 4 TrueDepth, accessibility, offline-proxy, external-action, lifecycle,
   and crash-free gates remain open until their evidence is attached.
 - Screenshot capture and final copy freeze remain open.
+
+## Retained local evidence — August 13, 2026
+
+- Unit tests: 158 passed, 0 failed, 0 skipped in
+  `.artifacts/unit-tests-final-20260813.xcresult`.
+- Compact-device UI: all 22 current cases are covered — 21 passed in
+  `.artifacts/ui-tests/small-20260814T025326Z-25662.xcresult`, and the added
+  no-TrueDepth/small-screen fallback passed in
+  `.artifacts/ui-tests/unsupported-camera-compact-rerun-20260813.xcresult`.
+- Large-device accessibility UI: all seven current cases have passing retained
+  evidence. Five passed in
+  `.artifacts/ui-tests/large-accessibility-20260814T025326Z-25662.xcresult`;
+  the previously skipped calibration case passed in
+  `.artifacts/ui-tests/unsupported-camera-targeted-20260813.xcresult`; and the
+  AX5 History/Settings test was split into two bounded one-launch cases, both
+  passing in `.artifacts/ui-tests/ax5-split-tabs-20260813.xcresult`.
+- Xcode 26's simulator test manager was materially slower when every UI test ran
+  in one process: a consolidated rerun hit the old two-launch test's 120-second
+  allowance. The test was split instead of increasing a global timeout; each
+  replacement case now passes independently in 60 seconds or less.
+- Backend: 22 passed; release-policy tooling: 18 passed; production dependency
+  audit: 0 vulnerabilities.
+- Xcode Release static analysis passed. Periphery found 120 dead-code findings,
+  concentrated in deferred Guardian, research, and excluded pupil-model paths.
+  That is a source-minimization follow-up, not evidence that those routes are
+  reachable: the Release boundary scan separately proves the routes,
+  permissions, endpoint, model, and push entitlements are absent from public v1.
+- The repository has no checked-in SwiftLint policy. Running SwiftLint with its
+  global defaults reports 206 pre-existing style/size findings (166 warnings,
+  40 errors), chiefly large legacy types and line-length/naming rules. Compiler
+  diagnostics and Xcode static analysis are clean; adopting a lint baseline and
+  shrinking `AppModel` should be scheduled deliberately rather than mass-edited
+  into this release candidate.
+- Unsigned archive: `.artifacts/app-store-rehearsal/final-20260813/Sober.xcarchive`.
+  This is package-shape evidence only; it cannot satisfy the signed archive,
+  Apple validation, upload, processing, TestFlight, or physical-device rows.
 
 ## Signoff
 

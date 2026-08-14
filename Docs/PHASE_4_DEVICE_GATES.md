@@ -30,17 +30,21 @@ None of this can start until someone provides what is listed.
 | --- | --- | --- |
 | Apple Developer Program membership and Team ID | Any signed device build, TestFlight | Founder |
 | A TrueDepth iPhone | Every camera gate below | Founder |
+| A currently supported non-TrueDepth iPhone | Limited-capture fallback and honest compatibility disclosure | Founder |
 | A second iPhone | Nothing in v1 — Guardian is v1.1 | — |
 | Privacy policy URL and support URL | External TestFlight and submission | Founder + counsel |
 | Legal/regulatory determination | External TestFlight recruiting | Counsel |
 
 ## Camera and capture
 
-The simulator has no TrueDepth camera. Every row here is unverified today, and
-the ocular protocol is the app's least-proven surface.
+The simulator has no TrueDepth camera. It proves that the limited-capture
+control is reachable, but not how the fallback behaves on physical unsupported
+hardware. Every physical row here is unverified today, and the ocular protocol
+is the app's least-proven surface.
 
 | # | Case | Expected | Evidence |
 | --- | --- | --- | --- |
+| C0 | Check on a supported iPhone without TrueDepth | Limited-capture action remains reachable; result is inconclusive; safety actions remain available | recording |
 | C1 | Calibration in good light | All six tiles reach ready; button enables after the hold | screenshot |
 | C2 | Calibration in a dim room | Specific guidance names light; button stays disabled | screenshot |
 | C3 | Face too close, then too far | Distance tile drives the guidance | screenshot |

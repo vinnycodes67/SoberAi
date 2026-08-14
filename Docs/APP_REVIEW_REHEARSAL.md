@@ -32,13 +32,14 @@ Screen-record the complete sequence without cuts:
 3. On Home, confirm **Record a baseline session** is the live-check action and
    **Get home** remains available.
 4. Under **Before a live check**, open **How results work**.
-5. Confirm the page says **No result is a green light**, shows **Signals
-   detected**, **No clear read**, and **No signals detected**, and labels them
+5. Confirm the page says **No result is a green light**, shows **Changes
+   detected**, **No clear read**, and **No changes detected**, and labels them
    as examples that record no data.
 6. Tap **Done**. Confirm Home still requests the first baseline session.
 7. Open History and confirm **Nothing recorded yet**.
-8. Open Settings → **What Sober stores**. Confirm the local storage, camera,
-   location, and notification descriptions match the public binary.
+8. Open Settings → **What Sober stores**. Confirm the local storage, device
+   backup, camera, location, and notification descriptions match the public
+   binary and the person's Apple backup settings.
 9. Use **Delete all local data**, relaunch, and confirm onboarding returns with
    no synthetic baseline, History, or Safety Plan.
 10. Repeat the journey in airplane mode. Public v1 should not show network
