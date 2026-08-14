@@ -44,7 +44,9 @@ struct YourSteadyView: View {
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.isHeader)
       Text(
-        "Every check compares you only to the range below. Nothing here is compared to other people, and no measure is combined with another."
+        "Each measure is compared with your own earlier sessions. The check considers those "
+          + "comparisons together only to choose one of three cautious result states — never a "
+          + "score or driving clearance."
       )
       .font(DSFont.callout)
       .foregroundStyle(DSPalette.textSecondary)
@@ -67,7 +69,8 @@ struct YourSteadyView: View {
       DSCard {
         VStack(alignment: .leading, spacing: DSSpace.sm) {
           Text(
-            "A check looks at each measure on its own and asks whether it fell outside your usual range. Enough of them together is what makes a result say signals were found."
+            "A check asks whether each measure fell outside your usual range. Enough change across "
+              + "the available measures is what makes a result say changes were detected."
           )
           .font(DSFont.body)
           .foregroundStyle(DSPalette.textSecondary)

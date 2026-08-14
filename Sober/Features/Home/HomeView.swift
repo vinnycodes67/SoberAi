@@ -82,7 +82,7 @@ struct HomeView: View {
       HowResultsWorkView()
     }
     .sheet(isPresented: $showingAbout) {
-      AboutPrototypeView()
+      AboutSoberView()
         .environmentObject(model)
         .preferredColorScheme(.dark)
     }
@@ -117,7 +117,7 @@ struct HomeView: View {
   #endif
 }
 
-struct AboutPrototypeView: View {
+struct AboutSoberView: View {
   @EnvironmentObject private var model: AppModel
   @Environment(\.dismiss) private var dismiss
   @State private var showingReset = false
@@ -131,10 +131,9 @@ struct AboutPrototypeView: View {
             .frame(maxWidth: .infinity)
 
           ScreenHeader(
-            eyebrow: "Sober 0.2",
+            eyebrow: "Sober \(versionString)",
             title: aboutTitle,
-            detail:
-              "The app demonstrates an ethically constrained screening and intervention flow, not a validated impairment detector."
+            detail: aboutDetail
           )
 
           SoberCard {
@@ -156,7 +155,7 @@ struct AboutPrototypeView: View {
           Button("How results work") { showingHowResultsWork = true }
             .buttonStyle(DSSecondaryButtonStyle())
 
-          Button("Reset prototype") {
+          Button(resetButtonTitle) {
             showingReset = true
           }
           .foregroundStyle(Palette.textSecondary)
@@ -176,7 +175,7 @@ struct AboutPrototypeView: View {
       }
       .alert(resetTitle, isPresented: $showingReset) {
         Button("Cancel", role: .cancel) {}
-        Button("Reset and delete", role: .destructive) {
+        Button("Delete and reset", role: .destructive) {
           dismiss()
           model.resetPrototype()
         }
@@ -200,6 +199,26 @@ struct AboutPrototypeView: View {
     #endif
   }
 
+  private var aboutDetail: String {
+    #if INTERNAL_BUILD
+    "This internal build demonstrates a constrained research and intervention flow. It is not a validated impairment detector."
+    #else
+    "Sober compares a short check with your own measured baseline and keeps a ride within reach. It never estimates BAC, diagnoses impairment, or clears anyone to drive."
+    #endif
+  }
+
+  private var resetButtonTitle: String {
+    #if INTERNAL_BUILD
+    "Reset internal build"
+    #else
+    "Delete all local data"
+    #endif
+  }
+
+  private var versionString: String {
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+  }
+
   private var resetTitle: String {
     #if INTERNAL_BUILD
     "Reset the prototype and delete research data?"
@@ -210,9 +229,13 @@ struct AboutPrototypeView: View {
 
   private var resetMessage: String {
     #if INTERNAL_BUILD
-    "This clears onboarding, your Safety Circle, and consent, and permanently deletes all \(model.researchSessions.count) stored research session\(model.researchSessions.count == 1 ? "" : "s") and your measured baseline. Export first if you need the data. This cannot be undone."
+    "This clears onboarding, your Safety Circle, consent, \(model.researchSessions.count) stored "
+      + "research session\(model.researchSessions.count == 1 ? "" : "s"), and your measured baseline "
+      + "from this installation. Export first if you need the data. Older device backups are "
+      + "managed separately in Apple settings."
     #else
-    "This clears onboarding, your Safety Plan, stored sessions, and your measured baseline from this iPhone. This cannot be undone."
+    "This clears onboarding, your Safety Plan, stored sessions, and your measured baseline from "
+      + "this installation. Older device backups are managed separately in Apple settings."
     #endif
   }
 }

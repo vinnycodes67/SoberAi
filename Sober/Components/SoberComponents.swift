@@ -61,9 +61,6 @@ struct SoberCard<Content: View>: View {
 struct PrimaryActionButtonStyle: ButtonStyle {
   var tint: Color = DSPalette.accent
 
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.isEnabled) private var isEnabled
-
   func makeBody(configuration: Configuration) -> some View {
     DSPrimaryButtonStyle().makeBody(configuration: configuration)
   }

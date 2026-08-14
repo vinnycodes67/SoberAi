@@ -13,6 +13,7 @@ struct SettingsView: View {
   @State private var showingPlan = false
   @State private var showingAbout = false
   @State private var showingPrivacy = false
+  @State private var showingPrivacyPolicy = false
   @State private var showingHowResultsWork = false
   @State private var showingReset = false
 
@@ -34,13 +35,17 @@ struct SettingsView: View {
         .preferredColorScheme(.dark)
     }
     .sheet(isPresented: $showingAbout) {
-      AboutPrototypeView()
+      AboutSoberView()
         .environmentObject(model)
         .preferredColorScheme(.dark)
     }
     .sheet(isPresented: $showingPrivacy) {
       PrivacyCenterView()
         .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
+    .sheet(isPresented: $showingPrivacyPolicy) {
+      PrivacyPolicyView()
         .preferredColorScheme(.dark)
     }
     .sheet(isPresented: $showingHowResultsWork) {
@@ -52,7 +57,9 @@ struct SettingsView: View {
       Button("Delete", role: .destructive) { model.resetPrototype() }
     } message: {
       Text(
-        "This removes your Safety Plan, your recorded sessions, and your measured baseline. You would start a new baseline from zero. This cannot be undone."
+        "This removes your Safety Plan, recorded sessions, and measured baseline from this installation. "
+          + "You would start a new baseline from zero. Older device backups are managed separately "
+          + "in Apple settings."
       )
     }
     .onChange(of: model.privacyShieldIsVisible) { _, isShielded in
@@ -62,6 +69,7 @@ struct SettingsView: View {
       showingPlan = false
       showingAbout = false
       showingPrivacy = false
+      showingPrivacyPolicy = false
       showingReset = false
     }
   }
@@ -113,6 +121,13 @@ struct SettingsView: View {
           detail: "Every kind of data, where it lives, and when it goes",
           action: { showingPrivacy = true }
         )
+        DSSeparator()
+        DSRow(
+          "Privacy policy",
+          detail: "How the public app handles camera processing and local data",
+          action: { showingPrivacyPolicy = true }
+        )
+        .accessibilityIdentifier("privacy-policy-row")
       }
     }
   }
@@ -145,7 +160,9 @@ struct SettingsView: View {
             .font(DSFont.headline)
             .foregroundStyle(DSPalette.textPrimary)
           Text(
-            "Sober keeps everything on this iPhone, so deleting here is the whole deletion. There is no account and no copy on a server to ask about."
+            "This removes Sober's data from this installation. Sober has no account or server copy, "
+              + "but an older iCloud or computer backup may retain app data until that backup is "
+              + "replaced or deleted in Apple settings."
           )
           .font(DSFont.footnote)
           .foregroundStyle(DSPalette.textSecondary)
@@ -182,13 +199,14 @@ struct PrivacyCenterView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: DSSpace.xl) {
           VStack(alignment: .leading, spacing: DSSpace.sm) {
-            Text("Everything stays on this iPhone.")
+            Text("No Sober account or data server.")
               .font(DSFont.title)
               .dsTitleTracking()
               .foregroundStyle(DSPalette.textPrimary)
               .fixedSize(horizontal: false, vertical: true)
             Text(
-              "Sober has no account and sends no measurement anywhere. The list below is everything it keeps and what removes it."
+              "Sober has no account or configured server connection. The list below explains what "
+                + "the app stores locally and what removes it."
             )
             .font(DSFont.callout)
             .foregroundStyle(DSPalette.textSecondary)
@@ -200,7 +218,11 @@ struct PrivacyCenterView: View {
           DSSection("Never stored") {
             DSCard {
               VStack(alignment: .leading, spacing: DSSpace.xs) {
-                item("Camera frames", "Used for face and eye landmarks while a task runs, then gone. Never written to disk, never uploaded.")
+                item(
+                  "Camera frames",
+                  "Used for face and eye landmarks while a task runs, then gone. Never written "
+                    + "to disk, never uploaded."
+                )
                 item("Video or audio", "Sober records neither.")
               }
             }
@@ -212,11 +234,18 @@ struct PrivacyCenterView: View {
                 item("Your steady", "The range your checks compare against. Removed by deleting all local data.")
                 item(
                   "History",
-                  "When you checked, how well the capture went, and which of the three results came out. Entries older than \(CheckHistoryStore.retentionDays) days are removed automatically, and only the most recent \(CheckHistoryStore.maximumEntries) are kept."
+                  "When you checked, how well the capture went, and which of the three results came "
+                    + "out. Entries older than \(CheckHistoryStore.retentionDays) days are removed "
+                    + "automatically, and only the most recent \(CheckHistoryStore.maximumEntries) are kept."
                 )
                 item("Session summaries", "Numbers only — no imagery. Removed by deleting all local data.")
                 item("Safety Plan", "Your destination, ride app, and contact. Removed by deleting all local data.")
-                item("Your name and age", "Used only to address you and to check you are old enough.")
+                item("Your optional name and age", "Used only to address you and to check you are old enough.")
+                item(
+                  "Device backups",
+                  "Depending on your Apple settings, iOS may include Sober's app data in an iCloud "
+                    + "or computer backup. Sober does not receive or control those backups."
+                )
               }
             }
           }
@@ -242,7 +271,9 @@ struct PrivacyCenterView: View {
           DSSection("Results are yours alone") {
             DSCard {
               Text(
-                "A result is not proof of anything and cannot be shared from the app as though it were. If someone asks you to run a check and show them, you are under no obligation, and the result would not tell them what they think it does."
+                "A result is not proof of anything and cannot be shared from the app as though it "
+                  + "were. If someone asks you to run a check and show them, you are under no "
+                  + "obligation, and the result would not tell them what they think it does."
               )
               .font(DSFont.body)
               .foregroundStyle(DSPalette.textSecondary)
@@ -362,5 +393,98 @@ struct PrivacyCenterView: View {
         .dsReadingLine()
     }
     .padding(.vertical, DSSpace.xxs)
+  }
+}
+
+/// The policy for the public, local-only App Store build. It intentionally
+/// excludes Guardian and research tooling, which are reachable only in
+/// SoberInternal.
+struct PrivacyPolicyView: View {
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    NavigationStack {
+      ScrollView {
+        VStack(alignment: .leading, spacing: DSSpace.xl) {
+          VStack(alignment: .leading, spacing: DSSpace.sm) {
+            DSEyebrow("Effective August 13, 2026")
+            Text("Privacy policy")
+              .font(DSFont.hero)
+              .dsHeroTracking()
+              .foregroundStyle(DSPalette.textPrimary)
+              .accessibilityAddTraits(.isHeader)
+            Text(
+              "This policy covers the public Sober app. Sober has no account, advertising, "
+                + "analytics, or configured server connection."
+            )
+            .font(DSFont.callout)
+            .foregroundStyle(DSPalette.textSecondary)
+            .dsReadingLine()
+          }
+
+          policySection(
+            "Camera processing",
+            "When you start a check, Sober asks for camera access and processes face and eye "
+              + "landmarks on this iPhone. Camera frames, video, and audio are not saved or uploaded. "
+              + "You can deny access or turn it off later in iPhone Settings; the app then uses its "
+              + "explicit no-camera path rather than inventing a reading."
+          )
+          policySection(
+            "Data kept on this iPhone",
+            "Sober keeps your optional name, age, Safety Plan, baseline session summaries, "
+              + "preferences, and check History in the app’s private container. History is limited "
+              + "to the newest 100 entries and entries are removed after 90 days. Baseline sessions "
+              + "remain until you delete all local data. Depending on your Apple settings, iOS may "
+              + "include this app data in an iCloud or computer backup. Sober does not receive or "
+              + "control those backups."
+          )
+          policySection(
+            "Data collection and sharing",
+            "The public app does not upload personal data or measurements to Sober or a remote "
+              + "result feed. It does not track you, sell data, show ads, or share results with a "
+              + "parent, employer, insurer, school, law-enforcement agency, or other third party. "
+              + "Ride, call, and message actions happen only after you tap them and open the relevant "
+              + "system or third-party app, which operates under its own privacy policy. Sober does "
+              + "not attach your check result."
+          )
+          policySection(
+            "Your choices",
+            "Camera processing and local retention require your agreement during onboarding. You "
+              + "can review permissions in Privacy, remove camera access in iPhone Settings, or use "
+              + "Delete all local data in Sober Settings. Deletion removes onboarding, the Safety "
+              + "Plan, History, session summaries, and your measured baseline from the current "
+              + "installation. It does not delete older device backups managed through Apple settings."
+          )
+          policySection(
+            "Age and changes",
+            "Sober is not available to children under 13. If this policy changes, the effective date and the in-app policy will be updated before new data practices take effect."
+          )
+          policySection(
+            "Contact",
+            "For privacy or support questions, email pulavarthyvinay@gmail.com. Do not send camera images, health information, or sensitive measurements."
+          )
+        }
+        .padding(DSSpace.margin)
+      }
+      .background(DSPalette.background.ignoresSafeArea())
+      .navigationTitle("Privacy policy")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button("Done") { dismiss() }
+        }
+      }
+    }
+  }
+
+  private func policySection(_ title: String, _ detail: String) -> some View {
+    DSSection(title) {
+      DSCard {
+        Text(detail)
+          .font(DSFont.body)
+          .foregroundStyle(DSPalette.textSecondary)
+          .dsReadingLine()
+      }
+    }
   }
 }

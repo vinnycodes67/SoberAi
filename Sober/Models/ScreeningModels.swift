@@ -13,20 +13,20 @@ enum ScreeningResultState: String, Sendable {
 
   var title: String {
     switch self {
-    case .signalsDetected: "Signals detected"
+    case .signalsDetected: "Changes detected"
     case .inconclusive: "No clear read"
-    case .noSignalsDetected: "No signals detected"
+    case .noSignalsDetected: "No changes detected"
     }
   }
 
   var message: String {
     switch self {
     case .signalsDetected:
-      "We saw signs consistent with impairment. Don’t drive."
+      "This check found changes outside your usual range. Don’t drive."
     case .inconclusive:
       "We couldn’t get a clear read. If you’ve had anything, don’t drive."
     case .noSignalsDetected:
-      "We didn’t detect signals. This does not mean you’re sober or safe to drive."
+      "This check did not find changes. It cannot establish sobriety or driving safety."
     }
   }
 }
@@ -43,9 +43,8 @@ struct ScreeningMetrics: Equatable, Sendable {
   /// `false` when the timing task never ran.
   var timingWasMeasured: Bool = true
   var gazeSmoothness: Double?
-  /// `nil` when the pupillometry step was skipped or the model/capture
-  /// couldn't produce a reading. Unlike trackingError/gazeSmoothness this
-  /// does not force an INCONCLUSIVE result — see ScreeningEngine for why.
+  /// Internal-research-only signal. Public builds neither bundle its model
+  /// nor include this value in a result.
   var pupillometry: PupillometrySample? = nil
   var qualityScore: Double
   var completedAllTasks: Bool
@@ -137,10 +136,10 @@ struct BaselineCompletionState: Equatable, Sendable {
 }
 
 enum FounderScenario: String, CaseIterable, Identifiable, Sendable {
-  case live = "Run the live prototype"
-  case signals = "Preview signals detected"
+  case live = "Run live check"
+  case signals = "Preview changes detected"
   case inconclusive = "Preview inconclusive"
-  case noSignals = "Preview no signals"
+  case noSignals = "Preview no changes"
 
   var id: String { rawValue }
 }

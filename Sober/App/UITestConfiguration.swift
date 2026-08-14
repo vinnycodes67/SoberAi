@@ -1,5 +1,6 @@
 import Foundation
 
+#if DEBUG
 /// Deterministic launch state for UI tests.
 ///
 /// A UI test that drives the real app's stored state is not deterministic: it
@@ -233,3 +234,4 @@ enum UITestConfiguration {
     return arguments[index + 1]
   }
 }
+#endif

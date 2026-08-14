@@ -37,7 +37,7 @@ final class SoberUITests: XCTestCase {
   func testSeededHistoryShowsBoundedRowsWithoutAggregateClaims() {
     let app = launch(fixture: "history", initialTab: "history")
 
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 30))
+    XCTAssertTrue(app.staticTexts["Changes detected"].waitForExistence(timeout: 30))
     XCTAssertTrue(app.staticTexts["Inconclusive"].exists)
     XCTAssertTrue(app.staticTexts["Baseline session"].exists)
     XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'streak'")).firstMatch.exists)
@@ -54,7 +54,8 @@ final class SoberUITests: XCTestCase {
     XCTAssertTrue(stores.waitForExistence(timeout: 30))
     stores.tap()
 
-    XCTAssertTrue(app.staticTexts["Everything stays on this iPhone."].waitForExistence(timeout: 30))
+    XCTAssertTrue(app.staticTexts["No Sober account or data server."].waitForExistence(timeout: 30))
+    XCTAssertTrue(app.staticTexts["Device backups"].exists)
     XCTAssertTrue(app.staticTexts["NEVER STORED"].exists)
     capture(app, named: "privacy-center")
   }
@@ -63,9 +64,9 @@ final class SoberUITests: XCTestCase {
     let app = launch(fixture: "how-results-work")
 
     XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 30))
-    XCTAssertTrue(app.staticTexts["Signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["Changes detected"].exists)
     XCTAssertTrue(app.staticTexts["No clear read"].exists)
-    XCTAssertTrue(app.staticTexts["No signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["No changes detected"].exists)
     XCTAssertTrue(app.staticTexts["Examples only. No data is recorded."].exists)
     XCTAssertFalse(app.buttons["Open Uber"].exists)
     capture(app, named: "how-results-work")
@@ -74,8 +75,10 @@ final class SoberUITests: XCTestCase {
   func testSignalsResultKeepsNoDriveActionAndSampleDisclosureVisible() {
     let app = launch(fixture: "result-signals")
 
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 30))
-    XCTAssertTrue(app.staticTexts["We saw signs consistent with impairment. Don’t drive."].exists)
+    XCTAssertTrue(app.staticTexts["Changes detected"].waitForExistence(timeout: 30))
+    XCTAssertTrue(
+      app.staticTexts["This check found changes outside your usual range. Don’t drive."].exists
+    )
     XCTAssertTrue(app.staticTexts["Sample result"].exists)
     XCTAssertTrue(app.buttons["Open Uber"].exists)
     capture(app, named: "result-signals")
@@ -94,9 +97,9 @@ final class SoberUITests: XCTestCase {
   func testNoSignalsResultRetainsExplicitSafetyLimit() {
     let app = launch(fixture: "result-clear")
 
-    XCTAssertTrue(app.staticTexts["No signals detected"].waitForExistence(timeout: 30))
+    XCTAssertTrue(app.staticTexts["No changes detected"].waitForExistence(timeout: 30))
     XCTAssertTrue(
-      app.staticTexts["We didn’t detect signals. This does not mean you’re sober or safe to drive."].exists
+      app.staticTexts["This check did not find changes. It cannot establish sobriety or driving safety."].exists
     )
     capture(app, named: "result-no-signals")
   }

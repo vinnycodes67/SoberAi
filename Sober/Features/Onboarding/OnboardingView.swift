@@ -128,7 +128,7 @@ struct OnboardingView: View {
           eyebrow: "What Sober is",
           title: "A signal, never a green light.",
           detail:
-            "This prototype screens for changes from your own baseline. It cannot measure BAC, diagnose impairment, or tell you it’s safe to drive."
+            "Sober checks for changes from your own measured baseline. It cannot measure BAC, diagnose impairment, or tell you it’s safe to drive."
         )
         .soberEntrance(order: 0)
 
@@ -160,7 +160,12 @@ struct OnboardingView: View {
   }
 
   private var profileValidation: OnboardingValidation {
-    validator.validate(profile: profileDraft, safetyPlan: model.safetyPlan)
+    validator.validate(
+      profile: profileDraft,
+      safetyPlan: model.safetyPlan,
+      requiresName: BuildChannel.allowsInternalTools,
+      validatesGuardian: BuildChannel.allowsInternalTools
+    )
   }
 
   private func commitProfile() {
@@ -182,8 +187,8 @@ struct OnboardingView: View {
         SoberCard {
           VStack(alignment: .leading, spacing: DSSpace.md) {
             field(
-              title: "Name",
-              prompt: "First name",
+              title: profileNameFieldTitle,
+              prompt: profileNamePrompt,
               text: $nameField,
               contentType: .givenName
             )
@@ -280,7 +285,7 @@ struct OnboardingView: View {
         .foregroundStyle(Palette.primary)
         .soberEntrance(order: 2)
 
-        Text("Prototype consent only, not legal advice or a production privacy policy.")
+        Text("You can review what Sober stores and delete all local data at any time in Settings.")
           .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .soberEntrance(order: 3)
@@ -343,7 +348,7 @@ struct OnboardingView: View {
     #if INTERNAL_BUILD
     "You can invite one trusted Guardian to receive a minimal help request. No employer or law-enforcement mode."
     #else
-    "Checks and baseline measurements stay on this iPhone. The public app has no family tracking or remote result feed."
+    "The public app has no Sober server connection, family tracking, or remote result feed."
     #endif
   }
 
@@ -351,7 +356,7 @@ struct OnboardingView: View {
     #if INTERNAL_BUILD
     "Who should your family see?"
     #else
-    "What should Sober call you?"
+    "Confirm your age."
     #endif
   }
 
@@ -359,7 +364,24 @@ struct OnboardingView: View {
     #if INTERNAL_BUILD
     "Your age stays on this iPhone. Your first name may appear in a help request to the Guardian you choose. Neither is attached to research data."
     #else
-    "Your name and age stay on this iPhone and are not attached to camera frames or sent to a server."
+    "Sober is available to people 13 and older. A name is optional. Both are stored in the app "
+      + "and are never attached to camera frames or sent to Sober."
+    #endif
+  }
+
+  private var profileNameFieldTitle: String {
+    #if INTERNAL_BUILD
+    "Name"
+    #else
+    "Name (optional)"
+    #endif
+  }
+
+  private var profileNamePrompt: String {
+    #if INTERNAL_BUILD
+    "First name"
+    #else
+    "What should Sober call you?"
     #endif
   }
 
@@ -388,9 +410,9 @@ struct RetentionPolicyView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: DSSpace.margin) {
           ScreenHeader(
-            eyebrow: "Prototype policy",
+            eyebrow: "Privacy & retention",
             title: "Short memory by design.",
-            detail: "The MVP is designed around data minimization."
+            detail: "Sober keeps only the local data needed for your baseline, History, and Safety Plan."
           )
 
           policySection(

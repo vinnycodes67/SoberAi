@@ -21,8 +21,13 @@ fi
 mkdir -p "$REHEARSAL_ROOT"
 
 echo "==> Regenerating the Xcode project"
+PROJECT_HASH_BEFORE=$(shasum -a 256 Sober.xcodeproj/project.pbxproj | awk '{print $1}')
 xcodegen generate >/dev/null
-git diff --exit-code -- Sober.xcodeproj
+PROJECT_HASH_AFTER=$(shasum -a 256 Sober.xcodeproj/project.pbxproj | awk '{print $1}')
+if [ "$PROJECT_HASH_BEFORE" != "$PROJECT_HASH_AFTER" ]; then
+  echo "Sober.xcodeproj was stale. Review and commit the regenerated project, then rerun." >&2
+  exit 1
+fi
 
 echo "==> Checking source metadata and the public/internal artifact boundary"
 Scripts/check-release-metadata.sh
@@ -71,7 +76,7 @@ done
 for copy in \
   "No result is a green light." \
   "Examples only. No data is recorded."; do
-  strings -a "$BINARY" | grep -q -F -- "$copy"
+  LC_ALL=C grep -a -q -F -- "$copy" "$BINARY"
   echo "  ok    review education is archived: \"$copy\""
 done
 

@@ -86,6 +86,16 @@ protocol GuardianLocationProviding: Sendable {
   func currentCoordinate() async throws -> GuardianCoordinate
 }
 
+/// Public v1 has no Guardian route or location permission. Supplying an inert
+/// implementation also avoids constructing CLLocationManager merely because
+/// AppModel has internal Guardian dependencies.
+@MainActor
+struct DisabledGuardianLocationService: GuardianLocationProviding {
+  func currentCoordinate() async throws -> GuardianCoordinate {
+    throw GuardianLocationError.locationUnavailable
+  }
+}
+
 @MainActor
 final class GuardianLocationService: NSObject, GuardianLocationProviding, @MainActor CLLocationManagerDelegate {
   private let manager = CLLocationManager()

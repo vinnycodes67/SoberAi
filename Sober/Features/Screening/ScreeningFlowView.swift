@@ -82,12 +82,27 @@ struct ScreeningFlowView: View {
       _step = State(initialValue: .attestation)
     } else {
       _step = State(initialValue: .result)
+      #if INTERNAL_BUILD
       _outcome = State(
         initialValue: ScreeningEngine().evaluate(
           selfReport: .no,
           metrics: .demoClear,
           founderScenario: configuration.scenario
         ))
+      #elseif DEBUG
+      _outcome = State(
+        initialValue: ScreeningEngine().uiTestPreview(for: configuration.scenario)
+      )
+      #else
+      // Public Release has no non-live route. If a future caller constructs
+      // one anyway, refuse to fabricate a result and fall back to the normal
+      // measured-data evaluator.
+      _outcome = State(
+        initialValue: ScreeningEngine().evaluate(
+          selfReport: .no,
+          metrics: .demoClear
+        ))
+      #endif
     }
   }
 
@@ -501,7 +516,7 @@ private struct SelfReportView: View {
         eyebrow: "Before the check",
         title: "Have you had anything to drink or use in the last 4 hours?",
         detail:
-          "Be honest with yourself. Your answer stays on this iPhone and overrides the task result."
+          "Be honest with yourself. Your answer is stored in the app, is not uploaded to Sober, and overrides the task result."
       )
 
       VStack(spacing: DSSpace.xs) {
@@ -626,7 +641,7 @@ private struct BaselineCompleteView: View {
         Text(
           accepted
             ? (sessions >= 5
-              ? "Your five-session research baseline is ready."
+              ? "Your five-session personal baseline is ready."
               : "\(5 - sessions) sober session\(5 - sessions == 1 ? "" : "s") still needed.")
             : completionState.message
         )

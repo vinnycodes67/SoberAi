@@ -1,6 +1,6 @@
 import Foundation
 
-/// A deliberately transparent prototype scorer. It is not a validated medical model.
+/// A deliberately transparent comparison engine. It is not a medical model.
 struct ScreeningEngine: Sendable {
   static let minimumQuality = 0.72
   private let signalThreshold = 0.58
@@ -11,9 +11,11 @@ struct ScreeningEngine: Sendable {
     personalBaseline: PersonalBaseline? = nil,
     founderScenario: FounderScenario = .live
   ) -> ScreeningOutcome {
+    #if INTERNAL_BUILD
     if founderScenario != .live {
       return previewOutcome(for: founderScenario)
     }
+    #endif
 
     // A baseline that hasn't reached its required session count doesn't
     // back any metric yet — everything falls back to the population range
@@ -40,24 +42,30 @@ struct ScreeningEngine: Sendable {
         personalValues: baseline?.samples.compactMap(\.gazeSmoothness), sdFloor: 0.05)
     }
     let baselineTrials = baseline?.samples.compactMap(\.pupillometry).flatMap(\.trials)
-    let pupilRisk = pupilRisk(metrics.pupillometry, baselineTrials: baselineTrials)
+    // Pupillometry is an internal experiment. The model has not been
+    // validated on visible-light iPhone captures and the public flow does not
+    // collect a pupil sample, so public scoring must neither display it nor
+    // penalize every person for its absence.
+    let pupilRisk = BuildChannel.allowsInternalTools
+      ? pupilRisk(metrics.pupillometry, baselineTrials: baselineTrials)
+      : nil
 
     // A metric that wasn't captured contributes the conservative (highest
     // risk) value here, but never on its own decides the outcome — the
     // guard below refuses to score at all when a task wasn't measured.
-    // Pupillometry is the one exception: it's a brand-new capture pathway
-    // riding on a freshly trained model with real domain-gap risk, so it
-    // contributes here but is deliberately kept out of that guard below —
-    // see the comment there.
-    let riskScore =
+    // Internal pupillometry is the one exception: it contributes to research
+    // builds but is deliberately kept out of the established-task guard below.
+    let measuredTaskRisk =
       (reactionRisk * 0.20)
       + (missRisk * 0.12)
       + ((trackingRisk ?? 1) * 0.18)
       + (timingRisk * 0.10)
       + ((gazeRisk ?? 1) * 0.15)
-      + ((pupilRisk ?? 1) * 0.25)
+    let riskScore = BuildChannel.allowsInternalTools
+      ? measuredTaskRisk + ((pupilRisk ?? 1) * 0.25)
+      : measuredTaskRisk / 0.75
 
-    let details = details(
+    let allDetails = details(
       reactionRisk: reactionRisk,
       trackingRisk: trackingRisk,
       timingRisk: timingRisk,
@@ -65,6 +73,9 @@ struct ScreeningEngine: Sendable {
       pupilRisk: pupilRisk,
       metrics: metrics
     )
+    let details = BuildChannel.allowsInternalTools
+      ? allDetails
+      : allDetails.filter { $0.id != "pupil" }
 
     // Self-report is a hard safety gate. A reported use can never produce
     // NO_SIGNALS_DETECTED, regardless of task performance.
@@ -86,13 +97,9 @@ struct ScreeningEngine: Sendable {
       )
     }
 
-    // Deliberately does not require metrics.pupillometry != nil here.
-    // Hard-gating every check to INCONCLUSIVE whenever the pupil capture
-    // pathway misses would make the app unusable if the model
-    // underperforms in the field — the likely case for a model trained in
-    // days on public data. It still runs, still scores, still gets
-    // baselined; it just isn't allowed to unilaterally block a result the
-    // way these already-proven tasks can.
+    // Deliberately does not require metrics.pupillometry here. It is absent
+    // from the public protocol, and an internal experimental miss must not
+    // overrule otherwise complete established tasks.
     guard
       metrics.completedAllTasks,
       metrics.qualityScore >= Self.minimumQuality,
@@ -114,6 +121,21 @@ struct ScreeningEngine: Sendable {
       details: details
     )
   }
+
+  #if DEBUG
+  /// Deterministic UI evidence only. This method does not exist in an App Store
+  /// binary, and the public fixture mirrors the public four-measure protocol.
+  func uiTestPreview(for scenario: FounderScenario) -> ScreeningOutcome {
+    let outcome = previewOutcome(for: scenario)
+    guard !BuildChannel.allowsInternalTools else { return outcome }
+    return ScreeningOutcome(
+      state: outcome.state,
+      qualityScore: outcome.qualityScore,
+      riskScore: outcome.riskScore,
+      details: outcome.details.filter { $0.id != "pupil" }
+    )
+  }
+  #endif
 
   private func normalized(_ value: Double, low: Double, high: Double) -> Double {
     min(max((value - low) / (high - low), 0), 1)

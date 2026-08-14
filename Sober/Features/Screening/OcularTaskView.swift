@@ -45,7 +45,7 @@ struct OcularTaskView: View {
         eyebrow: "Visual motor",
         title: "Keep your head still. Follow the signal.",
         detail:
-          "The signal will hold, glide horizontally and vertically, then jump. This is a guided research task, not an official HGN test."
+          "The signal will hold, glide horizontally and vertically, then jump. This is a guided eye-movement task, not an official clinical HGN test."
       )
 
       GeometryReader { proxy in

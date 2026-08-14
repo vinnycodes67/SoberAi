@@ -31,6 +31,10 @@ xcodebuild \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=$small_udid" \
   -resultBundlePath "$small_result" \
+  -parallel-testing-enabled NO \
+  -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 120 \
+  -maximum-test-execution-time-allowance 180 \
   -quiet \
   test \
   -only-testing:SoberUITests/JourneySmokeUITests \
@@ -47,6 +51,10 @@ xcodebuild \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=$large_udid" \
   -resultBundlePath "$large_result" \
+  -parallel-testing-enabled NO \
+  -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 120 \
+  -maximum-test-execution-time-allowance 180 \
   -quiet \
   test \
   -only-testing:SoberUITests/AccessibilityUITests \

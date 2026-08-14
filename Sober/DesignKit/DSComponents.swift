@@ -6,39 +6,55 @@ import SwiftUI
 
 /// The single most important action on a screen.
 struct DSPrimaryButtonStyle: ButtonStyle {
-  @Environment(\.isEnabled) private var isEnabled
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  func makeBody(configuration: Configuration) -> StyleContent {
+    StyleContent(configuration: configuration)
+  }
 
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(DSFont.headline)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: DSHit.primary)
-      .foregroundStyle(DSPalette.onAccent)
-      .background(
-        RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
-          .fill(DSPalette.accent)
-      )
-      .opacity(isEnabled ? (configuration.isPressed ? 0.86 : 1) : 0.4)
-      .animation(reduceMotion ? nil : DSMotion.quick, value: configuration.isPressed)
+  struct StyleContent: View {
+    let configuration: ButtonStyle.Configuration
+
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+      configuration.label
+        .font(DSFont.headline)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: DSHit.primary)
+        .foregroundStyle(DSPalette.onAccent)
+        .background(
+          RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
+            .fill(DSPalette.accent)
+        )
+        .opacity(isEnabled ? (configuration.isPressed ? 0.86 : 1) : 0.4)
+        .animation(reduceMotion ? nil : DSMotion.quick, value: configuration.isPressed)
+    }
   }
 }
 
 /// A supporting action.
 struct DSSecondaryButtonStyle: ButtonStyle {
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  func makeBody(configuration: Configuration) -> StyleContent {
+    StyleContent(configuration: configuration)
+  }
 
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(DSFont.headline)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: DSHit.control)
-      .foregroundStyle(DSPalette.textPrimary)
-      .background(
-        RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
-          .fill(configuration.isPressed ? DSPalette.surfaceRaised : DSPalette.surface)
-      )
-      .animation(reduceMotion ? nil : DSMotion.quick, value: configuration.isPressed)
+  struct StyleContent: View {
+    let configuration: ButtonStyle.Configuration
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+      configuration.label
+        .font(DSFont.headline)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: DSHit.control)
+        .foregroundStyle(DSPalette.textPrimary)
+        .background(
+          RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
+            .fill(configuration.isPressed ? DSPalette.surfaceRaised : DSPalette.surface)
+        )
+        .animation(reduceMotion ? nil : DSMotion.quick, value: configuration.isPressed)
+    }
   }
 }
 

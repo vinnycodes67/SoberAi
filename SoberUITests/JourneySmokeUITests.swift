@@ -49,6 +49,38 @@ final class JourneySmokeUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Start Sober check"].waitForExistence(timeout: 10))
   }
 
+  /// Simulators and non-TrueDepth iPhones cannot run AR face tracking. That
+  /// must degrade to an explicitly limited, inconclusive path rather than
+  /// stranding someone at camera setup.
+  func testUnsupportedCameraStillOffersALimitedCapturePath() {
+    let app = launchApp([
+      "-sober-onboarding-complete", "-sober-baseline-sessions", "5",
+    ])
+
+    let start = app.buttons["Start Sober check"]
+    XCTAssertTrue(start.waitForExistence(timeout: 10))
+    start.tap()
+
+    let no = app.buttons["No"]
+    XCTAssertTrue(no.waitForExistence(timeout: 10))
+    no.tap()
+
+    let continueToSetup = app.buttons["Continue to setup"]
+    XCTAssertTrue(continueToSetup.waitForExistence(timeout: 10))
+    continueToSetup.tap()
+
+    let limitedCapture = app.buttons["Continue with limited capture"]
+    XCTAssertTrue(limitedCapture.waitForExistence(timeout: 20))
+    for _ in 0..<4 where !limitedCapture.isHittable {
+      app.swipeUp()
+    }
+    XCTAssertTrue(limitedCapture.isHittable)
+    XCTAssertTrue(
+      app.staticTexts[
+        "A live check can continue, but its result will be inconclusive without usable camera capture."
+      ].exists)
+  }
+
   func testHowResultsWorkDoesNotCreateHistoryOrABaseline() {
     let app = launchApp(["-sober-onboarding-complete"])
 
@@ -62,9 +94,9 @@ final class JourneySmokeUITests: XCTestCase {
     education.tap()
 
     XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 10))
-    XCTAssertTrue(app.staticTexts["Signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["Changes detected"].exists)
     XCTAssertTrue(app.staticTexts["No clear read"].exists)
-    XCTAssertTrue(app.staticTexts["No signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["No changes detected"].exists)
     XCTAssertTrue(app.staticTexts["Examples only. No data is recorded."].exists)
 
     app.buttons["Done"].tap()
@@ -89,9 +121,9 @@ final class JourneySmokeUITests: XCTestCase {
       "-sober-history-fixture", "mixed",
     ])
 
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Changes detected"].waitForExistence(timeout: 10))
     XCTAssertTrue(app.staticTexts["Inconclusive"].exists)
-    XCTAssertTrue(app.staticTexts["No signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["No changes detected"].exists)
     XCTAssertTrue(app.staticTexts["Baseline session"].exists)
   }
 
@@ -102,6 +134,24 @@ final class JourneySmokeUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["What Sober stores"].waitForExistence(timeout: 10))
     XCTAssertTrue(app.buttons["Delete all local data"].exists)
+  }
+
+  func testPrivacyPolicyIsReachableInsideTheApp() {
+    let app = launchApp(["-sober-onboarding-complete", "-sober-initial-tab", "settings"])
+
+    // Activate the row's Button rather than its nested title. Tapping the
+    // StaticText can synthesize an event on the label without firing the
+    // surrounding Button after a long sequential UI run.
+    let policy = app.buttons["privacy-policy-row"]
+    XCTAssertTrue(policy.waitForExistence(timeout: 10))
+    XCTAssertTrue(policy.isHittable)
+    policy.tap()
+
+    XCTAssertTrue(app.navigationBars["Privacy policy"].waitForExistence(timeout: 10))
+    // DesignKit eyebrow labels expose their rendered uppercase value.
+    XCTAssertTrue(app.staticTexts["CAMERA PROCESSING"].exists)
+    XCTAssertTrue(app.staticTexts["DATA COLLECTION AND SHARING"].exists)
+    XCTAssertTrue(app.buttons["Done"].isHittable)
   }
 
   /// The privacy screen must keep saying the app does not use these, because it

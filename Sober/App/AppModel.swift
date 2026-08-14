@@ -111,9 +111,9 @@ final class AppModel: ObservableObject {
     guardianStore: any GuardianSessionStoring = KeychainGuardianSessionStore(),
     guardianAPI: GuardianAPIClient = GuardianAPIClient(),
     guardianHomeStore: any GuardianHomeStoring = KeychainGuardianHomeStore(),
-    guardianLocation: any GuardianLocationProviding = GuardianLocationService(),
+    guardianLocation: (any GuardianLocationProviding)? = nil,
     guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler(),
-    guardianLiveLocation: any GuardianLiveLocationProviding = GuardianLiveLocationService(),
+    guardianLiveLocation: (any GuardianLiveLocationProviding)? = nil,
     automaticallyStartsGuardianServices: Bool = BuildChannel.allowsInternalTools,
     allowsInternalTools: Bool = BuildChannel.allowsInternalTools
   ) {
@@ -134,8 +134,12 @@ final class AppModel: ObservableObject {
     self.guardianAPI = guardianAPI
     self.guardianHomeStore = guardianHomeStore
     self.guardianLocation = guardianLocation
+      ?? (allowsInternalTools ? GuardianLocationService() : DisabledGuardianLocationService())
     self.guardianCheckInScheduler = guardianCheckInScheduler
     self.guardianLiveLocation = guardianLiveLocation
+      ?? (allowsInternalTools
+        ? GuardianLiveLocationService()
+        : DisabledGuardianLiveLocationService())
     hasCompletedOnboarding = defaults.bool(forKey: Keys.onboarding)
     // Readiness begins empty and is rebuilt only from versioned archive records.
     // The old UserDefaults counter is deliberately ignored by BaselineStore.
@@ -166,11 +170,11 @@ final class AppModel: ObservableObject {
     }
 
     if automaticallyStartsGuardianServices {
-      guardianLocationAuthorization = guardianLiveLocation.authorizationState
-      guardianLiveLocation.onAuthorizationChange = { [weak self] state in
+      guardianLocationAuthorization = self.guardianLiveLocation.authorizationState
+      self.guardianLiveLocation.onAuthorizationChange = { [weak self] state in
         self?.guardianLocationAuthorization = state
       }
-      guardianLiveLocation.onLocation = { [weak self] update in
+      self.guardianLiveLocation.onLocation = { [weak self] update in
         guard let self else { return }
         self.guardianLocalLocation = update
         Task { await self.publishGuardianLocation(update) }
@@ -178,7 +182,7 @@ final class AppModel: ObservableObject {
       if guardianSession?.role == .person,
         defaults.bool(forKey: Keys.guardianLocationSharingEnabled)
       {
-        guardianLiveLocation.resumeIfAuthorized()
+        self.guardianLiveLocation.resumeIfAuthorized()
       }
     }
 
@@ -908,7 +912,10 @@ final class AppModel: ObservableObject {
   func completeOnboarding(founderPreview: Bool) {
     isFounderPreview = allowsInternalTools && founderPreview
     hasCompletedOnboarding = true
-    privacyStore.recordConsent(version: "prototype-v2", at: Date())
+    privacyStore.recordConsent(
+      version: BuildChannel.allowsInternalTools ? "internal-research-v2" : "public-v1",
+      at: Date()
+    )
     persist()
   }
 
@@ -1168,7 +1175,7 @@ final class AppModel: ObservableObject {
     // Capture before clearing `guardianSession` below — the revoke call
     // needs those credentials, and without this the backend would keep
     // showing an "active" relationship to the other party after a reset
-    // that promised this "cannot be undone." Best-effort and
+    // that promises to clear the current installation. Best-effort and
     // fire-and-forget like the other async cleanup below: local state
     // must not wait on network to actually clear.
     if let sessionToRevoke = guardianSession {

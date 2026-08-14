@@ -24,11 +24,15 @@ struct OnboardingValidator: Sendable {
     profile: UserProfile,
     safetyPlan: SafetyPlan,
     issuedFamilyCode: FamilyReferralCode? = nil,
-    joinedFamilyCodes: Set<FamilyReferralCode> = []
+    joinedFamilyCodes: Set<FamilyReferralCode> = [],
+    requiresName: Bool = true,
+    validatesGuardian: Bool = true
   ) -> OnboardingValidation {
     var flags: [OnboardingRiskFlag] = []
 
-    flags.append(contentsOf: nameFlags(profile.trimmedName))
+    if requiresName || !profile.trimmedName.isEmpty {
+      flags.append(contentsOf: nameFlags(profile.trimmedName))
+    }
     flags.append(contentsOf: ageFlags(profile.ageYears))
     flags.append(
       contentsOf: familyCodeFlags(
@@ -37,7 +41,9 @@ struct OnboardingValidator: Sendable {
         joinedFamilyCodes: joinedFamilyCodes
       )
     )
-    flags.append(contentsOf: guardianFlags(profile: profile, safetyPlan: safetyPlan))
+    if validatesGuardian {
+      flags.append(contentsOf: guardianFlags(profile: profile, safetyPlan: safetyPlan))
+    }
 
     return OnboardingValidation(flags: flags)
   }

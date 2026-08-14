@@ -192,15 +192,15 @@ struct HistoryView: View {
   private func title(for entry: CheckHistoryEntry) -> String {
     guard entry.kind == .check else { return "Baseline session" }
     switch entry.outcome {
-    case .signalsDetected: return "Signals detected"
+    case .signalsDetected: return "Changes detected"
     case .inconclusive: return "Inconclusive"
-    case .noSignalsDetected: return "No signals detected"
+    case .noSignalsDetected: return "No changes detected"
     case nil: return "Check"
     }
   }
 
   /// Only a concerning result is coloured, matching the palette's single rule:
-  /// orange means attention. "No signals detected" gets no colour, because it is
+  /// orange means attention. "No changes detected" gets no colour, because it is
   /// not a pass and must not read as one.
   private func tint(for entry: CheckHistoryEntry) -> Color {
     entry.outcome == .signalsDetected ? DSPalette.accent : DSPalette.textPrimary

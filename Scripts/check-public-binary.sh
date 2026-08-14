@@ -111,6 +111,52 @@ for needle in "${FORBIDDEN[@]}"; do
   fi
 done
 
+# Public-facing beta/prototype language makes a finished App Store build look
+# incomplete under Guideline 2.1. Internal tooling may still use those labels.
+PUBLIC_COPY_FORBIDDEN=(
+  "Prototype consent only"
+  "This prototype screens for changes"
+  "Prototype measurements explain what contributed"
+  "This MVP is not clinically validated"
+  "Reset prototype"
+  "We saw signs consistent with impairment"
+  "We didn’t detect signals. This does not mean you’re sober"
+  "-sober-ui-testing"
+  "-sober-baseline-sessions"
+)
+for needle in "${PUBLIC_COPY_FORBIDDEN[@]}"; do
+  if LC_ALL=C grep -a -q -F -- "$needle" "$BINARY"; then
+    fail "public-facing pre-release copy remains: \"$needle\""
+  else
+    pass "absent pre-release copy: \"$needle\""
+  fi
+done
+
+PUBLIC_RESULT_COPY_REQUIRED=(
+  "This check found changes outside your usual range. Don’t drive."
+  "This check did not find changes. It cannot establish sobriety or driving safety."
+)
+for needle in "${PUBLIC_RESULT_COPY_REQUIRED[@]}"; do
+  # Scan the binary directly. `strings | grep -q` is unsafe with `pipefail`:
+  # once grep finds a match and exits, strings can receive SIGPIPE and make the
+  # successful lookup report status 141. Direct grep also preserves UTF-8 copy
+  # such as the curly apostrophe in "Don't drive."
+  if LC_ALL=C grep -a -q -F -- "$needle" "$BINARY"; then
+    pass "required bounded result copy: \"$needle\""
+  else
+    fail "required bounded result copy is missing: \"$needle\""
+  fi
+done
+
+echo
+echo "==> Experimental model boundary"
+PUBLIC_MODEL=$(find "$APP" \( -name 'PupilSegmentation.mlmodelc' -o -name 'PupilSegmentation.mlpackage' \) -print -quit)
+if [ -n "$PUBLIC_MODEL" ]; then
+  fail "public app bundles the unvalidated pupil-segmentation model"
+else
+  pass "public app omits the unvalidated pupil-segmentation model"
+fi
+
 echo
 echo "==> Required coercion-resistant result copy"
 RESULT_PRIVACY_COPY="This result is private context for you. It is not evidence for a parent, partner, employer, school, insurer, or authority."
@@ -201,7 +247,7 @@ if [ -f "$PRIVACY_MANIFEST" ] && plutil -lint "$PRIVACY_MANIFEST" >/dev/null 2>&
     CA92.1 \
     NSPrivacyAccessedAPICategorySystemBootTime \
     35F9.1; do
-    if printf '%s' "$privacy_json" | grep -q -F -- "$value"; then
+    if grep -q -F -- "$value" <<< "$privacy_json"; then
       pass "bundled manifest declares $value"
     else
       fail "bundled manifest is missing $value"
@@ -248,26 +294,30 @@ echo "  note  export compliance must be answered for the archived binary"
 # alone, because a manually embedded binary would otherwise bypass the audit.
 echo
 echo "==> No-provider telemetry audit"
-FORBIDDEN_PROVIDERS=(
-  Firebase
-  Crashlytics
-  Sentry
-  PostHog
-  Mixpanel
-  Amplitude
-  Datadog
-  NewRelic
-  Instabug
-  Bugsnag
-  AppCenter
+FORBIDDEN_PROVIDER_SIGNATURES=(
+  "Firebase|FIRApp"
+  "Crashlytics|FirebaseCrashlytics"
+  "Sentry|SentrySDK"
+  "PostHog|PostHogSDK"
+  "Mixpanel|MixpanelInstance"
+  "Amplitude|AmplitudeSwift"
+  "Datadog|DatadogCore"
+  "NewRelic|NewRelicAgent"
+  "Instabug|InstabugSDK"
+  "Bugsnag|BugsnagClient"
+  "AppCenter|MSACAppCenter"
 )
 
 LINKED_IMAGE=$(otool -L "$BINARY" 2>/dev/null || true)
 BUNDLED_FRAMEWORKS=$(find "$APP" -path '*/Frameworks/*' -print 2>/dev/null || true)
-BINARY_STRINGS=$(strings -a "$BINARY" 2>/dev/null || true)
-for provider in "${FORBIDDEN_PROVIDERS[@]}"; do
-  if printf '%s\n%s\n%s\n' "$LINKED_IMAGE" "$BUNDLED_FRAMEWORKS" "$BINARY_STRINGS" \
-    | grep -qi -F -- "$provider"; then
+for entry in "${FORBIDDEN_PROVIDER_SIGNATURES[@]}"; do
+  provider=${entry%%|*}
+  binary_signature=${entry#*|}
+  # Framework names can use the readable provider name. Binary scans need a
+  # provider-specific symbol: a bare term such as "Amplitude" also describes
+  # the app's pupil-response measurement and is not telemetry evidence.
+  if grep -qi -F -- "$provider" <<< "$LINKED_IMAGE"$'\n'"$BUNDLED_FRAMEWORKS" \
+    || LC_ALL=C grep -a -q -F -- "$binary_signature" "$BINARY"; then
     fail "telemetry provider is linked or embedded: $provider"
   else
     pass "no provider artifact: $provider"
@@ -279,7 +329,7 @@ done
 # absent from the signed payload as well.
 ENTITLEMENTS=$(codesign -d --entitlements :- "$APP" 2>/dev/null || true)
 for key in aps-environment com.apple.developer.usernotifications.communication; do
-  if printf '%s' "$ENTITLEMENTS" | grep -q -F -- "$key"; then
+  if grep -q -F -- "$key" <<< "$ENTITLEMENTS"; then
     fail "public app contains deferred entitlement: $key"
   else
     pass "absent entitlement: $key"
@@ -322,6 +372,12 @@ if xcodebuild \
     pass "internal app also contains the privacy manifest"
   else
     fail "internal app is missing a valid PrivacyInfo.xcprivacy"
+  fi
+  INTERNAL_MODEL=$(find "$(dirname "$INTERNAL_BINARY")" -name 'PupilSegmentation.mlmodelc' -print -quit)
+  if [ -n "$INTERNAL_MODEL" ]; then
+    pass "experimental pupil model remains available in SoberInternal"
+  else
+    fail "SoberInternal is missing its experimental pupil model"
   fi
 else
   fail "could not build SoberInternal; forbidden-string sensitivity is unproven"

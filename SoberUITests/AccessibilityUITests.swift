@@ -55,20 +55,23 @@ final class AccessibilityUITests: XCTestCase {
     }
   }
 
-  /// Timeouts here are deliberately generous. Laying out three tab destinations
-  /// at AX5 is slow, and on a loaded CI machine this test timed out at 20s while
-  /// passing in 60s on its own — a flake that would train people to ignore the
-  /// suite.
-  func testEveryTabRendersAtLargestTextSize() {
-    let app = launchApp(
-      textSize: Self.ax5, ["-sober-history-fixture", "mixed"])
-    XCTAssertTrue(app.buttons["History"].waitForExistence(timeout: 60))
+  /// Render each destination directly at AX5. End-to-end tab taps are covered by
+  /// the journey suite; using the debug-only initial-tab route here isolates the
+  /// accessibility question from an XCTest/SwiftUI hit-synthesis flake seen only
+  /// on the simulator at AX5. Keep one launch per test: two 60-second waits plus
+  /// launch overhead can otherwise exceed XCTest's 120-second per-test ceiling.
+  func testHistoryRendersAtLargestTextSize() {
+    let history = launchApp(
+      textSize: Self.ax5,
+      ["-sober-history-fixture", "mixed", "-sober-initial-tab", "history"])
+    XCTAssertTrue(history.staticTexts["Changes detected"].waitForExistence(timeout: 60))
+  }
 
-    app.buttons["History"].tap()
-    XCTAssertTrue(app.staticTexts["Signals detected"].waitForExistence(timeout: 60))
-
-    app.buttons["Settings"].tap()
-    XCTAssertTrue(app.staticTexts["What Sober stores"].waitForExistence(timeout: 60))
+  func testSettingsRendersAtLargestTextSize() {
+    let settings = launchApp(
+      textSize: Self.ax5,
+      ["-sober-initial-tab", "settings"])
+    XCTAssertTrue(settings.staticTexts["What Sober stores"].waitForExistence(timeout: 60))
   }
 
   // MARK: - VoiceOver content
@@ -83,7 +86,12 @@ final class AccessibilityUITests: XCTestCase {
 
     // The self-report gate comes first; answering "No" reaches calibration.
     let no = app.buttons["No"]
-    if no.waitForExistence(timeout: 10) { no.tap() }
+    if no.waitForExistence(timeout: 10) {
+      no.tap()
+      let continueToSetup = app.buttons["Continue to setup"]
+      XCTAssertTrue(continueToSetup.waitForExistence(timeout: 10))
+      continueToSetup.tap()
+    }
 
     // The tile is one combined element, so it can surface as `otherElements` or
     // `staticTexts` depending on how the platform folds it.

@@ -327,7 +327,7 @@ struct DSIntegratedResultScreen: View {
         }
       }
 
-      Text("Prototype measurements explain what contributed. They are not clinical readings.")
+      Text("These measurements explain what contributed. They are not clinical readings.")
         .font(DSFont.footnote)
         .foregroundStyle(DSPalette.textMuted)
         .fixedSize(horizontal: false, vertical: true)

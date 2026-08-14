@@ -18,6 +18,9 @@ targets:
           - DesignKit/README.md
           - Info-Internal.plist
           - Resources/Fonts/Satoshi-Black.otf
+          # Experimental research asset. Its OpenEDS-domain accuracy has not
+          # been validated on iPhone captures, so it must not ship in v1.
+          - Resources/PupilSegmentation.mlpackage
     info:
       path: Sober/Info.plist
       properties:

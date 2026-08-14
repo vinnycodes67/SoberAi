@@ -52,7 +52,10 @@ struct ResearchModeView: View {
         }
       }
     } message: {
-      Text("This deletes stored sessions, the measured baseline, and any export file this build wrote from this iPhone. It cannot be undone.")
+      Text(
+        "This deletes stored sessions, the measured baseline, and any export file from this "
+          + "installation. Older device backups are managed separately in Apple settings."
+      )
     }
   }
 

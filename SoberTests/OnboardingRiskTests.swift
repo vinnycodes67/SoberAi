@@ -52,6 +52,17 @@ final class OnboardingRiskTests: XCTestCase {
     XCTAssertTrue(result.isBlocked)
   }
 
+  func testPublicOnboardingAllowsNameToBeOmitted() {
+    let result = validator.validate(
+      profile: profile(name: "   "),
+      safetyPlan: plan(automatic: false, consent: false),
+      requiresName: false,
+      validatesGuardian: false
+    )
+    XCTAssertFalse(result.flags.contains(.nameMissing))
+    XCTAssertFalse(result.isBlocked)
+  }
+
   func testNameWithDigitsOrMarkupIsRejected() {
     for candidate in ["Vinay123", "<script>", "a@b.com", "name|pipe"] {
       let result = validator.validate(profile: profile(name: candidate), safetyPlan: plan())

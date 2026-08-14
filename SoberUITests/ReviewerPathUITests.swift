@@ -14,6 +14,7 @@ import XCTest
 /// `Scripts/check-public-binary.sh` separately requires this page's copy to be
 /// present in the Release binary. That proves the strings ship; this proves they
 /// are reachable and say the right thing.
+@MainActor
 final class ReviewerPathUITests: XCTestCase {
 
   override func setUp() {
@@ -38,9 +39,9 @@ final class ReviewerPathUITests: XCTestCase {
     let app = launchToExamples()
 
     XCTAssertTrue(app.staticTexts["No result is a green light."].waitForExistence(timeout: 60))
-    XCTAssertTrue(app.staticTexts["Signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["Changes detected"].exists)
     XCTAssertTrue(app.staticTexts["No clear read"].exists)
-    XCTAssertTrue(app.staticTexts["No signals detected"].exists)
+    XCTAssertTrue(app.staticTexts["No changes detected"].exists)
   }
 
   /// Every card is labelled. A screenshot of one card has to carry its own

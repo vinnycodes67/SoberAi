@@ -94,7 +94,7 @@ final class ScreeningEngineTests: XCTestCase {
   func testNoSignalsCopyRetainsMandatoryWarning() {
     XCTAssertEqual(
       ScreeningResultState.noSignalsDetected.message,
-      "We didn’t detect signals. This does not mean you’re sober or safe to drive."
+      "This check did not find changes. It cannot establish sobriety or driving safety."
     )
   }
 
@@ -184,17 +184,13 @@ final class ScreeningEngineTests: XCTestCase {
     XCTAssertNil(EllipseFit.fit(points: [(0, 0), (1, 1)]))
   }
 
-  /// Regression guard for the pupil-segmentation model actually shipping:
-  /// this project runs its tests inside the Sober.app host process (see
-  /// TEST_HOST in project.pbxproj), so Bundle.main here is the real app
-  /// bundle — if PupilSegmentation.mlmodelc is ever dropped from the
-  /// target's Resources build phase, or fails to compile, this fails
-  /// instead of silently degrading pupillometry back to "no reading."
+  /// The visible-light iPhone domain has not been validated, so the public
+  /// App Store artifact must not bundle the experimental OpenEDS model.
   @MainActor
-  func testPupilSegmentationModelIsBundledAndLoads() {
-    XCTAssertTrue(
+  func testPublicBuildDoesNotBundleExperimentalPupilModel() {
+    XCTAssertFalse(
       PupilCaptureService().isModelAvailable,
-      "PupilSegmentation.mlmodelc should be bundled and loadable — see Training/PupilSegmentation/README.md"
+      "PupilSegmentation.mlmodelc belongs only in SoberInternal until iPhone-domain validation"
     )
   }
 
@@ -229,7 +225,7 @@ final class ScreeningEngineTests: XCTestCase {
     XCTAssertNil(trial?.recoveryTo75PercentSeconds)
   }
 
-  func testHealthyPupilReadingScoresLowerRiskThanMissingData() {
+  func testPublicScoringIgnoresExperimentalPupilReadings() {
     var metrics = ScreeningMetrics.demoClear
     metrics.pupillometry = nil
     let missingResult = engine.evaluate(selfReport: .no, metrics: metrics)
@@ -245,14 +241,10 @@ final class ScreeningEngineTests: XCTestCase {
     )
     let healthyResult = engine.evaluate(selfReport: .no, metrics: metrics)
 
-    // A present, healthy reading should score strictly less risky than no
-    // reading at all — missing data defaults to the conservative (highest
-    // risk) contribution, same shape as the tracking/gaze fallback.
-    XCTAssertLessThan(healthyResult.riskScore, missingResult.riskScore)
-    XCTAssertEqual(missingResult.riskScore - healthyResult.riskScore, 0.25, accuracy: 0.001)
+    XCTAssertEqual(healthyResult.riskScore, missingResult.riskScore, accuracy: 0.001)
 
-    // A clearly blunted reflex should contribute exactly the same
-    // (maximum) risk as no reading at all.
+    // A clearly different experimental reading is ignored too. Public
+    // scoring may use only measurements the public flow actually runs.
     metrics.pupillometry = PupillometrySample(
       trials: [
         PupilLightReflexTrial(
@@ -264,9 +256,11 @@ final class ScreeningEngineTests: XCTestCase {
     )
     let bluntedResult = engine.evaluate(selfReport: .no, metrics: metrics)
     XCTAssertEqual(bluntedResult.riskScore, missingResult.riskScore, accuracy: 0.001)
+    XCTAssertFalse(missingResult.details.contains { $0.id == "pupil" })
+    XCTAssertFalse(healthyResult.details.contains { $0.id == "pupil" })
+    XCTAssertFalse(bluntedResult.details.contains { $0.id == "pupil" })
 
-    // None of these cross the signal threshold on their own — this test is
-    // about the pupil contribution's shape, not a verdict flip.
+    // None of these can flip the public verdict.
     XCTAssertEqual(missingResult.state, .noSignalsDetected)
     XCTAssertEqual(healthyResult.state, .noSignalsDetected)
     XCTAssertEqual(bluntedResult.state, .noSignalsDetected)
@@ -283,17 +277,34 @@ final class ScreeningEngineTests: XCTestCase {
 
   func testFounderPreviewScenariosMapExactly() {
     XCTAssertEqual(
-      engine.evaluate(selfReport: .no, metrics: .demoClear, founderScenario: .signals).state,
+      engine.uiTestPreview(for: .signals).state,
       .signalsDetected
     )
     XCTAssertEqual(
-      engine.evaluate(selfReport: .no, metrics: .demoClear, founderScenario: .inconclusive).state,
+      engine.uiTestPreview(for: .inconclusive).state,
       .inconclusive
     )
     XCTAssertEqual(
-      engine.evaluate(selfReport: .no, metrics: .demoClear, founderScenario: .noSignals).state,
+      engine.uiTestPreview(for: .noSignals).state,
       .noSignalsDetected
     )
+    XCTAssertEqual(engine.uiTestPreview(for: .signals).details.count, 4)
+    XCTAssertFalse(engine.uiTestPreview(for: .signals).details.contains { $0.id == "pupil" })
+  }
+
+  func testPublicEvaluatorCannotFabricateAFounderResult() {
+    let live = engine.evaluate(selfReport: .no, metrics: .demoClear)
+
+    for scenario in [FounderScenario.signals, .inconclusive, .noSignals] {
+      XCTAssertEqual(
+        engine.evaluate(
+          selfReport: .no,
+          metrics: .demoClear,
+          founderScenario: scenario
+        ),
+        live
+      )
+    }
   }
 
 }

@@ -26,6 +26,20 @@ protocol GuardianLiveLocationProviding: AnyObject {
   func stopSharing()
 }
 
+/// No-op dependency for the public target. It keeps deferred Guardian source
+/// buildable without touching Core Location at runtime.
+@MainActor
+final class DisabledGuardianLiveLocationService: GuardianLiveLocationProviding {
+  var onLocation: ((GuardianLiveLocationUpdate) -> Void)?
+  var onAuthorizationChange: ((GuardianLocationAuthorizationState) -> Void)?
+  let authorizationState: GuardianLocationAuthorizationState = .unavailable
+
+  func startForegroundSharing() {}
+  func requestBackgroundAccess() {}
+  func resumeIfAuthorized() {}
+  func stopSharing() {}
+}
+
 /// A visible, consent-gated Core Location session for Circle sharing.
 /// Standard updates provide accuracy while the app is in use. “Always” access
 /// adds background and significant-change delivery without hiding the system’s

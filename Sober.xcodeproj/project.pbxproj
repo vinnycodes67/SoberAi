@@ -123,7 +123,6 @@
 		C95BB01E59852C259B9EB775 /* HowResultsWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */; };
 		CF746581A660CBD426F30F23 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
 		D119B5036B3E95BCFA80816C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */; };
-		D28F2BC6C3100862062D6B82 /* PupilSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = FA1285417D984728C5CA0F62 /* PupilSegmentation.mlpackage */; };
 		D3536C9068EDD8488845AAD3 /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC092ACD54BAE55BF8380675 /* PermissionStore.swift */; };
 		D59C851AEEB911F3B54376CD /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
@@ -839,7 +838,6 @@
 				15BB1FE2A7A259D81112EBEC /* PermissionStore.swift in Sources */,
 				0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */,
 				89C872F604789BD16689E0A4 /* PupilMetricsAnalyzer.swift in Sources */,
-				D28F2BC6C3100862062D6B82 /* PupilSegmentation.mlpackage in Sources */,
 				B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */,
 				48E4C17B7146DC42773D76D5 /* ResearchModels.swift in Sources */,
 				77950C028EA8BD14C1C02927 /* ResearchPreferences.swift in Sources */,

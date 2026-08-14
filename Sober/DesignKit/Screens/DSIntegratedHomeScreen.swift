@@ -186,7 +186,7 @@ struct DSIntegratedHomeScreen: View {
 
   private var primaryActionHint: String {
     if !model.baselineReady { return "Starts a sober baseline session" }
-    return "Starts the private impairment screening flow"
+    return "Starts the private personal-comparison flow"
   }
 
   private func performPrimaryAction() {
@@ -488,7 +488,7 @@ struct DSIntegratedHomeScreen: View {
     HStack(alignment: .top, spacing: DSSpace.sm) {
       Image(systemName: "exclamationmark.shield")
         .foregroundStyle(DSPalette.accent)
-      Text("This MVP is not clinically validated and must not be used to decide whether to drive.")
+      Text("Sober is not clinically validated and must not be used to decide whether to drive.")
         .font(DSFont.footnote)
         .foregroundStyle(DSPalette.textMuted)
         .fixedSize(horizontal: false, vertical: true)

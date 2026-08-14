@@ -16,18 +16,23 @@ struct DSPortraitTrack: Identifiable, Equatable {
   /// the threshold `ScreeningEngine` already uses for `SignalDetail.concern`.
   static let concernThreshold = 0.55
 
-  static let all: [DSPortraitTrack] = [
-    .init(id: "reaction", label: "Reaction"),
-    .init(id: "tracking", label: "Tracking"),
-    .init(id: "timing", label: "Timing"),
-    .init(id: "gaze", label: "Guided gaze"),
-    .init(id: "pupil", label: "Light reflex"),
-  ]
+  static var all: [DSPortraitTrack] {
+    var tracks: [DSPortraitTrack] = [
+      .init(id: "reaction", label: "Reaction"),
+      .init(id: "tracking", label: "Tracking"),
+      .init(id: "timing", label: "Timing"),
+      .init(id: "gaze", label: "Guided gaze"),
+    ]
+    #if INTERNAL_BUILD
+    tracks.append(.init(id: "pupil", label: "Light reflex"))
+    #endif
+    return tracks
+  }
 }
 
 /// The portrait of someone's own steady.
 ///
-/// Five measures, each drawn as a band representing that person's usual
+/// Each available measure is drawn as a band representing that person's usual
 /// range, with a tick showing where a check landed. It is the product's
 /// central claim made visible: every row compares someone only to themselves,
 /// and no row is a summary of the others.
