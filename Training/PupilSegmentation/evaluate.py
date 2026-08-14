@@ -65,7 +65,7 @@ def main():
 
     model = PupilSegmentationModel()
     if args.weights:
-        model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=False))
+        model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     else:
         model.load_pretrained_backbone("vendor_ritnet/ritnet_openeds2019_pretrained.pkl")
     model.to(args.device)

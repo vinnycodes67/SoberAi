@@ -38,20 +38,20 @@ for value in \
   CA92.1 \
   NSPrivacyAccessedAPICategorySystemBootTime \
   35F9.1; do
-  if printf '%s' "$manifest_json" | grep -q -F -- "$value"; then
+  if grep -q -F -- "$value" <<< "$manifest_json"; then
     pass "manifest declares $value"
   else
     fail "manifest is missing $value"
   fi
 done
 
-if printf '%s' "$manifest_json" | grep -q -F -- '"NSPrivacyCollectedDataTypes":[]'; then
+if grep -q -F -- '"NSPrivacyCollectedDataTypes":[]' <<< "$manifest_json"; then
   pass "no collected-data categories are declared"
 else
   fail "public v1 manifest must declare an empty collected-data array"
 fi
 
-if printf '%s' "$manifest_json" | grep -q -F -- '"NSPrivacyTrackingDomains":[]'; then
+if grep -q -F -- '"NSPrivacyTrackingDomains":[]' <<< "$manifest_json"; then
   pass "no tracking domains are declared"
 else
   fail "public v1 manifest must declare an empty tracking-domain array"
@@ -94,6 +94,27 @@ if [ -n "$secret_hits" ]; then
   fail "credential-like content was found"
 else
   pass "no private-key or production-token signatures found"
+fi
+
+echo
+echo "==> Developer tooling safety"
+unsafe_checkpoint_loads=$(grep -R -n -E \
+  'torch\.load\([^[:cntrl:]]*weights_only[[:space:]]*=[[:space:]]*False' \
+  --include='*.py' Training/PupilSegmentation 2>/dev/null || true)
+if [ -n "$unsafe_checkpoint_loads" ]; then
+  printf '%s\n' "$unsafe_checkpoint_loads"
+  fail "PyTorch checkpoints must not enable executable pickle deserialization"
+else
+  pass "PyTorch checkpoint loads keep executable pickle deserialization disabled"
+fi
+
+echo
+echo "==> Deferred Guardian backend"
+if grep -q -E '^GUARDIAN_FOUNDER_MODE[[:space:]]*=[[:space:]]*"false"[[:space:]]*$' \
+  Backend/wrangler.toml; then
+  pass "checked-in Guardian deployment fails closed"
+else
+  fail "Backend/wrangler.toml must keep GUARDIAN_FOUNDER_MODE=false"
 fi
 
 echo

@@ -8,3 +8,6 @@ Backend/.wrangler/
 Training/**/__pycache__/
 Training/**/*.pyc
 .artifacts/
+.gstack/
+Backend/.dev.vars
+Backend/.dev.vars.*

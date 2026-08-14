@@ -11,6 +11,7 @@ tag = "guardian-v1"
 new_sqlite_classes = ["GuardianRelationship"]
 
 [vars]
-# Local/founder review only. Production creation remains closed until phone
-# verification, abuse prevention, APNs, and external security review are live.
-GUARDIAN_FOUNDER_MODE = "true"
+# Fail closed in every checked-in deployment. A founder-only local session may
+# override this with an ignored `.dev.vars` file, but `wrangler deploy` must not
+# publish relationship creation before attestation and abuse controls exist.
+GUARDIAN_FOUNDER_MODE = "false"

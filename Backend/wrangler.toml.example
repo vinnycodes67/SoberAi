@@ -11,5 +11,6 @@ tag = "guardian-v1"
 new_sqlite_classes = ["GuardianRelationship"]
 
 [vars]
-# Local founder review only. Keep false/absent for any non-founder deployment.
-GUARDIAN_FOUNDER_MODE = "true"
+# Safe deployment default. For local founder review only, put
+# `GUARDIAN_FOUNDER_MODE=true` in an ignored `.dev.vars` file.
+GUARDIAN_FOUNDER_MODE = "false"

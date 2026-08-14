@@ -89,7 +89,10 @@ class PupilSegmentationModel(nn.Module):
         return torch.cat([background, iris, pupil], dim=1)
 
     def load_pretrained_backbone(self, path: str, map_location: str = "cpu") -> None:
-        state_dict = torch.load(path, map_location=map_location, weights_only=False)
+        # These files contain tensor state dictionaries, not executable model
+        # objects. Keep pickle disabled so a replaced checkpoint cannot run
+        # arbitrary code on the developer machine during training or export.
+        state_dict = torch.load(path, map_location=map_location, weights_only=True)
         if hasattr(state_dict, "state_dict"):
             state_dict = state_dict.state_dict()
         self.backbone.load_state_dict(state_dict)

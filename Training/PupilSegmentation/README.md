@@ -49,6 +49,11 @@ on its own).
 actually ships in `PupilSegmentation.mlpackage` — not a nicer pipeline
 that gets swapped out at export time.
 
+All checkpoint loads use PyTorch's `weights_only=True` mode. The files are
+tensor state dictionaries, so executable pickle deserialization is neither
+needed nor permitted when a developer evaluates, fine-tunes, or exports a
+checkpoint.
+
 ## Known limitation: domain gap to Sober's actual deployment
 
 **OpenEDS is near-infrared (NIR) imagery from a VR-headset eye-tracking

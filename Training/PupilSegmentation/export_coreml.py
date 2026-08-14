@@ -33,7 +33,7 @@ def main():
     args = parser.parse_args()
 
     model = PupilSegmentationModel()
-    model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=False))
+    model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     model.eval()
 
     example_input = torch.rand(1, 1, 400, 640)
