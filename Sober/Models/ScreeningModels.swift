@@ -31,6 +31,11 @@ enum ScreeningResultState: String, Sendable {
   }
 }
 
+enum ScreeningOutcomeReason: Equatable, Sendable {
+  case measuredComparison
+  case reportedUse
+}
+
 struct ScreeningMetrics: Equatable, Sendable {
   var reactionTimeMilliseconds: Double
   var reactionMisses: Int
@@ -108,6 +113,36 @@ struct ScreeningOutcome: Equatable, Sendable {
   let qualityScore: Double
   let riskScore: Double
   let details: [SignalDetail]
+  let reason: ScreeningOutcomeReason
+
+  init(
+    state: ScreeningResultState,
+    qualityScore: Double,
+    riskScore: Double,
+    details: [SignalDetail],
+    reason: ScreeningOutcomeReason = .measuredComparison
+  ) {
+    self.state = state
+    self.qualityScore = qualityScore
+    self.riskScore = riskScore
+    self.details = details
+    self.reason = reason
+  }
+
+  var title: String {
+    switch reason {
+    case .measuredComparison: state.title
+    case .reportedUse: "You reported recent use"
+    }
+  }
+
+  var message: String {
+    switch reason {
+    case .measuredComparison: state.message
+    case .reportedUse:
+      "You reported drinking or using something in the last 4 hours. No tasks were needed. Don’t drive."
+    }
+  }
 }
 
 enum BaselineCompletionReason: Sendable {

@@ -192,6 +192,10 @@ struct HistoryView: View {
   private func title(for entry: CheckHistoryEntry) -> String {
     guard entry.kind == .check else { return "Baseline session" }
     switch entry.outcome {
+    case .signalsDetected where !entry.completedAllTasks:
+      // The only live path to a concerning result before tasks finish is the
+      // person's own report. Do not rewrite that later as a measured change.
+      return "Safety choice recorded"
     case .signalsDetected: return "Changes detected"
     case .inconclusive: return "Inconclusive"
     case .noSignalsDetected: return "No changes detected"

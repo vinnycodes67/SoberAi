@@ -58,6 +58,13 @@ final class ScreeningEngineTests: XCTestCase {
     XCTAssertEqual(result.state, .signalsDetected)
     XCTAssertTrue(result.details.allSatisfy { !$0.wasMeasured })
     XCTAssertTrue(result.details.allSatisfy { $0.value == "Not measured" })
+    XCTAssertEqual(result.reason, .reportedUse)
+    XCTAssertEqual(result.title, "You reported recent use")
+    XCTAssertEqual(
+      result.message,
+      "You reported drinking or using something in the last 4 hours. No tasks were needed. Don’t drive."
+    )
+    XCTAssertFalse(result.message.contains("found changes"))
   }
 
   func testLowQualityRefusesToGuess() {

@@ -84,7 +84,8 @@ struct ScreeningEngine: Sendable {
         state: .signalsDetected,
         qualityScore: metrics.qualityScore,
         riskScore: max(riskScore, signalThreshold),
-        details: details
+        details: details,
+        reason: .reportedUse
       )
     }
 

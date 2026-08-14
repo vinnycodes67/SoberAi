@@ -135,6 +135,8 @@ done
 PUBLIC_RESULT_COPY_REQUIRED=(
   "This check found changes outside your usual range. Don’t drive."
   "This check did not find changes. It cannot establish sobriety or driving safety."
+  "You reported recent use"
+  "You reported drinking or using something in the last 4 hours. No tasks were needed. Don’t drive."
 )
 for needle in "${PUBLIC_RESULT_COPY_REQUIRED[@]}"; do
   # Scan the binary directly. `strings | grep -q` is unsafe with `pipefail`:
