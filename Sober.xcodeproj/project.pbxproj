@@ -661,8 +661,8 @@
 			targets = (
 				F1848F7C2B81A7E5AF4CAD9A /* Sober */,
 				C57653EF52276BB440CAEB75 /* SoberInternal */,
-				28D796906C95F4478FEED7B3 /* SoberTests */,
 				8DC96E2F1CA53F9524067922 /* SoberUITests */,
+				28D796906C95F4478FEED7B3 /* SoberTests */,
 			);
 		};
 /* End PBXProject section */
