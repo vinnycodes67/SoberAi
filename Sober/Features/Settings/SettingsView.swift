@@ -401,6 +401,9 @@ struct PrivacyCenterView: View {
 /// SoberInternal.
 struct PrivacyPolicyView: View {
   @Environment(\.dismiss) private var dismiss
+  private let hostedPolicyURL = URL(
+    string: "https://vinnycodes67.github.io/SoberSupport/privacy.html"
+  )
 
   var body: some View {
     NavigationStack {
@@ -463,6 +466,32 @@ struct PrivacyPolicyView: View {
             "Contact",
             "For privacy or support questions, email pulavarthyvinay@gmail.com. Do not send camera images, health information, or sensitive measurements."
           )
+
+          if let hostedPolicyURL {
+            Link(destination: hostedPolicyURL) {
+              DSCard {
+                HStack(spacing: DSSpace.sm) {
+                  VStack(alignment: .leading, spacing: DSSpace.xxs) {
+                    Text("Privacy policy on the web")
+                      .font(DSFont.subheadlineStrong)
+                      .foregroundStyle(DSPalette.textPrimary)
+                    Text("View the public copy used by the App Store listing")
+                      .font(DSFont.footnote)
+                      .foregroundStyle(DSPalette.textSecondary)
+                      .dsReadingLine()
+                  }
+                  Spacer(minLength: DSSpace.sm)
+                  Image(systemName: "arrow.up.right")
+                    .font(DSFont.subheadlineStrong)
+                    .foregroundStyle(DSPalette.accent)
+                    .accessibilityHidden(true)
+                }
+              }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("privacy-policy-web-link")
+            .accessibilityHint("Opens the public Sober privacy policy in your browser")
+          }
         }
         .padding(DSSpace.margin)
       }

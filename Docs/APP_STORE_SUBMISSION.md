@@ -85,12 +85,12 @@ medical-device claim.
 
 ## Metadata
 
-**Name:** Sober
+**App Store name:** `Sober.` The founder confirmed the reserved App Store name
+with the trailing period for v1. The installed display name remains `Sober`.
 
 **Subtitle (30 chars max):** `A private check, and a ride`  *(27)*
 
-**Promotional text:** DECISION — leave empty for v1 rather than making a claim
-that outruns the product.
+**Promotional text:** Leave empty for v1. Founder-approved August 15, 2026.
 
 **Description draft:**
 
@@ -120,13 +120,23 @@ that outruns the product.
 > Sober is not a medical device, a breathalyser, or a blood alcohol estimate. It
 > cannot diagnose impairment. If you are unsure, do not drive.
 
-**Keywords:** DECISION — avoid "breathalyzer", "BAC", "sobriety test", "drunk
-test". Each is a claim the product refuses to make, and buying traffic on them
-sets up exactly the misunderstanding the three-state design exists to prevent.
+**Keywords:** `personal safety,reaction time,coordination,ride home,private check,safety plan,steady`
 
-**Support URL / Privacy Policy URL:** DECISION — deploy-ready matching pages now
-exist in `SupportSite/`, including a provisional monitored contact, but Apple
-requires stable public HTTPS URLs and none has been deployed yet.
+Continue to avoid "breathalyzer", "BAC", "sobriety test", and "drunk test".
+Each is a claim the product refuses to make, and buying traffic on them sets up
+exactly the misunderstanding the three-state design exists to prevent.
+
+**Support URL:** `https://vinnycodes67.github.io/SoberSupport/`
+
+**Privacy Policy URL:** `https://vinnycodes67.github.io/SoberSupport/privacy.html`
+
+The founder confirmed `pulavarthyvinay@gmail.com` as the monitored public
+support address. The hosted copy and in-app policy must change together.
+
+**Copyright:** `2026 Ravi Pulavarthy`
+
+**Pricing and initial availability:** Free; United States only. Expand territory
+availability only after the corresponding legal, age-rating, and DSA review.
 
 ## Review notes
 

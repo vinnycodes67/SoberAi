@@ -7,6 +7,8 @@ options:
   createIntermediateGroups: true
 settings:
   base:
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: CPRVLR97XJ
     SWIFT_VERSION: "6.0"
 targets:
   Sober:
@@ -45,8 +47,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.app
         PRODUCT_NAME: Sober
         TARGETED_DEVICE_FAMILY: "1"
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "3"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
@@ -94,8 +96,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal
         PRODUCT_NAME: SoberInternal
         TARGETED_DEVICE_FAMILY: "1"
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "3"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
