@@ -335,6 +335,13 @@ silent renewal, key recovery, or multi-device enrollment. Both roles receive war
 days before expiry. The relationship-change push plus foreground reconciliation returns the screened
 person's Safety Circle to explicitly unconfigured when expiry commits.
 
+Activation sets `expiresAt` to exactly 90 days after `activatedAt`. The relationship Durable Object
+schedules an alarm for `expiresAt - 14 days`. When that alarm fires, or when a foreground read first
+observes an active relationship already inside the warning window, it durably changes the warning
+state to `visible` and schedules the same object's next lifecycle alarm for `expiresAt`. Duplicate or
+early alarm delivery recomputes the next deadline from durable state and cannot extend the
+relationship.
+
 ## Relationship state and revocation
 
 - `GET /v1/guardian-relationships/{relationshipId}` requires either valid capability and returns
@@ -359,6 +366,74 @@ Revocation is committed inside the same object and lock that submits alerts. Ord
    its Home/Safety Circle UI to unconfigured.
 
 Capability, relationship, and alert existence errors are generic to prevent enumeration.
+
+### Consent acceptance
+
+`{consentId}` must be one of the frozen IDs in **Consent versions**, and the authenticated role must
+match that table. The route is available only while the relationship is `active` or
+`reauthorizationRequired`. It requires an `Idempotency-Key` of 1–128 printable characters and this
+exact body:
+
+```json
+{
+  "documentVersion": "guardian-sender-v1",
+  "documentDigest": "<lowercase SHA-256 hex of the displayed consent document>",
+  "locale": "en-US",
+  "appVersion": "1.1.0"
+}
+```
+
+`documentVersion` must equal `{consentId}`; `documentDigest` is exactly 64 lowercase hexadecimal
+characters; `locale` is a canonical BCP 47 identifier of 2–35 characters; and `appVersion` is a
+trimmed, non-control string of 1–64 characters. Unknown or additional fields are rejected. The
+server derives `consentId` and `role`, assigns `acceptedAt` from server time, and initializes
+`withdrawnAt` to `null`; clients cannot author those fields.
+
+Success and an exact replay return `200` with:
+
+```json
+{
+  "consent": {
+    "consentId": "guardian-sender-v1",
+    "role": "person",
+    "documentVersion": "guardian-sender-v1",
+    "documentDigest": "<lowercase SHA-256 hex>",
+    "acceptedAt": "2026-08-05T18:52:11.000Z",
+    "locale": "en-US",
+    "appVersion": "1.1.0",
+    "withdrawnAt": null
+  },
+  "requestId": "req_01k1..."
+}
+```
+
+An exact replay preserves the original `acceptedAt`, including after a Durable Object reload. Reuse
+of the same idempotency key with changed canonical content returns `409 idempotencyConflict`. A
+different acceptance body for an already-recorded version returns `409 consentConflict`; material
+text changes require a new reviewed consent ID rather than rewriting history. Wrong role,
+capability, relationship, unknown consent ID, revoked relationship, or expired relationship returns
+generic `404 notFound`.
+
+Relationship reads include `consents`, containing only records accepted by the authenticated role,
+and never expose the other role's consent audit context. They also include `expiryWarning: null`
+before the warning window. Once visible, both caller views return:
+
+```json
+{
+  "expiryWarning": {
+    "state": "visible",
+    "startedAt": "2026-10-20T18:51:02.011Z",
+    "expiresAt": "2026-11-03T18:51:02.011Z"
+  }
+}
+```
+
+Revocation is logically immediate, sets every stored consent record's `withdrawnAt` once, cancels
+warning/expiry work, and schedules hard cleanup of the inactive audit record after 30 days. Exact
+signed revocation replays return `204` during that window. Expiry similarly marks consent withdrawn,
+removes live capability keys and relationship payloads immediately, and schedules the same 30-day
+audit cleanup. Cleanup deletes the Durable Object state and alarm; duplicate cleanup delivery is a
+no-op.
 
 ## APNs registration
 
@@ -530,9 +605,12 @@ Screened-person `personActionState` values are deliberately collapsed for an imp
 - `requestingHelp`: the request is being processed or a recent canonical request remains active.
   Provider acceptance is not exposed as a human-reaching milestone, and direct help stays visible.
 - `guardianConfirmed`: a signed guardian acknowledgment was accepted for this relationship/event.
-- `actNow`: no acknowledgment exists and automatic help definitively failed, may already have sent,
-  is unavailable, or expired. Copy says status could not be confirmed and directs the person to
-  Call/Message/Ride; a `425` or provider-unknown outcome must never be described as “failed.”
+- `actNow`: no acknowledgment exists and a real configured provider submission returned a
+  definitive automatic-delivery failure or an unknown/possibly-sent outcome. Copy says status could
+  not be confirmed and directs the person to Call/Message/Ride; a `425` or provider-unknown outcome
+  must never be described as “failed.” A missing provider integration, client-authored field,
+  local timeout, corrupt receipt, relationship warning, or simulated failure cannot set this server
+  state.
 
 Detailed `workflowState`, push, fallback, and SMS fields remain available for reconciliation and
 diagnostics but do not create additional person-facing steps. There is no screened-person
@@ -653,8 +731,16 @@ or acknowledgment.
 
 Clients retry only network failures, `408`, setup/verification `429`, and explicitly retryable `5xx`
 using backoff, jitter, and the same idempotency key. After an alert timeout they first query the
-event. `425`, provider `unknown`, and corrupt local receipt stop automatic sends and return
-`personActionState: actNow` with “automatic status could not be confirmed” copy, never “failed.”
+event. A `425` or provider `unknown` result that follows a real provider submission stops automatic
+sends and returns `personActionState: actNow` with “automatic status could not be confirmed” copy,
+never “failed.” A corrupt local receipt stops local automatic sends and requires reconciliation; it
+does not create provider evidence or authorize the server to set `actNow`.
+
+The current founder-only polling foundation has no APNs or SMS provider adapter, so its server can
+return only `requestingHelp` or `guardianConfirmed`. `actNow` remains unreachable until a reviewed
+provider adapter records one of the outcomes above. Tests reject client-supplied delivery outcomes
+and prove that reservation, polling, replay, warning, revocation, and simulated failures do not
+create `actNow`.
 
 ## Required shared fixtures
 
@@ -670,6 +756,7 @@ event. `425`, provider `unknown`, and corrupt local receipt stop automatic sends
   rejected by the legacy three-event limiter;
 - every workflow and nested transport state mapped onto exactly three screened-person action states;
 - `425`/provider-unknown mapped to `actNow`, never failed, and never automatically resent;
+- no `actNow` transition without a server-owned result from a real provider submission;
 - app relaunch between reservation and receipt recovering the same canonical event ID;
 - compiled Worker proof that the shared-token endpoint and client-authored message body are absent;
 - guardian open with no person-facing state change;

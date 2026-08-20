@@ -57,6 +57,31 @@ struct GuardianRelationshipSnapshot: Codable, Equatable, Sendable {
   let expiresAt: String
   let guardianReachability: String
   let guardianCapabilityId: String?
+  let expiryWarning: GuardianRelationshipExpiryWarning?
+  let consents: [GuardianConsentSnapshot]?
+}
+
+struct GuardianRelationshipExpiryWarning: Codable, Equatable, Sendable {
+  let state: String
+  let startedAt: String
+  let expiresAt: String
+
+  var expirationDate: Date? {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter.date(from: expiresAt) ?? ISO8601DateFormatter().date(from: expiresAt)
+  }
+}
+
+struct GuardianConsentSnapshot: Codable, Equatable, Sendable {
+  let consentId: String
+  let role: GuardianRole
+  let documentVersion: String
+  let documentDigest: String
+  let acceptedAt: String
+  let locale: String
+  let appVersion: String
+  let withdrawnAt: String?
 }
 
 struct GuardianAlertSnapshot: Codable, Equatable, Sendable {

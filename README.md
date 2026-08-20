@@ -166,7 +166,9 @@ or mismatched candidate ready.
 - The scorer thresholds and weights are illustrative and have no clinical validity.
 - Simulator live capture is unsupported and therefore inconclusive; only explicitly labeled founder previews use sample data.
 - The ocular protocol is not HGN detection, a standardized field sobriety test, or a clinically validated impairment measure.
-- No pupil segmentation, PLR protocol, voice task, balance task, or trained CoreML impairment model is included.
+- A pupil/iris segmentation model is bundled for the pupillometry signal, but visible-light iPhone
+  accuracy remains unvalidated; no clinically validated PLR protocol, voice task, balance task, or
+  trained CoreML impairment model is included.
 - Five high-quality sessions unlock the prototype baseline. That is a product-development minimum, not an evidence-backed clinical threshold.
 - Research context is self-reported. The app has no supervised labels, breath-reference hardware integration, controlled-study ground truth, or model-training pipeline yet.
 - Raw camera frames are not persisted by app code, but the prototype privacy copy still requires legal review before any external distribution.

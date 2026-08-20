@@ -264,9 +264,14 @@ struct GuardianCenterView: View {
 
     relationshipCard(session).dsAppear(hasActiveHelpRequest ? 2 : 1)
 
+    if let warning = model.guardianRelationship?.expiryWarning {
+      expiryWarningCard(warning)
+        .dsAppear(hasActiveHelpRequest ? 3 : 2)
+    }
+
     if model.guardianRelationshipIsActive {
       checkInSection(session)
-        .dsAppear(hasActiveHelpRequest ? 3 : 2)
+        .dsAppear(hasActiveHelpRequest ? 4 : 3)
     }
 
     if session.role == .guardian,
@@ -705,6 +710,37 @@ struct GuardianCenterView: View {
     return session.role == .person
       ? "This invite can be used once. It expires after 24 hours."
       : "Checking the relationship status."
+  }
+
+  private func expiryWarningCard(_ warning: GuardianRelationshipExpiryWarning) -> some View {
+    DSSection("Connection expiry") {
+      DSCard {
+        HStack(alignment: .top, spacing: DSSpace.sm) {
+          Image(systemName: "calendar.badge.exclamationmark")
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(DSPalette.accent)
+
+          VStack(alignment: .leading, spacing: DSSpace.xxs) {
+            Text("Guardian connection expires soon")
+              .font(DSFont.headline)
+              .foregroundStyle(DSPalette.textPrimary)
+            Text(expiryWarningDetail(warning))
+              .font(DSFont.footnote)
+              .foregroundStyle(DSPalette.textSecondary)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+      }
+    }
+    .accessibilityElement(children: .combine)
+  }
+
+  private func expiryWarningDetail(_ warning: GuardianRelationshipExpiryWarning) -> String {
+    let expiration = warning.expirationDate?.formatted(
+      date: .abbreviated,
+      time: .shortened
+    ) ?? "the date shown in relationship status"
+    return "This connection expires \(expiration). Both people will need a new invite; it will not renew automatically."
   }
 
   private func personCheckInTitle(_ plan: GuardianCheckInPlanSnapshot) -> String {
