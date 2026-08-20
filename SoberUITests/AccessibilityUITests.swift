@@ -93,10 +93,10 @@ final class AccessibilityUITests: XCTestCase {
       continueToSetup.tap()
     }
 
-    // The tile is one combined element, so it can surface as `otherElements` or
-    // `staticTexts` depending on how the platform folds it.
-    let named = NSPredicate(format: "label == %@", "Face")
-    let tile = app.descendants(matching: .any).matching(named).firstMatch
+    // Query the combined tile directly. A label-only query can select the
+    // nested Text node on some OS versions, whose value is correctly empty,
+    // instead of the tile that owns the textual readiness state.
+    let tile = app.descendants(matching: .any)["calibration-quality-face"].firstMatch
 
     guard tile.waitForExistence(timeout: 20) else {
       // A simulator has no TrueDepth camera. If calibration could not be

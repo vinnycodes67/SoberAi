@@ -29,6 +29,7 @@ targets:
         CFBundleDisplayName: Sober
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
         NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
         NSFaceIDUsageDescription: Sober uses Face ID only when you choose Privacy Lock to protect History, Your Steady, and Settings on this iPhone.
         LSApplicationCategoryType: public.app-category.healthcare-fitness
@@ -74,6 +75,7 @@ targets:
         CFBundleDisplayName: Sober Internal
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
         NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
         NSFaceIDUsageDescription: Sober uses Face ID only when you choose Privacy Lock to protect History, Your Steady, and Settings on this iPhone.
         NSLocationWhenInUseUsageDescription: Sober Internal uses your location for private Home checks and, only when you turn on Circle sharing, to show your current location to your connected guardian.

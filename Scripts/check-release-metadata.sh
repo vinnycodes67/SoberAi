@@ -18,6 +18,15 @@ pass() {
 
 MANIFEST="Sober/PrivacyInfo.xcprivacy"
 
+echo "==> Export compliance"
+for info_plist in Sober/Info.plist Sober/Info-Internal.plist; do
+  if [ "$(/usr/libexec/PlistBuddy -c 'Print :ITSAppUsesNonExemptEncryption' "$info_plist" 2>/dev/null)" = "false" ]; then
+    pass "$info_plist declares exempt encryption usage"
+  else
+    fail "$info_plist must declare ITSAppUsesNonExemptEncryption=false"
+  fi
+done
+
 echo "==> Privacy manifest"
 if plutil -lint "$MANIFEST" >/dev/null 2>&1; then
   pass "PrivacyInfo.xcprivacy is valid"
