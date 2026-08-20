@@ -9,12 +9,12 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 | Field | Value |
 | --- | --- |
 | Commit | Release-readiness work started from `486a790c64a6722ee4b711a0bdfbb12067f82572`; replace with the exact signed candidate commit before distribution |
-| Marketing version | `0.2.0` |
-| Build number | `2` |
+| Marketing version | `1.0` |
+| Build number | `3` |
 | Bundle identifier | `com.soberprototype.app` |
-| Archive SHA-256 | Local unsigned rehearsal: `6373e7bb5bbd9f29e232ee4d3befad6f6559925ecd0b5a93bfbcf93160bee651` |
-| Apple team | |
-| App Store Connect app record | |
+| Archive SHA-256 | Pending for the signed `1.0 (3)` candidate; the earlier `0.2.0 (2)` rehearsal is retired |
+| Apple team | `CPRVLR97XJ` |
+| App Store Connect app record | `6801400126` |
 | TestFlight processed-build link | |
 | Rehearsal device / iOS | Simulator: iPhone SE (3rd generation) and iPhone 17 Pro Max, iOS 26.5; physical device still open |
 | Rehearsal date / tester | August 13, 2026 / Codex local automation |
@@ -47,13 +47,13 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 
 ## Metadata and creative
 
-- [ ] Name, subtitle, description, and keywords approved
+- [x] Name, subtitle, description, and keywords approved
 - [ ] Primary and secondary categories approved
 - [ ] Current age-rating questionnaire completed; regional results recorded
 - [ ] Export-compliance answer approved
 - [ ] Copyright, contact, and review-contact details complete
-- [ ] Support URL resolves without authentication
-- [ ] Privacy policy URL resolves without authentication and is linked inside app
+- [x] Support URL resolves without authentication
+- [x] Privacy policy URL resolves without authentication and is linked inside app
 - [ ] Screenshots use real public states at accepted device dimensions
 - [ ] Screenshots never imply a pass or driving clearance
 - [ ] App Review notes use the exact public navigation path
@@ -83,20 +83,39 @@ Apple can prove validation, upload, processing, and TestFlight delivery.
 
 ## Stop-ship blockers as of August 13, 2026
 
-- One Apple Development identity is installed, but no project team, distribution
-  archive, or App Store Connect record has been supplied in this workspace.
+- Apple team `CPRVLR97XJ`, automatic signing, version `1.0`, and build `3` are
+  configured. The first signed archive attempt reached Apple but failed because
+  the team has no registered iPhone and therefore no development provisioning
+  profile for `com.soberprototype.app`. Connect and register a device, then
+  archive again; distribution signing and Apple validation remain open.
 - No current signed physical-device or TestFlight evidence is recorded. Both a
   TrueDepth iPhone and a supported non-TrueDepth iPhone are needed because the
   App Store binary is installable on both and intentionally behaves differently.
-- Matching support and privacy pages exist in `SupportSite/`, and the privacy
-  policy is accessible in-app, but no stable public HTTPS URLs have been supplied.
+- Matching support and privacy pages are live from the public
+  `vinnycodes67/SoberSupport` Pages site with HTTPS enforced. The live HTML and
+  CSS matched the reviewed local files byte-for-byte on August 15, 2026, and
+  the public app links to the hosted policy from its in-app policy screen.
 - Category, age questionnaire, export compliance, and medical-claim language
   still require founder/counsel decisions.
 - Phase 4 TrueDepth, accessibility, offline-proxy, external-action, lifecycle,
   and crash-free gates remain open until their evidence is attached.
 - Screenshot capture and final copy freeze remain open.
 
-## Retained local evidence — August 13, 2026
+## Retained local evidence
+
+- August 15 App Store-unblocker run: all 158 unit tests passed, the 22 backend
+  tests passed, all 18 release-policy tests passed, and the public Release
+  boundary passed with version `1.0 (3)` embedded. The targeted privacy-link UI
+  test compiled but CoreSimulator failed before app launch with `Invalid device
+  state`; this is not retained as passing UI evidence.
+- `https://vinnycodes67.github.io/SoberSupport/` and
+  `https://vinnycodes67.github.io/SoberSupport/privacy.html` returned HTTPS 200
+  and matched the reviewed local HTML/CSS byte-for-byte. The deployed static-site
+  source is public commit `0c9ed8b2e1a33a3030079a718cd22c36dc368efb` in
+  `vinnycodes67/SoberSupport`; no application source or review phone is present.
+- The first automatic-signing archive attempt reached Apple and failed closed:
+  the team has no registered device and no matching development provisioning
+  profile for `com.soberprototype.app`. No candidate archive was produced.
 
 - Unit tests: 158 passed, 0 failed, 0 skipped in
   `.artifacts/unit-tests-final-20260813.xcresult`.

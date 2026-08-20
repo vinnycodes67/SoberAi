@@ -187,6 +187,7 @@ struct CameraCalibrationView: View {
     // differed only in hue. This is the one screen a person has to satisfy
     // before a check can start.
     .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("calibration-quality-\(title.lowercased())")
     .accessibilityLabel(title)
     .accessibilityValue(ready ? "Ready" : "Needs adjusting")
     .padding(.horizontal, DSSpace.sm)

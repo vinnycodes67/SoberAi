@@ -18,6 +18,15 @@ pass() {
 
 MANIFEST="Sober/PrivacyInfo.xcprivacy"
 
+echo "==> Export compliance"
+for info_plist in Sober/Info.plist Sober/Info-Internal.plist; do
+  if [ "$(/usr/libexec/PlistBuddy -c 'Print :ITSAppUsesNonExemptEncryption' "$info_plist" 2>/dev/null)" = "false" ]; then
+    pass "$info_plist declares exempt encryption usage"
+  else
+    fail "$info_plist must declare ITSAppUsesNonExemptEncryption=false"
+  fi
+done
+
 echo "==> Privacy manifest"
 if plutil -lint "$MANIFEST" >/dev/null 2>&1; then
   pass "PrivacyInfo.xcprivacy is valid"
@@ -55,6 +64,30 @@ if grep -q -F -- '"NSPrivacyTrackingDomains":[]' <<< "$manifest_json"; then
   pass "no tracking domains are declared"
 else
   fail "public v1 manifest must declare an empty tracking-domain array"
+fi
+
+echo
+echo "==> Public privacy URLs"
+SUPPORT_URL="https://vinnycodes67.github.io/SoberSupport/"
+PRIVACY_URL="https://vinnycodes67.github.io/SoberSupport/privacy.html"
+if grep -q -F -- "$PRIVACY_URL" Sober/Features/Settings/SettingsView.swift; then
+  pass "the in-app policy links to the hosted privacy policy"
+else
+  fail "the in-app policy must link to $PRIVACY_URL"
+fi
+
+if grep -q -F -- 'href="privacy.html"' SupportSite/index.html \
+  && grep -q -F -- 'href="index.html"' SupportSite/privacy.html; then
+  pass "support and privacy pages link to each other"
+else
+  fail "support and privacy pages must remain mutually reachable"
+fi
+
+if grep -q -F -- "Support URL: \`$SUPPORT_URL\`" SupportSite/README.md \
+  && grep -q -F -- "Privacy Policy URL: \`$PRIVACY_URL\`" SupportSite/README.md; then
+  pass "deployment documentation records both App Store URLs"
+else
+  fail "SupportSite/README.md must record the live App Store URLs"
 fi
 
 echo
