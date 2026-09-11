@@ -95,7 +95,16 @@ enum CurfewPauseEvaluator {
   /// A night runs from curfew for this long: 23:00 → 06:00, 00:30 → 07:30.
   static let nightLengthMinutes = 7 * 60
   /// A home reading older than this is treated as unknown, i.e. not home.
-  static let homeFreshnessMinutes = 45
+  ///
+  /// Region monitoring writes a reading only on a boundary crossing, on
+  /// `start()`, and on a decisive one-shot fix, so a teen home since 8 p.m. has
+  /// an "inside" reading that is hours old at 11 p.m. iOS delivers the exit
+  /// event even when the app is not running, which keeps that reading true
+  /// until it is contradicted; the window here only bounds how long a phone
+  /// that lost location access (permission revoked, powered off) can be
+  /// trusted. A wrong guess pauses social apps until the teen opens Sober,
+  /// which refreshes the reading and lifts the pause — harmless by design.
+  static let homeFreshnessMinutes = 8 * 60
 
   static func evaluate(
     now: Date,

@@ -21,9 +21,45 @@ struct CurfewCountdownAttributes: ActivityAttributes {
     var phase: Phase
     var curfewAt: Date
     var nextCheckInAt: Date?
+
+    init(phase: Phase, curfewAt: Date, nextCheckInAt: Date? = nil) {
+      self.phase = phase
+      self.curfewAt = curfewAt
+      self.nextCheckInAt = nextCheckInAt
+    }
   }
 
   /// `CurfewNight.id`
   var nightID: String
   var guardianName: String?
+
+  init(nightID: String, guardianName: String? = nil) {
+    self.nightID = nightID
+    self.guardianName = guardianName
+  }
 }
+
+#if DEBUG
+extension CurfewCountdownAttributes {
+  /// Fixtures for the widget's `#Preview` blocks. Tonight's curfew is 40
+  /// minutes out so the countdown has something to show.
+  static var preview: CurfewCountdownAttributes {
+    CurfewCountdownAttributes(nightID: "night-preview", guardianName: "Jordan")
+  }
+
+  static var previewCurfewAt: Date { Date().addingTimeInterval(40 * 60) }
+
+  static func previewState(_ phase: Phase) -> ContentState {
+    switch phase {
+    case .beforeCurfew, .grace, .checkInDue, .ride:
+      ContentState(phase: phase, curfewAt: previewCurfewAt)
+    case .checkedIn:
+      ContentState(
+        phase: phase,
+        curfewAt: previewCurfewAt,
+        nextCheckInAt: previewCurfewAt.addingTimeInterval(60 * 60)
+      )
+    }
+  }
+}
+#endif

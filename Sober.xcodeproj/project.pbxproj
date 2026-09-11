@@ -8,16 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		03BACA0E9D1F5B3D31AFB277 /* CurfewDeviceContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9731A6D24C194BF6F28FB423 /* CurfewDeviceContract.swift */; };
+		0547620BF32A913C25EB77EB /* CurfewRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163B5DA258E5BFD05E401DB4 /* CurfewRuntime.swift */; };
 		05CE2163F3E42DAEAA3BC849 /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
+		068FA336DD42D3A309948915 /* CurfewLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F84FFD58288F22C52D4F66 /* CurfewLiveActivityController.swift */; };
+		08086A6A9219E53D8047428A /* CurfewSelectionCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BC6D05A1487CC39BD2D5CC /* CurfewSelectionCodec.swift */; };
 		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
 		0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
 		0E534F84BD34F6C553810602 /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */; };
+		10634B3E420A312DE47D26F8 /* CurfewHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8827D89E62B14AB79DCF2E6 /* CurfewHost.swift */; };
 		11921ADD7BF72AAB627531B7 /* YourSteadyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC54FC880C1A3D97062FCDE /* YourSteadyView.swift */; };
+		149178222A0C5F6CFB4EE2ED /* CurfewCountdownCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17B6D64EA098C383353DDB7E /* CurfewCountdownCopy.swift */; };
 		15A4037EBDCE254D6277C6A5 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		15BB1FE2A7A259D81112EBEC /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC092ACD54BAE55BF8380675 /* PermissionStore.swift */; };
 		165C267256A7800A47A7B2A0 /* ReviewerPathUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073988A5B67D68A322D05A27 /* ReviewerPathUITests.swift */; };
 		173D09AAEE48F9DF2DF669DE /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
 		1A71C37E89A77CAE14E2F97E /* ScreeningFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */; };
+		1AFCCB51D646146AA3604D52 /* CurfewShieldController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33F040E2EE41A9C372F4DC57 /* CurfewShieldController.swift */; };
 		1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */; };
 		2089434D8F6BF6EACE598E75 /* UITestConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDBFAEBB016DAA0ADF21017D /* UITestConfiguration.swift */; };
 		20DD0FBBA6B1E5F2E7C6C0F6 /* CurfewPauseEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */; };
@@ -26,6 +32,7 @@
 		240740F7B4158F40241A1623 /* GuardianCheckInServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */; };
 		2462681B9D8662FFAE4B604B /* DSFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */; };
 		25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
+		266F1CC01D6C5B72F9458BF7 /* CurfewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8050048695ED94F242430446 /* CurfewCoordinator.swift */; };
 		27800BEA0A33A57B9A000FF7 /* CheckHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */; };
 		28B736154A9676FCB216F736 /* UITestConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDBFAEBB016DAA0ADF21017D /* UITestConfiguration.swift */; };
 		2B3D0C06779F49543898A3F2 /* DSIntegratedResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */; };
@@ -35,12 +42,14 @@
 		2D7F62FEE6DEF63C8A2311E6 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
 		312565781DA1FBF2E8A2B930 /* StimulusPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4140C2A150B816F736F4404 /* StimulusPalette.swift */; };
 		31463DBCB8555A12DF3AA4C6 /* PupilSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = FA1285417D984728C5CA0F62 /* PupilSegmentation.mlpackage */; };
+		325B0BF0F596A5E13070D562 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		33891F10756188C7FE383924 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		36032A7E300F9C9213981F51 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
 		3708147E573D6A4C6814F9E7 /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3913393AC13E7C6B038C3535 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
+		39185688945D36C4BA39DCE5 /* CurfewContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D20348E09CA314BDF125D8E /* CurfewContractTests.swift */; };
 		3A2AA0EE6A8B49E03198873C /* CurfewContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8150D19D8281A6719F7B3F6E /* CurfewContract.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
@@ -53,13 +62,18 @@
 		3FCEA4BDF29B948140B5BB46 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804D0A298DBB719A4493299F /* ResearchModels.swift */; };
 		40574DCC9B2EFDA9FB9D5434 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
 		40C71064DB2B9FAB175D9BB8 /* CheckHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC6C8AC127FF67AF764965C /* CheckHistoryTests.swift */; };
+		418D081397856F3CC6776FDF /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		4197758E513411230354073D /* CaptureRecoveryOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314E02FCE19ACB2DFDDF555C /* CaptureRecoveryOverlay.swift */; };
 		42141DE1E9EE74A5965E13BB /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA8616F52D00B34DC76C73 /* BaselineProfileEngine.swift */; };
+		43A2A0C03208D79D85833CB8 /* CurfewSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40244518BD26E4BDD7C8B7BA /* CurfewSetupView.swift */; };
+		455BD54B226B71933FB9FFC5 /* CurfewActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B672229219BA823966CB5A /* CurfewActivityScheduler.swift */; };
 		45A9CFA18E73738D0779B36E /* ResearchDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */; };
 		4680E4C49809397FA06B5C72 /* CurfewMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3ADA5241DBF6E1647E3E51C /* CurfewMonitorExtension.swift */; };
 		48E4C17B7146DC42773D76D5 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804D0A298DBB719A4493299F /* ResearchModels.swift */; };
 		4A4A228F87CD8ADA69E9632E /* GuardianModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D117214C47BD9D0F74EB077 /* GuardianModels.swift */; };
+		4B961EC57240C76209EA4BBA /* CurfewDeviceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FA378789A9ABA7750E0D6D /* CurfewDeviceController.swift */; };
+		4B9BAA59E6B53F13C467CCF0 /* CurfewCountdownPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F94E1D416D72BB8721C5301 /* CurfewCountdownPalette.swift */; };
 		4BCE367BF7EAC7EF84E82CAE /* ScreeningFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */; };
 		4BF4E9B76941B164200D91D2 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */; };
@@ -74,7 +88,9 @@
 		5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
 		5672B347F10C149F6A9068C5 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		571BAE02276B52C64862F6FC /* InterruptionPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AB736360F8E779AC1692AC9 /* InterruptionPolicyTests.swift */; };
+		5AE4A5DF9A63217B6A922096 /* CurfewEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BAE19D755330A3E02BEB58C /* CurfewEvaluatorTests.swift */; };
 		5C06CFD44B35DDEF0131EA78 /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
+		5C37A5C2968056C2E8BB3D29 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		5CB184DB10A8DA9DDA86ACFA /* UITestLaunchConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9578CA43E138C16E0045DB01 /* UITestLaunchConfiguration.swift */; };
 		5D4D65ABCBFBD483FD21958D /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
 		5E81055C4351923E4C378CF3 /* CurfewShieldConfig.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B39388466ADADE12F684E4E6 /* CurfewShieldConfig.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -87,6 +103,7 @@
 		65F5CD02AA7AFB755CD8A507 /* ResearchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281945014B1C95CFDF4E271C /* ResearchPreferences.swift */; };
 		674907C06B5829FA87311557 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
 		682FB198136E7D1795584E14 /* ResearchSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */; };
+		68C92C9287575412ADEC850D /* CurfewRideLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA6875D4FF59C8B79DBEEE6 /* CurfewRideLink.swift */; };
 		69BC63D8C1ACB2AE62EE1053 /* OnboardingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */; };
 		69D7D7B5E7E7F19ADDD0629E /* UITestLaunchConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3314A34E9DD328C72F63E9B /* UITestLaunchConfigurationTests.swift */; };
 		6AA8A94B439AB5273C1D0097 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C562984AD4EE5F0087499CBB /* HistoryView.swift */; };
@@ -112,6 +129,7 @@
 		82A825E392D3535B4BEE1D80 /* CurfewCountdownAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12431CD9C4F7AB45F82A7A49 /* CurfewCountdownAttributes.swift */; };
 		857568F4B503E22D9B628C11 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
 		870CEAC234FC3FCCCF391525 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA8BCEEE16E4133908B99020 /* Assets.xcassets */; };
+		87D8424BCC49703BEB5956E8 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		89C872F604789BD16689E0A4 /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */; };
 		8A7801282589E1B6707C385D /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B992B649C74F7395F2D97 /* DSComponents.swift */; };
@@ -122,6 +140,7 @@
 		8F72CC9DA26B2AEDED32591D /* CaptureRecoveryOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314E02FCE19ACB2DFDDF555C /* CaptureRecoveryOverlay.swift */; };
 		906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
 		90D6CB428AD2EE567D86CE04 /* Satoshi-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */; };
+		9537996CE7D1949174641DD9 /* CurfewCountdownCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17B6D64EA098C383353DDB7E /* CurfewCountdownCopy.swift */; };
 		95C39A8225B5DB8620C7CEE5 /* DSBaselinePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCADE3964A9C5359D6AD476 /* DSBaselinePortrait.swift */; };
 		95F3A51BFEFD9EA047DFAFDC /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4931F024BDBE787378DF6FB9 /* RootTabView.swift */; };
 		967B2062EFDB159A727A41BF /* CurfewPauseEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */; };
@@ -133,6 +152,7 @@
 		9CEF905752FE1B818D84C14E /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		9DBE5A8CA3BCA27B3DEB32F7 /* GuardianModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */; };
 		A0C22C75DAD88185B1123392 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */; };
+		A1071C9EAA96BB9754B1EA72 /* CurfewLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F84FFD58288F22C52D4F66 /* CurfewLiveActivityController.swift */; };
 		A107BDACFB3A6EA075C6855B /* CurfewMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 514ED508B7982AD9A2C8DBFF /* CurfewMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A2D6113F96A89F7A087A1D96 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		A4657F61EB270A966DB12398 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
@@ -147,6 +167,7 @@
 		AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
 		AF6D2D6ED5DB472BEE1E29FF /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		B02AF5E71ED033A20B47DFA7 /* Satoshi-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */; };
+		B2D8E8F7811FF22C4BAAB61C /* CurfewShieldController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33F040E2EE41A9C372F4DC57 /* CurfewShieldController.swift */; };
 		B3A8D5E80B20F1A3E8FAD387 /* DSIntegratedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */; };
 		B3B717A7585F81ACF1F8D1BF /* PublicBoundaryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989CC81D39FF9EB4FB80B6DB /* PublicBoundaryUITests.swift */; };
 		B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
@@ -158,19 +179,24 @@
 		C3E6B6F5DC937DDDBAFADBF2 /* ScreeningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */; };
 		C65A5A62F6D465F4F0337CC2 /* CurfewDeviceContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9731A6D24C194BF6F28FB423 /* CurfewDeviceContract.swift */; };
 		C74E3D8F49399F2A0F1B8295 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */; };
+		C75F5019E2957E3C0194147D /* CurfewActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B672229219BA823966CB5A /* CurfewActivityScheduler.swift */; };
+		C7EBD3B5806F3BC95003741D /* CurfewSelectionCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BC6D05A1487CC39BD2D5CC /* CurfewSelectionCodec.swift */; };
 		C94BC7151A83E0FAF8F66165 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C562984AD4EE5F0087499CBB /* HistoryView.swift */; };
 		C95BB01E59852C259B9EB775 /* HowResultsWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */; };
 		C9C05048C3CFC73F8D69A9E4 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
 		CEF037AA550D9A0E8254C9FD /* CurfewShieldActionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616165D94342FAF91BACCACD /* CurfewShieldActionExtension.swift */; };
+		CF36DD640A247E42B1573E25 /* CurfewHomeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 027B09708355113C17773D80 /* CurfewHomeMonitor.swift */; };
 		CF746581A660CBD426F30F23 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
 		D119B5036B3E95BCFA80816C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */; };
 		D3536C9068EDD8488845AAD3 /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC092ACD54BAE55BF8380675 /* PermissionStore.swift */; };
 		D4439656509FFE82F9B0343E /* CurfewCountdownAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12431CD9C4F7AB45F82A7A49 /* CurfewCountdownAttributes.swift */; };
+		D4C7BC90D5BD8A3A62A14FFD /* CurfewDeviceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FA378789A9ABA7750E0D6D /* CurfewDeviceController.swift */; };
 		D59C851AEEB911F3B54376CD /* OcularTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */; };
 		D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */; };
 		D5D2B38C911487DB3585B946 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6732CF2B5D184B14D10AED /* SettingsView.swift */; };
 		D5F0A9F59D2DEA6E1171097A /* GuardianLiveLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */; };
 		D7802D3FD752061892E354A5 /* DSTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6127949ED5CD1BF168B4251C /* DSTabBar.swift */; };
+		D78C385E3A840E0603F80C0B /* CurfewCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB1E042DA3D3DA98EA957FC /* CurfewCheckInView.swift */; };
 		D840A44D4F163A644F1FE9A6 /* DSPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3431821643AFE8BAF39CD613 /* DSPalette.swift */; };
 		D8DEE00CB83D1B254F3D7A73 /* DSTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1154AF077381776EE9F825A /* DSTokens.swift */; };
 		D8E2C3D0E1C4649BAFB90069 /* CurfewLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4313F77F4236B18D0FAD78 /* CurfewLiveActivityBundle.swift */; };
@@ -181,11 +207,15 @@
 		DCB1000C5637C85C341E85E4 /* HowResultsWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */; };
 		DCF1B99206B155131E297B06 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
 		DE6D3D78C1F4D890B4D73058 /* UITestLaunchConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9578CA43E138C16E0045DB01 /* UITestLaunchConfiguration.swift */; };
+		DEFC3157EF6E61AD67106970 /* CurfewCountdownPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F94E1D416D72BB8721C5301 /* CurfewCountdownPalette.swift */; };
 		DFDDEB988D6C7AC03CDE8C80 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
+		E147354264A798B4E0880C37 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		E23A809C154FFA56F40F2171 /* InterruptedTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FB5E98C4511B45784899E9 /* InterruptedTaskView.swift */; };
+		E5A98D29FAF0BF310FA5F89C /* CurfewCountdownViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4EFB64D5978D23D9115123 /* CurfewCountdownViews.swift */; };
 		E63603886E93995B6DEC056C /* CurfewContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8150D19D8281A6719F7B3F6E /* CurfewContract.swift */; };
 		E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */; };
 		E918AD349611CA1B147D0E7B /* DSIntegratedResultScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF46C229BF65A51EC338AE9 /* DSIntegratedResultScreen.swift */; };
+		EA0AE0858EBFCF82A2922ACB /* CurfewRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163B5DA258E5BFD05E401DB4 /* CurfewRuntime.swift */; };
 		EC625CA5C0E9BC76AF62F47F /* PupilCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AF2DEAAA3D84F733B67DC9 /* PupilCaptureService.swift */; };
 		EC66E6687A5CEC293F4898E7 /* Satoshi-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */; };
 		EC8E5A96E6EB532342042E02 /* TaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D21C92E2C87F13E3587EA3 /* TaskModels.swift */; };
@@ -196,6 +226,7 @@
 		F47F42240CD0D3CF947DCA4A /* CheckHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */; };
 		F484B3BF63DC3E3462E2D447 /* DSIntegratedHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */; };
 		F711B90B52AC65B1474A2205 /* GuardianCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */; };
+		F8444455D17AB8F8D133B0A4 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		F97EB6201A4427AAD0CA8F3C /* Satoshi-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */; };
 		FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */; };
 		FC0446B060F94C806FA23A8C /* PersistenceFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5CE17DDAF1811BF0F4C6C18 /* PersistenceFoundationTests.swift */; };
@@ -267,6 +298,7 @@
 
 /* Begin PBXFileReference section */
 		008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchSessionStore.swift; sourceTree = "<group>"; };
+		027B09708355113C17773D80 /* CurfewHomeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewHomeMonitor.swift; sourceTree = "<group>"; };
 		05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PupilMetricsAnalyzer.swift; sourceTree = "<group>"; };
 		0688BB4567ADCA25DAA96F46 /* StateStores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateStores.swift; sourceTree = "<group>"; };
 		073988A5B67D68A322D05A27 /* ReviewerPathUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewerPathUITests.swift; sourceTree = "<group>"; };
@@ -275,12 +307,15 @@
 		0B3EFD4DB4DBCB29DA687024 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0B77BB710C5315F758F0D499 /* ResearchModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModeView.swift; sourceTree = "<group>"; };
 		0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceCameraPreview.swift; sourceTree = "<group>"; };
+		0D4EFB64D5978D23D9115123 /* CurfewCountdownViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCountdownViews.swift; sourceTree = "<group>"; };
 		0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberApp.swift; sourceTree = "<group>"; };
 		12431CD9C4F7AB45F82A7A49 /* CurfewCountdownAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCountdownAttributes.swift; sourceTree = "<group>"; };
 		12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleMapView.swift; sourceTree = "<group>"; };
 		12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanView.swift; sourceTree = "<group>"; };
 		13A596808C5944580D9A323B /* CameraCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCalibrationView.swift; sourceTree = "<group>"; };
 		1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningModels.swift; sourceTree = "<group>"; };
+		163B5DA258E5BFD05E401DB4 /* CurfewRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewRuntime.swift; sourceTree = "<group>"; };
+		17B6D64EA098C383353DDB7E /* CurfewCountdownCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCountdownCopy.swift; sourceTree = "<group>"; };
 		17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularAndTaskTests.swift; sourceTree = "<group>"; };
 		1CC25F72A27335610F808FA8 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		1F6E93B88F5CA07CA4A0669F /* CurfewLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CurfewLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -289,14 +324,19 @@
 		281945014B1C95CFDF4E271C /* ResearchPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchPreferences.swift; sourceTree = "<group>"; };
 		2D117214C47BD9D0F74EB077 /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
 		2E6732CF2B5D184B14D10AED /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2F94E1D416D72BB8721C5301 /* CurfewCountdownPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCountdownPalette.swift; sourceTree = "<group>"; };
 		314E02FCE19ACB2DFDDF555C /* CaptureRecoveryOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureRecoveryOverlay.swift; sourceTree = "<group>"; };
+		31FA378789A9ABA7750E0D6D /* CurfewDeviceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewDeviceController.swift; sourceTree = "<group>"; };
+		33F040E2EE41A9C372F4DC57 /* CurfewShieldController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewShieldController.swift; sourceTree = "<group>"; };
 		3431821643AFE8BAF39CD613 /* DSPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSPalette.swift; sourceTree = "<group>"; };
 		353D21A8AEE3C9BE5A98C6C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		35ABD6127F23F09013D16BF9 /* JourneySmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneySmokeUITests.swift; sourceTree = "<group>"; };
 		37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianSessionStore.swift; sourceTree = "<group>"; };
 		3A306DA8403F659ED8E1428B /* NoNetworkInPublicBuildTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoNetworkInPublicBuildTests.swift; sourceTree = "<group>"; };
+		3AA6875D4FF59C8B79DBEEE6 /* CurfewRideLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewRideLink.swift; sourceTree = "<group>"; };
 		3AB736360F8E779AC1692AC9 /* InterruptionPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterruptionPolicyTests.swift; sourceTree = "<group>"; };
 		3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		40244518BD26E4BDD7C8B7BA /* CurfewSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewSetupView.swift; sourceTree = "<group>"; };
 		41FE4F8F275081E3EC620E82 /* BuildChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildChannel.swift; sourceTree = "<group>"; };
 		43FB5E98C4511B45784899E9 /* InterruptedTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterruptedTaskView.swift; sourceTree = "<group>"; };
 		4774E23D01BA58560B461B2E /* SoberUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberUITests.swift; sourceTree = "<group>"; };
@@ -316,20 +356,27 @@
 		64D21C92E2C87F13E3587EA3 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
 		68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewShieldPalette.swift; sourceTree = "<group>"; };
+		69F84FFD58288F22C52D4F66 /* CurfewLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewLiveActivityController.swift; sourceTree = "<group>"; };
 		6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskViews.swift; sourceTree = "<group>"; };
 		6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
 		7546093BAAED4F4EA047F42F /* SoberUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SoberUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		780EA89290A39CE59962249D /* SoberInternal.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SoberInternal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		797F2A0F76C4EFDA52C0E981 /* CurfewShieldAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CurfewShieldAction.entitlements; sourceTree = "<group>"; };
 		7999B36252FF36F412C6AA7A /* CurfewCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCopy.swift; sourceTree = "<group>"; };
+		7AB1E042DA3D3DA98EA957FC /* CurfewCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCheckInView.swift; sourceTree = "<group>"; };
 		7DF5020E9E4FFA03E0A97B35 /* OcularTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularTaskView.swift; sourceTree = "<group>"; };
+		7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewNotifications.swift; sourceTree = "<group>"; };
 		804D0A298DBB719A4493299F /* ResearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModels.swift; sourceTree = "<group>"; };
+		8050048695ED94F242430446 /* CurfewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCoordinator.swift; sourceTree = "<group>"; };
 		8150D19D8281A6719F7B3F6E /* CurfewContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewContract.swift; sourceTree = "<group>"; };
 		845DB8F174E092281695AC2E /* StimulusIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StimulusIsolationTests.swift; sourceTree = "<group>"; };
 		85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingValidator.swift; sourceTree = "<group>"; };
+		8BAE19D755330A3E02BEB58C /* CurfewEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewEvaluatorTests.swift; sourceTree = "<group>"; };
+		8D20348E09CA314BDF125D8E /* CurfewContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewContractTests.swift; sourceTree = "<group>"; };
 		900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianLiveLocationService.swift; sourceTree = "<group>"; };
 		93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Satoshi-LICENSE.txt"; sourceTree = "<group>"; };
 		9578CA43E138C16E0045DB01 /* UITestLaunchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunchConfiguration.swift; sourceTree = "<group>"; };
+		96BC6D05A1487CC39BD2D5CC /* CurfewSelectionCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewSelectionCodec.swift; sourceTree = "<group>"; };
 		9731A6D24C194BF6F28FB423 /* CurfewDeviceContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewDeviceContract.swift; sourceTree = "<group>"; };
 		989CC81D39FF9EB4FB80B6DB /* PublicBoundaryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicBoundaryUITests.swift; sourceTree = "<group>"; };
 		9AAFBDF79CB6F9DA3C34EFB5 /* CurfewLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CurfewLiveActivity.entitlements; sourceTree = "<group>"; };
@@ -353,6 +400,7 @@
 		CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewSharedStore.swift; sourceTree = "<group>"; };
 		CE4313F77F4236B18D0FAD78 /* CurfewLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewLiveActivityBundle.swift; sourceTree = "<group>"; };
 		D14013F7673B50FE4AF10D1B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D8827D89E62B14AB79DCF2E6 /* CurfewHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewHost.swift; sourceTree = "<group>"; };
 		D98B992B649C74F7395F2D97 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSComponents.swift; sourceTree = "<group>"; };
 		DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Bold.otf"; sourceTree = "<group>"; };
 		DD807E9174CA4449A93A910B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -369,6 +417,7 @@
 		F1154AF077381776EE9F825A /* DSTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTokens.swift; sourceTree = "<group>"; };
 		F131DE43C85F16FD9A5CB6DB /* CurfewShieldConfig.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CurfewShieldConfig.entitlements; sourceTree = "<group>"; };
 		F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Regular.otf"; sourceTree = "<group>"; };
+		F3B672229219BA823966CB5A /* CurfewActivityScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewActivityScheduler.swift; sourceTree = "<group>"; };
 		F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedHomeScreen.swift; sourceTree = "<group>"; };
 		F5CE17DDAF1811BF0F4C6C18 /* PersistenceFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceFoundationTests.swift; sourceTree = "<group>"; };
 		F69FF16FB9F7B0082399E074 /* SoberComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoberComponents.swift; sourceTree = "<group>"; };
@@ -386,6 +435,7 @@
 		01946707243A96460A573946 /* LiveActivity */ = {
 			isa = PBXGroup;
 			children = (
+				0D4EFB64D5978D23D9115123 /* CurfewCountdownViews.swift */,
 				9AAFBDF79CB6F9DA3C34EFB5 /* CurfewLiveActivity.entitlements */,
 				CE4313F77F4236B18D0FAD78 /* CurfewLiveActivityBundle.swift */,
 				353D21A8AEE3C9BE5A98C6C3 /* Info.plist */,
@@ -398,6 +448,8 @@
 			children = (
 				3ED59CDEE3F39A86D8F1627A /* AppModelTests.swift */,
 				4DC6C8AC127FF67AF764965C /* CheckHistoryTests.swift */,
+				8D20348E09CA314BDF125D8E /* CurfewContractTests.swift */,
+				8BAE19D755330A3E02BEB58C /* CurfewEvaluatorTests.swift */,
 				08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */,
 				3AB736360F8E779AC1692AC9 /* InterruptionPolicyTests.swift */,
 				A98FC21A7803343F0B5A7C80 /* LocalDataFailureTests.swift */,
@@ -419,6 +471,7 @@
 			children = (
 				7999B36252FF36F412C6AA7A /* CurfewCopy.swift */,
 				9731A6D24C194BF6F28FB423 /* CurfewDeviceContract.swift */,
+				7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */,
 				25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */,
 				CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */,
 				68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */,
@@ -460,8 +513,33 @@
 		11C25C6D9D45417F8A86A60D /* ScreenTime */ = {
 			isa = PBXGroup;
 			children = (
+				F3B672229219BA823966CB5A /* CurfewActivityScheduler.swift */,
+				31FA378789A9ABA7750E0D6D /* CurfewDeviceController.swift */,
+				163B5DA258E5BFD05E401DB4 /* CurfewRuntime.swift */,
+				96BC6D05A1487CC39BD2D5CC /* CurfewSelectionCodec.swift */,
+				33F040E2EE41A9C372F4DC57 /* CurfewShieldController.swift */,
 			);
 			path = ScreenTime;
+			sourceTree = "<group>";
+		};
+		12E077165E9B00A2B8B3DB79 /* Curfew */ = {
+			isa = PBXGroup;
+			children = (
+				7AB1E042DA3D3DA98EA957FC /* CurfewCheckInView.swift */,
+				8050048695ED94F242430446 /* CurfewCoordinator.swift */,
+				D8827D89E62B14AB79DCF2E6 /* CurfewHost.swift */,
+				3AA6875D4FF59C8B79DBEEE6 /* CurfewRideLink.swift */,
+				40244518BD26E4BDD7C8B7BA /* CurfewSetupView.swift */,
+			);
+			path = Curfew;
+			sourceTree = "<group>";
+		};
+		2207E1D1246348547145D584 /* HomeRegion */ = {
+			isa = PBXGroup;
+			children = (
+				027B09708355113C17773D80 /* CurfewHomeMonitor.swift */,
+			);
+			path = HomeRegion;
 			sourceTree = "<group>";
 		};
 		26FAADC19274E05E861374DF /* Design */ = {
@@ -514,6 +592,7 @@
 		44992AC65B20E716710B920F /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				12E077165E9B00A2B8B3DB79 /* Curfew */,
 				50C581A359890CCA1B38A143 /* Guardian */,
 				8C18EE38BAA0C715DC2EC779 /* History */,
 				CE3468B3451787117E4877BE /* Home */,
@@ -552,6 +631,7 @@
 			isa = PBXGroup;
 			children = (
 				0527704B8AB4D26E3C3C7753 /* Core */,
+				2207E1D1246348547145D584 /* HomeRegion */,
 				FBA68286C9C6B9503A8390AE /* LiveActivity */,
 				11C25C6D9D45417F8A86A60D /* ScreenTime */,
 			);
@@ -749,6 +829,9 @@
 			isa = PBXGroup;
 			children = (
 				12431CD9C4F7AB45F82A7A49 /* CurfewCountdownAttributes.swift */,
+				17B6D64EA098C383353DDB7E /* CurfewCountdownCopy.swift */,
+				2F94E1D416D72BB8721C5301 /* CurfewCountdownPalette.swift */,
+				69F84FFD58288F22C52D4F66 /* CurfewLiveActivityController.swift */,
 			);
 			path = LiveActivity;
 			sourceTree = "<group>";
@@ -1022,6 +1105,7 @@
 				77E316A80DCF1122E31EA3CC /* CurfewContract.swift in Sources */,
 				AF6D2D6ED5DB472BEE1E29FF /* CurfewCopy.swift in Sources */,
 				C1AF5C85F5CD02E01EBFB8B5 /* CurfewDeviceContract.swift in Sources */,
+				325B0BF0F596A5E13070D562 /* CurfewNotifications.swift in Sources */,
 				ADE23E449F1674B1EB7A6823 /* CurfewPauseEvaluator.swift in Sources */,
 				2D7F62FEE6DEF63C8A2311E6 /* CurfewSharedStore.swift in Sources */,
 				3E17DC666D3BCE6B93E971AB /* CurfewShieldConfigurationExtension.swift in Sources */,
@@ -1040,12 +1124,27 @@
 				4197758E513411230354073D /* CaptureRecoveryOverlay.swift in Sources */,
 				27800BEA0A33A57B9A000FF7 /* CheckHistoryStore.swift in Sources */,
 				0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */,
+				C75F5019E2957E3C0194147D /* CurfewActivityScheduler.swift in Sources */,
+				D78C385E3A840E0603F80C0B /* CurfewCheckInView.swift in Sources */,
 				E63603886E93995B6DEC056C /* CurfewContract.swift in Sources */,
+				266F1CC01D6C5B72F9458BF7 /* CurfewCoordinator.swift in Sources */,
 				5FE3FF2FDBC08D9E65FC6AFD /* CurfewCopy.swift in Sources */,
 				82A825E392D3535B4BEE1D80 /* CurfewCountdownAttributes.swift in Sources */,
+				149178222A0C5F6CFB4EE2ED /* CurfewCountdownCopy.swift in Sources */,
+				DEFC3157EF6E61AD67106970 /* CurfewCountdownPalette.swift in Sources */,
 				3E62B03B8D4C99BB33987CCC /* CurfewDeviceContract.swift in Sources */,
+				4B961EC57240C76209EA4BBA /* CurfewDeviceController.swift in Sources */,
+				CF36DD640A247E42B1573E25 /* CurfewHomeMonitor.swift in Sources */,
+				10634B3E420A312DE47D26F8 /* CurfewHost.swift in Sources */,
+				A1071C9EAA96BB9754B1EA72 /* CurfewLiveActivityController.swift in Sources */,
+				E147354264A798B4E0880C37 /* CurfewNotifications.swift in Sources */,
 				74CB7FACD0578D410E8CFFE6 /* CurfewPauseEvaluator.swift in Sources */,
+				68C92C9287575412ADEC850D /* CurfewRideLink.swift in Sources */,
+				0547620BF32A913C25EB77EB /* CurfewRuntime.swift in Sources */,
+				08086A6A9219E53D8047428A /* CurfewSelectionCodec.swift in Sources */,
+				43A2A0C03208D79D85833CB8 /* CurfewSetupView.swift in Sources */,
 				173D09AAEE48F9DF2DF669DE /* CurfewSharedStore.swift in Sources */,
+				B2D8E8F7811FF22C4BAAB61C /* CurfewShieldController.swift in Sources */,
 				2CD0EA9CBDC040C9955604C7 /* CurfewShieldPalette.swift in Sources */,
 				95C39A8225B5DB8620C7CEE5 /* DSBaselinePortrait.swift in Sources */,
 				8A7801282589E1B6707C385D /* DSComponents.swift in Sources */,
@@ -1106,12 +1205,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				455BD54B226B71933FB9FFC5 /* CurfewActivityScheduler.swift in Sources */,
 				7EBA40F956766444F18FE110 /* CurfewContract.swift in Sources */,
 				3708147E573D6A4C6814F9E7 /* CurfewCopy.swift in Sources */,
 				C65A5A62F6D465F4F0337CC2 /* CurfewDeviceContract.swift in Sources */,
+				D4C7BC90D5BD8A3A62A14FFD /* CurfewDeviceController.swift in Sources */,
 				4680E4C49809397FA06B5C72 /* CurfewMonitorExtension.swift in Sources */,
+				87D8424BCC49703BEB5956E8 /* CurfewNotifications.swift in Sources */,
 				75290663AAC0C26C8B6E29EB /* CurfewPauseEvaluator.swift in Sources */,
+				EA0AE0858EBFCF82A2922ACB /* CurfewRuntime.swift in Sources */,
+				C7EBD3B5806F3BC95003741D /* CurfewSelectionCodec.swift in Sources */,
 				3913393AC13E7C6B038C3535 /* CurfewSharedStore.swift in Sources */,
+				1AFCCB51D646146AA3604D52 /* CurfewShieldController.swift in Sources */,
 				4BF4E9B76941B164200D91D2 /* CurfewShieldPalette.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1123,8 +1228,13 @@
 				6F95DDF3C92D6C34963EB93C /* CurfewContract.swift in Sources */,
 				9CEF905752FE1B818D84C14E /* CurfewCopy.swift in Sources */,
 				D4439656509FFE82F9B0343E /* CurfewCountdownAttributes.swift in Sources */,
+				9537996CE7D1949174641DD9 /* CurfewCountdownCopy.swift in Sources */,
+				4B9BAA59E6B53F13C467CCF0 /* CurfewCountdownPalette.swift in Sources */,
+				E5A98D29FAF0BF310FA5F89C /* CurfewCountdownViews.swift in Sources */,
 				B77BB0335635E2F5AB2E60B6 /* CurfewDeviceContract.swift in Sources */,
 				D8E2C3D0E1C4649BAFB90069 /* CurfewLiveActivityBundle.swift in Sources */,
+				068FA336DD42D3A309948915 /* CurfewLiveActivityController.swift in Sources */,
+				5C37A5C2968056C2E8BB3D29 /* CurfewNotifications.swift in Sources */,
 				AE2A9CF1F86F71BCB23FA093 /* CurfewPauseEvaluator.swift in Sources */,
 				36032A7E300F9C9213981F51 /* CurfewSharedStore.swift in Sources */,
 				5672B347F10C149F6A9068C5 /* CurfewShieldPalette.swift in Sources */,
@@ -1138,6 +1248,7 @@
 				4E1E8E1F74BC903BA37D981C /* CurfewContract.swift in Sources */,
 				802FFB9735C57233EC3EA9DB /* CurfewCopy.swift in Sources */,
 				8B1795683AADDC35EC65C4EE /* CurfewDeviceContract.swift in Sources */,
+				F8444455D17AB8F8D133B0A4 /* CurfewNotifications.swift in Sources */,
 				967B2062EFDB159A727A41BF /* CurfewPauseEvaluator.swift in Sources */,
 				D93F1BA91D11593BA2B58868 /* CurfewSharedStore.swift in Sources */,
 				CEF037AA550D9A0E8254C9FD /* CurfewShieldActionExtension.swift in Sources */,
@@ -1163,6 +1274,8 @@
 			files = (
 				E7609B38B6002DF84AA1C7F7 /* AppModelTests.swift in Sources */,
 				40C71064DB2B9FAB175D9BB8 /* CheckHistoryTests.swift in Sources */,
+				39185688945D36C4BA39DCE5 /* CurfewContractTests.swift in Sources */,
+				5AE4A5DF9A63217B6A922096 /* CurfewEvaluatorTests.swift in Sources */,
 				9DBE5A8CA3BCA27B3DEB32F7 /* GuardianModeTests.swift in Sources */,
 				571BAE02276B52C64862F6FC /* InterruptionPolicyTests.swift in Sources */,
 				65834F5A8D15E008A6F1288B /* LocalDataFailureTests.swift in Sources */,
@@ -1192,6 +1305,7 @@
 				3A2AA0EE6A8B49E03198873C /* CurfewContract.swift in Sources */,
 				3C9BBD5FB58748FA8EC1C3AE /* CurfewCopy.swift in Sources */,
 				03BACA0E9D1F5B3D31AFB277 /* CurfewDeviceContract.swift in Sources */,
+				418D081397856F3CC6776FDF /* CurfewNotifications.swift in Sources */,
 				20DD0FBBA6B1E5F2E7C6C0F6 /* CurfewPauseEvaluator.swift in Sources */,
 				C9C05048C3CFC73F8D69A9E4 /* CurfewSharedStore.swift in Sources */,
 				15A4037EBDCE254D6277C6A5 /* CurfewShieldPalette.swift in Sources */,

@@ -215,6 +215,7 @@ FORBIDDEN_KEYS=(
   NSAppTransportSecurity
   SoberGuardianAPIURL
   CFBundleURLTypes
+  NSSupportsLiveActivities
 )
 
 for key in "${FORBIDDEN_KEYS[@]}"; do
@@ -326,15 +327,45 @@ for entry in "${FORBIDDEN_PROVIDER_SIGNATURES[@]}"; do
   fi
 done
 
-# Public v1 has no push or remote-notification contract. The simulator product
-# may be unsigned; when entitlements are present, assert the deferred keys are
-# absent from the signed payload as well.
+# Public v1 has no push or remote-notification contract, and no Screen Time or
+# App Group entitlement: those belong to Curfew, which is SoberInternal-only.
+# The simulator product may be unsigned; when entitlements are present, assert
+# the deferred keys are absent from the signed payload as well.
 ENTITLEMENTS=$(codesign -d --entitlements :- "$APP" 2>/dev/null || true)
-for key in aps-environment com.apple.developer.usernotifications.communication; do
+for key in \
+  aps-environment \
+  com.apple.developer.usernotifications.communication \
+  com.apple.developer.family-controls \
+  com.apple.security.application-groups; do
   if grep -q -F -- "$key" <<< "$ENTITLEMENTS"; then
     fail "public app contains deferred entitlement: $key"
   else
     pass "absent entitlement: $key"
+  fi
+done
+
+# Curfew (Docs/CURFEW_SHREY_BRIEF.md §2 rule 8) lives in SoberInternal and its
+# four extensions. The public app must embed no extension at all and must not
+# link any Screen Time or Live Activity framework. Linking alone is enough to
+# widen App Review's questions even if no code path reaches the API.
+echo
+echo "==> Curfew stays internal"
+PUBLIC_PLUGINS="$APP/PlugIns"
+if [ -d "$PUBLIC_PLUGINS" ] && [ -n "$(ls -A "$PUBLIC_PLUGINS" 2>/dev/null)" ]; then
+  fail "public app embeds extensions: $(ls "$PUBLIC_PLUGINS" | tr '\n' ' ')"
+else
+  pass "public app embeds no extension"
+fi
+
+CURFEW_FRAMEWORKS=(FamilyControls ManagedSettings ManagedSettingsUI DeviceActivity ActivityKit)
+PUBLIC_LINKED_IMAGE=$(otool -L "$BINARY" 2>/dev/null || true)
+for framework in "${CURFEW_FRAMEWORKS[@]}"; do
+  # Match the framework path, not a bare word: ManagedSettings would otherwise
+  # also match ManagedSettingsUI and hide which one is linked.
+  if grep -q -F -- "/${framework}.framework/" <<< "$PUBLIC_LINKED_IMAGE"; then
+    fail "public binary links $framework"
+  else
+    pass "public binary does not link $framework"
   fi
 done
 
@@ -351,8 +382,15 @@ done
 echo
 echo "==> Sensitivity control (internal target must contain every needle)"
 INTERNAL_DD="$DERIVED_DATA-internal"
-INTERNAL_BINARY="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app/SoberInternal"
-INTERNAL_PRIVACY_MANIFEST="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app/PrivacyInfo.xcprivacy"
+INTERNAL_APP="$INTERNAL_DD/Build/Products/Release-iphonesimulator/SoberInternal.app"
+INTERNAL_BINARY="$INTERNAL_APP/SoberInternal"
+INTERNAL_PRIVACY_MANIFEST="$INTERNAL_APP/PrivacyInfo.xcprivacy"
+CURFEW_EXTENSIONS=(
+  CurfewMonitor.appex
+  CurfewShieldConfig.appex
+  CurfewShieldAction.appex
+  CurfewLiveActivity.appex
+)
 
 if xcodebuild \
   -project Sober.xcodeproj \
@@ -380,6 +418,21 @@ if xcodebuild \
     pass "experimental pupil model remains available in SoberInternal"
   else
     fail "SoberInternal is missing its experimental pupil model"
+  fi
+  # The Curfew checks above can only fail if the internal app really does embed
+  # the extensions and link Family Controls. Prove both here.
+  for appex in "${CURFEW_EXTENSIONS[@]}"; do
+    if [ -d "$INTERNAL_APP/PlugIns/$appex" ]; then
+      pass "SoberInternal embeds $appex"
+    else
+      fail "SoberInternal is missing $appex, so the public PlugIns check is unproven"
+    fi
+  done
+  INTERNAL_LINKED_IMAGE=$(otool -L "$INTERNAL_BINARY" 2>/dev/null || true)
+  if grep -q -F -- "/FamilyControls.framework/" <<< "$INTERNAL_LINKED_IMAGE"; then
+    pass "SoberInternal links FamilyControls, so the public framework check can fail"
+  else
+    fail "SoberInternal does not link FamilyControls; the public framework check is unproven"
   fi
 else
   fail "could not build SoberInternal; forbidden-string sensitivity is unproven"
