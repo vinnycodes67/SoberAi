@@ -295,6 +295,134 @@ final class CurfewEvaluatorTests: XCTestCase {
     }
   }
 
+  // MARK: - Check-ins before curfew
+
+  // A check-in can be recorded under the coming night from the Lock Screen
+  // countdown. The evaluator treats it like any other: the next ask is
+  // `recheckMinutes` later or the pause start, whichever is later. The setup
+  // screen's "before curfew" status describes exactly this.
+
+  func testCheckInShortlyBeforeCurfewDefersTheFirstPauseByRecheck() {
+    let tonight = CurfewTonight(nightID: "night-20260908", checkIns: [checkIn(at: tue(22, 50))])
+
+    guard case let .checkedIn(_, nextCheckInAt) = evaluate(now: tue(23, 12), tonight: tonight) else {
+      return XCTFail("A check-in within recheckMinutes of curfew counts as tonight's first")
+    }
+    XCTAssertEqual(nextCheckInAt, tue(23, 50))
+
+    guard case let .checkInDue(_, dueSince) = evaluate(now: tue(23, 50), tonight: tonight) else {
+      return XCTFail("Expected checkInDue once the recheck interval has passed")
+    }
+    XCTAssertEqual(dueSince, tue(23, 50))
+  }
+
+  func testCheckInLongBeforeCurfewDoesNotDeferThePause() {
+    let tonight = CurfewTonight(nightID: "night-20260908", checkIns: [checkIn(at: tue(18, 0))])
+
+    guard case .grace = evaluate(now: tue(23, 5), tonight: tonight) else {
+      return XCTFail("Expected grace")
+    }
+    guard case let .checkInDue(_, dueSince) = evaluate(now: tue(23, 15), tonight: tonight) else {
+      return XCTFail("Expected checkInDue at the normal pause start")
+    }
+    XCTAssertEqual(dueSince, tue(23, 10))
+  }
+
+  func testRideAskedForBeforeCurfewLiftsTheWholeNight() {
+    let tonight = CurfewTonight(
+      nightID: "night-20260908",
+      checkIns: [checkIn(at: tue(22, 0), status: .askedForRide)]
+    )
+    guard case .liftedForRide = evaluate(now: tue(23, 30), tonight: tonight) else {
+      return XCTFail("Expected liftedForRide")
+    }
+    guard case .liftedForRide = evaluate(now: wed(4, 0), tonight: tonight) else {
+      return XCTFail("Expected liftedForRide all night")
+    }
+  }
+
+  func testCheckInRecordedBeforeCurfewIsKeptUnderTheComingNight() {
+    // What the coordinator does before curfew: `.beforeCurfew(next:)` still
+    // carries a night, and `record` files the check-in under it.
+    guard case let .beforeCurfew(next) = evaluate(now: tue(22, 50)), let next else {
+      return XCTFail("Expected beforeCurfew with a night")
+    }
+    var state = CurfewSharedState(schedule: schedule)
+    XCTAssertTrue(state.record(checkIn(at: tue(22, 50)), for: next))
+    XCTAssertEqual(state.tonight?.nightID, "night-20260908")
+
+    guard case .checkedIn = evaluate(now: tue(23, 0), tonight: state.tonight) else {
+      return XCTFail("The early check-in must be honoured once the night starts")
+    }
+  }
+
+  // MARK: - Monitor slots
+
+  // `CurfewSlotPlan` is what the DeviceActivity scheduler registers. Two
+  // boundaries decide whether the monitor extension pauses and lifts on time.
+
+  func minuteOfDay(_ date: Date) -> Int {
+    let clock = wallClock(date)
+    return clock.hour * 60 + clock.minute
+  }
+
+  func testSlotPlanFirstSlotStartsAtPauseStartAndLastSlotEndsAfterNightEnd() {
+    let slots = CurfewSlotPlan.slots(for: schedule)
+    XCTAssertEqual(slots.count, 14)
+    XCTAssertEqual(slots.map(\.name).prefix(2), ["curfew.weeknight.h0", "curfew.weeknight.h1"])
+    XCTAssertEqual(slots.last?.name, "curfew.weekend.h6")
+
+    let tuesday = tuesdayNight()
+    let weeknight = slots.filter { $0.name.hasPrefix("curfew.weeknight.") }
+    XCTAssertEqual(weeknight.first?.startMinuteOfDay, minuteOfDay(tuesday.pauseStartsAt), "h0 must start at 23:10")
+    XCTAssertEqual(weeknight.first?.startMinuteOfDay, 23 * 60 + 10)
+    XCTAssertGreaterThanOrEqual(
+      weeknight.last!.endMinuteOfDay, minuteOfDay(tuesday.endsAt),
+      "h6 must end at or after 06:00 so its intervalDidEnd lifts the pause"
+    )
+    XCTAssertEqual(weeknight.last?.endMinuteOfDay, 6 * 60 + 10)
+
+    let friday = CurfewPauseEvaluator.night(eveningOf: fri(12, 0), schedule: schedule)!
+    let weekend = slots.filter { $0.name.hasPrefix("curfew.weekend.") }
+    XCTAssertEqual(weekend.first?.startMinuteOfDay, minuteOfDay(friday.pauseStartsAt))
+    XCTAssertEqual(weekend.first?.startMinuteOfDay, 40)
+    XCTAssertGreaterThanOrEqual(weekend.last!.endMinuteOfDay, minuteOfDay(friday.endsAt))
+    XCTAssertEqual(weekend.last?.endMinuteOfDay, 7 * 60 + 40)
+  }
+
+  func testSlotPlanCoversTheWholeNightForAnyGrace() {
+    for grace in [0, 5, 10, 45, CurfewSchedule.maximumGraceMinutes] {
+      var varied = schedule
+      varied.graceMinutes = grace
+      let slots = CurfewSlotPlan.slots(for: varied)
+      let weeknight = slots.filter { $0.name.hasPrefix("curfew.weeknight.") }
+      let first = weeknight.first!, last = weeknight.last!
+
+      XCTAssertEqual(first.startMinuteOfDay, (23 * 60 + grace) % (24 * 60), "grace \(grace)")
+      let span = (last.endMinuteOfDay - first.startMinuteOfDay + 24 * 60) % (24 * 60)
+      XCTAssertEqual(span, CurfewPauseEvaluator.nightLengthMinutes, "grace \(grace): slots must span the night")
+
+      // Consecutive slots touch: no minute between pause start and night end
+      // is outside every slot.
+      for (earlier, later) in zip(weeknight, weeknight.dropFirst()) {
+        XCTAssertEqual(earlier.endMinuteOfDay, later.startMinuteOfDay, "grace \(grace)")
+      }
+      for slot in weeknight {
+        let length = (slot.endMinuteOfDay - slot.startMinuteOfDay + 24 * 60) % (24 * 60)
+        XCTAssertEqual(length, CurfewSlotPlan.intervalMinutes)
+        XCTAssertGreaterThanOrEqual(length, 15, "DeviceActivity's minimum interval")
+      }
+    }
+  }
+
+  func testSlotPlanIsEmptyForAScheduleMissingATime() {
+    var broken = schedule
+    broken.weeknight = DateComponents(hour: 23)
+    let slots = CurfewSlotPlan.slots(for: broken)
+    XCTAssertEqual(slots.count, 7)
+    XCTAssertTrue(slots.allSatisfy { $0.name.hasPrefix("curfew.weekend.") })
+  }
+
   // MARK: - Schedule validity
 
   func testRecheckBelowMinimumIsNoSchedule() {

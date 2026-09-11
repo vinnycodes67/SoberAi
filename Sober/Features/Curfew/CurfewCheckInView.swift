@@ -66,6 +66,14 @@ struct CurfewCheckInView: View {
           .monospacedDigit()
           .foregroundStyle(DSPalette.textMuted)
       }
+      if !coordinator.decision.isWithinCurfewNight {
+        // Reached from the Lock Screen countdown before curfew. The check-in
+        // is real: it is shared and it is tonight's first one.
+        Text("It is not curfew yet. A check-in now is shared with your guardian and counts as tonight’s first check-in.")
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .dsReadingLine()
+      }
     }
   }
 

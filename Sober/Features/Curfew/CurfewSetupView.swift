@@ -19,7 +19,6 @@ struct CurfewSetupView: View {
   @State private var recheckMinutes = CurfewSchedule.standard().recheckMinutes
   @State private var graceMinutes = CurfewSchedule.standard().graceMinutes
   @State private var guardianName = ""
-  @State private var showingCheckIn = false
   @State private var hasLoaded = false
 
   private static let maximumTokenRows = 6
@@ -59,8 +58,12 @@ struct CurfewSetupView: View {
         }
       }
     }
-    .onAppear(perform: load)
-    .sheet(isPresented: $showingCheckIn) {
+    .onAppear {
+      coordinator.isSetupVisible = true
+      load()
+    }
+    .onDisappear { coordinator.isSetupVisible = false }
+    .sheet(isPresented: coordinator.checkInPresentation(fromSetup: true)) {
       CurfewCheckInView()
         .environmentObject(coordinator)
         .environmentObject(model)
@@ -77,9 +80,12 @@ struct CurfewSetupView: View {
         // Once a minute, and only here; the rest of the page is still.
         TimelineView(.everyMinute) { context in
           statusText(now: context.date)
+            // The countdown alone would keep reading "0 min" past curfew;
+            // re-evaluating on the same tick moves the card to the next state.
+            .onChange(of: context.date) { _, now in coordinator.refresh(now: now) }
         }
         if showsCheckInButton {
-          Button("Check in") { showingCheckIn = true }
+          Button("Check in") { coordinator.isPresentingCheckIn = true }
             .buttonStyle(DSPrimaryButtonStyle())
             .padding(.top, DSSpace.xs)
         }
@@ -118,7 +124,20 @@ struct CurfewSetupView: View {
       return ("No curfew set", "Save a schedule below and this iPhone will know when to ask you to check in.")
     case let .beforeCurfew(next):
       guard let next else { return ("No curfew coming up", "Check the schedule below.") }
-      return ("\(CurfewCopy.countdownPrefix) \(time(next.curfewAt))", countdown(to: next.curfewAt, from: now))
+      let title = "\(CurfewCopy.countdownPrefix) \(time(next.curfewAt))"
+      // A check-in made before curfew (from the Lock Screen countdown, say) is
+      // kept for tonight, and the evaluator honours it exactly as shown here.
+      if let early = coordinator.state.tonight, early.nightID == next.id {
+        if early.askedForRide {
+          return (title, "You asked for a ride. Nothing more is asked of you tonight.")
+        }
+        if let last = early.lastCheckInAt, let schedule = coordinator.state.schedule {
+          let recheck = last.addingTimeInterval(TimeInterval(schedule.recheckMinutes * 60))
+          let nextAsk = max(recheck, next.pauseStartsAt)
+          return (title, "Checked in \(time(last)). If you are still out at \(time(nextAsk)), you will be asked to check in.")
+        }
+      }
+      return (title, countdown(to: next.curfewAt, from: now))
     case let .grace(night):
       return (
         "\(CurfewCopy.countdownPrefix) \(time(night.curfewAt))",

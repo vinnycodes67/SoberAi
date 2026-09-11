@@ -192,6 +192,11 @@ final class CurfewHomeMonitor: NSObject, CurfewHomeMonitoring, @MainActor CLLoca
   private func record(isHome: Bool, at observedAt: Date = Date()) {
     let reading = CurfewHomeReading(isHome: isHome, observedAt: observedAt)
     try? store.update { $0.home = reading }
+    // Arriving home must lift the pause even when iOS relaunched the app in
+    // the background for the region event and no screen (and so no
+    // coordinator) exists to do it. The runtime is idempotent, so the
+    // coordinator refreshing again on `onHomeReading` costs nothing.
+    CurfewRuntime.reconcile(store: store)
     onHomeReading?(reading)
   }
 

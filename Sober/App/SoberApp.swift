@@ -5,6 +5,12 @@ struct SoberApp: App {
   @StateObject private var model: AppModel
 
   init() {
+    #if INTERNAL_BUILD
+    // Before anything else: a background relaunch for the Curfew home region
+    // never builds a scene, so the region delegate must exist by the end of
+    // launch or the arrival home is lost (Services/Curfew/HomeRegion).
+    CurfewBackgroundLaunch.prepare()
+    #endif
     #if DEBUG
     if let fixtureModel = UITestConfiguration.makeModel() {
       _model = StateObject(wrappedValue: fixtureModel)

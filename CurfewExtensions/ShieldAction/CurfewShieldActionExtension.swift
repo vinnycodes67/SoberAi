@@ -6,7 +6,10 @@ import ManagedSettings
 /// "Check-in due" notification, which deep-links into the check-in.
 ///
 /// It never lifts the shield. A check-in lifts the pause; a button press does
-/// not (rule 1). `.close` only dismisses the paused app.
+/// not (rule 1). `.close` only dismisses the paused app; the shield is back
+/// the next time it is opened. `.defer` is never returned: it keeps the shield
+/// on screen waiting for the app to change the settings, and nothing here
+/// ever will.
 final class CurfewShieldActionExtension: ShieldActionDelegate {
   override func handle(
     action: ShieldAction,
@@ -43,9 +46,10 @@ final class CurfewShieldActionExtension: ShieldActionDelegate {
       CurfewNotifications.enqueueCheckInDue(nightID: nightID)
       return .close
     case .secondaryButtonPressed:
-      return .defer
+      // "Not now": leave the paused app. It is still paused.
+      return .close
     @unknown default:
-      return .defer
+      return .none
     }
   }
 }

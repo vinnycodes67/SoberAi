@@ -94,10 +94,14 @@ final class CurfewLiveActivityController: CurfewLiveActivityControlling {
   /// (verify on device — Apple documents the cap loosely). A countdown to a
   /// curfew further out than that would be dropped by the system before it
   /// mattered, so it is not requested until it is within range.
-  static let maximumLeadTime: TimeInterval = 8 * 60 * 60
+  nonisolated static let maximumLeadTime: TimeInterval = 8 * 60 * 60
 
   private let now: @Sendable () -> Date
   private let logger = Logger(subsystem: "com.soberprototype.internal", category: "curfew")
+  /// The most recent piece of ActivityKit work. Each `sync` waits for the one
+  /// before it, so two refreshes in quick succession (a check-in refreshes and
+  /// the scene activates, say) cannot both see "no activity yet" and start two.
+  private var inFlight: Task<Void, Never>?
 
   init(now: @escaping @Sendable () -> Date = { Date() }) {
     self.now = now
@@ -105,26 +109,41 @@ final class CurfewLiveActivityController: CurfewLiveActivityControlling {
 
   func sync(decision: CurfewPauseDecision, guardianName: String?) async {
     let now = now()
-    guard let target = CurfewLiveActivityTarget(decision: decision, now: now) else {
-      // No schedule any more: take the countdown down at once. Home, or the
-      // night is over: let it linger dimmed the way ended activities do.
-      let policy: ActivityUIDismissalPolicy = decision == .noSchedule ? .immediate : .default
-      await Self.endAll(dismissalPolicy: policy, logger: logger)
-      return
-    }
-    guard target.isWithinLeadTime(Self.maximumLeadTime, of: now) else {
-      // Tomorrow's curfew, typically reached the moment tonight's window
-      // closes. Anything still running belongs to a finished night.
-      await Self.endAll(dismissalPolicy: .default, logger: logger)
-      return
-    }
+    let logger = logger
+    await enqueue {
+      guard let target = CurfewLiveActivityTarget(decision: decision, now: now) else {
+        // No schedule any more: take the countdown down at once. Home, or the
+        // night is over: let it linger dimmed the way ended activities do.
+        let policy: ActivityUIDismissalPolicy = decision == .noSchedule ? .immediate : .default
+        await Self.endAll(dismissalPolicy: policy, logger: logger)
+        return
+      }
+      guard target.isWithinLeadTime(Self.maximumLeadTime, of: now) else {
+        // Tomorrow's curfew, typically reached the moment tonight's window
+        // closes. Anything still running belongs to a finished night.
+        await Self.endAll(dismissalPolicy: .default, logger: logger)
+        return
+      }
 
-    let attributes = CurfewCountdownAttributes(nightID: target.nightID, guardianName: guardianName)
-    await Self.reconcile(attributes: attributes, content: target.content, logger: logger)
+      let attributes = CurfewCountdownAttributes(nightID: target.nightID, guardianName: guardianName)
+      await Self.reconcile(attributes: attributes, content: target.content, logger: logger)
+    }
   }
 
   func endAll() async {
-    await Self.endAll(dismissalPolicy: .default, logger: logger)
+    let logger = logger
+    await enqueue { await Self.endAll(dismissalPolicy: .default, logger: logger) }
+  }
+
+  /// Runs `work` after whatever was queued before it and waits for it.
+  private func enqueue(_ work: @escaping @Sendable () async -> Void) async {
+    let previous = inFlight
+    let task = Task {
+      await previous?.value
+      await work()
+    }
+    inFlight = task
+    await task.value
   }
 
   // MARK: - ActivityKit

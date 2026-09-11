@@ -3,25 +3,24 @@ import Foundation
 
 // Registers the DeviceActivity schedules that wake the monitor extension.
 //
-// `DeviceActivityEvent` thresholds measure app usage, not the clock, so the
-// hourly re-check is fourteen repeating daily intervals instead: one per hour
-// after the weeknight curfew (`curfew.weeknight.h0 … h6`) and one per hour
-// after the weekend curfew (`curfew.weekend.h0 … h6`). Every slot fires every
-// day; the monitor just calls `CurfewRuntime.reconcile`, and the evaluator
-// decides by weekday which curfew applies. Each interval is 59 minutes so
-// `intervalDidEnd` of slot h6 lands at the end of the seven-hour night.
+// The slots themselves come from `CurfewSlotPlan` (Services/Curfew/Core), which
+// is pure and unit-tested: fourteen repeating daily intervals, one per hour
+// from curfew plus grace for each curfew time (`curfew.weeknight.h0 … h6`,
+// `curfew.weekend.h0 … h6`). Slot 0 starts when apps may first pause and the
+// last slot ends at or after the end of the night, so `intervalDidStart` of
+// h0 applies the pause on time and `intervalDidEnd` of h6 lifts it.
 //
 // Needs on-device verification (the simulator cannot run DeviceActivity):
 //   • the cap on concurrently monitored activities (commonly cited ~20; we
 //     use 14, so the app must not register others alongside these);
-//   • the 15-minute minimum interval (ours is 59);
+//   • the 15-minute minimum interval (ours is 60);
 //   • that a repeating interval whose end is earlier than its start (e.g.
-//     23:30 → 00:29) is treated as spanning midnight.
+//     23:10 → 00:10) is treated as spanning midnight;
+//   • that `intervalDidEnd` is not delivered ahead of the boundary. It is
+//     what lifts the pause when the night ends, and a delivery even a second
+//     early would leave the shield up until the next slot or app launch.
 struct CurfewActivityScheduler: Sendable {
-  static let namePrefix = "curfew."
-  /// Slots after curfew. Seven covers `CurfewPauseEvaluator.nightLengthMinutes`.
-  static let hourlySlots = 0..<7
-  static let intervalMinutes = 59
+  static let namePrefix = CurfewSlotPlan.namePrefix
 
   /// Every `curfew.*` activity currently registered with the system.
   var registeredActivityNames: [DeviceActivityName] {
@@ -44,28 +43,18 @@ struct CurfewActivityScheduler: Sendable {
     }
   }
 
-  /// The fourteen (name, schedule) pairs, in a stable order.
+  /// The fourteen (name, schedule) pairs, in `CurfewSlotPlan` order.
   static func activities(for schedule: CurfewSchedule) -> [(DeviceActivityName, DeviceActivitySchedule)] {
-    let kinds: [(String, DateComponents)] = [
-      ("weeknight", schedule.weeknight),
-      ("weekend", schedule.weekend),
-    ]
-    var result: [(DeviceActivityName, DeviceActivitySchedule)] = []
-    for (kind, curfew) in kinds {
-      guard let hour = curfew.hour, let minute = curfew.minute else { continue }
-      for slot in hourlySlots {
-        let startMinutes = (hour * 60 + minute + slot * 60) % (24 * 60)
-        let endMinutes = (startMinutes + intervalMinutes) % (24 * 60)
-        let name = DeviceActivityName("\(namePrefix)\(kind).h\(slot)")
-        let activity = DeviceActivitySchedule(
-          intervalStart: components(minutesOfDay: startMinutes),
-          intervalEnd: components(minutesOfDay: endMinutes),
+    CurfewSlotPlan.slots(for: schedule).map { slot in
+      (
+        DeviceActivityName(slot.name),
+        DeviceActivitySchedule(
+          intervalStart: components(minutesOfDay: slot.startMinuteOfDay),
+          intervalEnd: components(minutesOfDay: slot.endMinuteOfDay),
           repeats: true
         )
-        result.append((name, activity))
-      }
+      )
     }
-    return result
   }
 
   private static func components(minutesOfDay: Int) -> DateComponents {

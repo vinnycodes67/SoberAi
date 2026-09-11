@@ -1,6 +1,7 @@
 import Combine
 import FamilyControls
 import Foundation
+import SwiftUI
 import UserNotifications
 
 // The teen-side owner of Curfew at runtime. It wires the shared store, the
@@ -15,6 +16,24 @@ final class CurfewCoordinator: ObservableObject {
   @Published private(set) var decision: CurfewPauseDecision = .noSchedule
   @Published private(set) var state = CurfewSharedState()
   @Published var isPresentingCheckIn = false
+  /// True while the Curfew setup sheet is on screen. Only one presenter may
+  /// own the check-in sheet at a time: the root host normally, the setup sheet
+  /// while it is up. Two sheets from two layers would leave the flag stuck.
+  @Published var isSetupVisible = false
+
+  /// The binding a presenter uses for the check-in sheet. `fromSetup` picks
+  /// which layer is allowed to present right now.
+  func checkInPresentation(fromSetup: Bool) -> Binding<Bool> {
+    Binding(
+      get: { [weak self] in
+        guard let self else { return false }
+        return self.isPresentingCheckIn && (self.isSetupVisible == fromSetup)
+      },
+      set: { [weak self] presented in
+        if !presented { self?.isPresentingCheckIn = false }
+      }
+    )
+  }
   @Published var lastError: String?
   @Published private(set) var homeAuthorization: CurfewHomeAuthorization = .notDetermined
 
@@ -31,13 +50,18 @@ final class CurfewCoordinator: ObservableObject {
   /// `sender` is the injection point for delivery to the guardian's side.
   /// Vinay's backend has no Curfew route yet, so the default keeps every
   /// check-in queued locally until one exists.
+  ///
+  /// `home` is normally the monitor `CurfewBackgroundLaunch` created at launch
+  /// so region events reach one delegate; nil creates a private one over
+  /// `store` for tests and previews.
   init(
     store: any CurfewStateStoring = AppGroupCurfewStore(),
-    sender: any CurfewCheckInSending = UnconfiguredCurfewCheckInSender()
+    sender: any CurfewCheckInSending = UnconfiguredCurfewCheckInSender(),
+    home: CurfewHomeMonitor? = nil
   ) {
     self.store = store
     device = CurfewDeviceController(store: store)
-    home = CurfewHomeMonitor(store: store)
+    self.home = home ?? CurfewHomeMonitor(store: store)
     liveActivity = CurfewLiveActivityController()
     flusher = CurfewOutboxFlusher(store: store, sender: sender)
     state = store.load()
@@ -215,7 +239,6 @@ final class CurfewCoordinator: ObservableObject {
 
     refresh(now: now)
     CurfewNotifications.clearCheckInDue()
-    await liveActivity.sync(decision: decision, guardianName: state.guardianDisplayName)
     await flusher.flush()
     state = store.load()
     if dismissingCheckIn { isPresentingCheckIn = false }
