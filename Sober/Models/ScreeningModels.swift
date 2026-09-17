@@ -297,6 +297,40 @@ struct SafetyPlan: Codable, Equatable, Sendable {
 
   var hasRideDestination: Bool { !trimmedHomeAddress.isEmpty }
 
+  /// The ride deep link for this plan.
+  ///
+  /// Shared rather than rebuilt per screen. The result screen and Curfew's
+  /// check-in have to open the same ride the same way, and two copies of a URL
+  /// builder is exactly how one of them quietly stops carrying the destination.
+  var rideURL: URL? {
+    if preferredRide == "Lyft" {
+      return URL(string: "https://www.lyft.com/rider")
+    }
+
+    // Built with URLComponents so the address is percent-encoded exactly once.
+    //
+    // The previous version encoded it by hand and interpolated it into a
+    // string. Uber's parameter name contains square brackets, which are illegal
+    // in a query, so `URL(string:)` re-encoded the whole thing — and the already
+    // encoded spaces became `%2520`. Uber then received the literal text
+    // "123%20Main%20Street" as the destination and could not resolve it, which
+    // silently removed the destination from the one action this app exists to
+    // offer.
+    var components = URLComponents()
+    components.scheme = "https"
+    components.host = "m.uber.com"
+    components.path = "/ul/"
+    var items = [
+      URLQueryItem(name: "action", value: "setPickup"),
+      URLQueryItem(name: "pickup", value: "my_location"),
+    ]
+    if !trimmedHomeAddress.isEmpty {
+      items.append(URLQueryItem(name: "dropoff[formatted_address]", value: trimmedHomeAddress))
+    }
+    components.queryItems = items
+    return components.url
+  }
+
   var normalizedContactPhone: String { contactPhone.filter(\.isNumber) }
 
   /// A plan can only be offered as a ride/text intervention once the person

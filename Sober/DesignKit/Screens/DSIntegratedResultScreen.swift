@@ -443,18 +443,7 @@ struct DSIntegratedResultScreen: View {
   }
 
   private func openRide() {
-    let destination = safetyPlan.trimmedHomeAddress.addingPercentEncoding(
-      withAllowedCharacters: .urlQueryAllowed
-    )
-    let rawURL: String
-    if safetyPlan.preferredRide == "Lyft" {
-      rawURL = "https://www.lyft.com/rider"
-    } else if let destination, !destination.isEmpty {
-      rawURL = "https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=\(destination)"
-    } else {
-      rawURL = "https://m.uber.com/ul/?action=setPickup&pickup=my_location"
-    }
-    if let url = URL(string: rawURL) { openURL(url) }
+    if let url = safetyPlan.rideURL { openURL(url) }
   }
 
   private func callContact() {

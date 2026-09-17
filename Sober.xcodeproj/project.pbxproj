@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0514A666D367EE50F9E20E2E /* SafetyPlanRideURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBB8912F166C1B9D65E91FBE /* SafetyPlanRideURLTests.swift */; };
 		05CE2163F3E42DAEAA3BC849 /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		0A73DCDA18F4DBDE47491D2B /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
 		0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
@@ -74,6 +75,7 @@
 		6D32C8F6FD7754A8BB53F5C0 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */; };
 		6D44101605F840EBD5E5F529 /* FaceCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */; };
 		6EE8A46000953B556D8BFE8F /* GuardianAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBCFCFA851B09C57729EC78A /* GuardianAPIClient.swift */; };
+		70EC17B29971548D3E0C7F71 /* DemoRecordingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9850F73C9FFC3D32B1615817 /* DemoRecordingUITests.swift */; };
 		7322E48361C81C2E89C60A3D /* YourSteadyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC54FC880C1A3D97062FCDE /* YourSteadyView.swift */; };
 		7401480EE6E5354FBED50A36 /* AccessibilityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA18DBB71AB47CE423D96907 /* AccessibilityUITests.swift */; };
 		75B902DC9EFA654F12C8DEE2 /* FaceCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB1DFA41473EA81118E1229 /* FaceCameraPreview.swift */; };
@@ -226,6 +228,7 @@
 		900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianLiveLocationService.swift; sourceTree = "<group>"; };
 		93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Satoshi-LICENSE.txt"; sourceTree = "<group>"; };
 		9578CA43E138C16E0045DB01 /* UITestLaunchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunchConfiguration.swift; sourceTree = "<group>"; };
+		9850F73C9FFC3D32B1615817 /* DemoRecordingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRecordingUITests.swift; sourceTree = "<group>"; };
 		989CC81D39FF9EB4FB80B6DB /* PublicBoundaryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicBoundaryUITests.swift; sourceTree = "<group>"; };
 		A20F48F19933BD649B2BB3A9 /* ScreeningFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningFlowView.swift; sourceTree = "<group>"; };
 		A283843C5F8155F2ABF81000 /* SoberTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SoberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -250,6 +253,7 @@
 		E5D0277C1F1057B474837F2C /* Sober.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sober.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckHistoryStore.swift; sourceTree = "<group>"; };
 		EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		EBB8912F166C1B9D65E91FBE /* SafetyPlanRideURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanRideURLTests.swift; sourceTree = "<group>"; };
 		EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCenterView.swift; sourceTree = "<group>"; };
 		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F1154AF077381776EE9F825A /* DSTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTokens.swift; sourceTree = "<group>"; };
@@ -282,6 +286,7 @@
 				F5CE17DDAF1811BF0F4C6C18 /* PersistenceFoundationTests.swift */,
 				DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */,
 				A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */,
+				EBB8912F166C1B9D65E91FBE /* SafetyPlanRideURLTests.swift */,
 				6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */,
 				845DB8F174E092281695AC2E /* StimulusIsolationTests.swift */,
 				E3314A34E9DD328C72F63E9B /* UITestLaunchConfigurationTests.swift */,
@@ -428,6 +433,7 @@
 			isa = PBXGroup;
 			children = (
 				FA18DBB71AB47CE423D96907 /* AccessibilityUITests.swift */,
+				9850F73C9FFC3D32B1615817 /* DemoRecordingUITests.swift */,
 				35ABD6127F23F09013D16BF9 /* JourneySmokeUITests.swift */,
 				989CC81D39FF9EB4FB80B6DB /* PublicBoundaryUITests.swift */,
 				073988A5B67D68A322D05A27 /* ReviewerPathUITests.swift */,
@@ -782,6 +788,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7401480EE6E5354FBED50A36 /* AccessibilityUITests.swift in Sources */,
+				70EC17B29971548D3E0C7F71 /* DemoRecordingUITests.swift in Sources */,
 				7A81F2DBDA1256D3ED3B4BD9 /* JourneySmokeUITests.swift in Sources */,
 				B3B717A7585F81ACF1F8D1BF /* PublicBoundaryUITests.swift in Sources */,
 				165C267256A7800A47A7B2A0 /* ReviewerPathUITests.swift in Sources */,
@@ -804,6 +811,7 @@
 				FC0446B060F94C806FA23A8C /* PersistenceFoundationTests.swift in Sources */,
 				45A9CFA18E73738D0779B36E /* ResearchDataTests.swift in Sources */,
 				8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */,
+				0514A666D367EE50F9E20E2E /* SafetyPlanRideURLTests.swift in Sources */,
 				4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */,
 				624F30A3820DF1AC72468ABC /* StimulusIsolationTests.swift in Sources */,
 				69D7D7B5E7E7F19ADDD0629E /* UITestLaunchConfigurationTests.swift in Sources */,
