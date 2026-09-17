@@ -56,7 +56,11 @@
 
 ## Migration state
 
-Home, result, and Guardian Mode use the canonical DesignKit. Onboarding, task capture, Safety Plan, Circle Map, Research, and About still use the earlier cyan/serif components while their approved replacement screens are pending. Do not add new styling to the legacy system; migrate those screens to `DS` tokens when final designs arrive.
+Every public screen renders through DesignKit. The shared legacy vocabulary (`SoberCard`, `ScreenHeader`, `PrimaryActionButtonStyle`, `soberBackground()`, `soberEntrance()`) no longer has its own implementation — each one now delegates to its `DS` counterpart, so a change to DesignKit reaches those screens instead of drifting away from them. Their layout is tokenised too.
+
+Circle Map and the Research Center are internal-only and still carry bespoke layout; they inherit the components but have not been restructured.
+
+New screens use `DS` components directly. Don't add new styling to the legacy names — they exist only so untouched screens keep compiling.
 
 ## Decisions log
 
@@ -66,3 +70,5 @@ Home, result, and Guardian Mode use the canonical DesignKit. Onboarding, task ca
 | 2026-08-04 | Make all motion accessibility-aware | A safety flow must remain usable with Reduce Motion and Reduce Transparency. |
 | 2026-08-06 | Adopt matte black, grey, and safety orange as the canonical UI | It creates a quieter hierarchy and makes attention states unmistakable. |
 | 2026-08-08 | Treat DesignKit as the source of truth | Home, result, and Guardian now share one tokenized visual language; legacy screens are explicitly transitional. |
+| 2026-08-16 | Legacy components delegate to DesignKit rather than being restyled | One implementation each; a padding or press state fixed in `DS` reaches every screen instead of two copies drifting apart. |
+| 2026-09-16 | Curfew status is never green, and the countdown ring drains | A green chip on a guardian's screen reads as "they're fine" — the one claim no state in this product may make. A filling ring reads as an achievement; this measures time being spent. See `DSStatusChip` and `DSCountdownRing`. |

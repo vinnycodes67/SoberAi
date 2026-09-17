@@ -11,3 +11,6 @@ Training/**/*.pyc
 .gstack/
 Backend/.dev.vars
 Backend/.dev.vars.*
+
+# App Store Connect export bundles (regenerated, not source)
+AppStoreConnect-*-Bundle-*.zip
