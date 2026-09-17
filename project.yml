@@ -23,6 +23,13 @@ targets:
           # Experimental research asset. Its OpenEDS-domain accuracy has not
           # been validated on iPhone captures, so it must not ship in v1.
           - Resources/PupilSegmentation.mlpackage
+          # Curfew (Screen Time, home region, Live Activity) is internal-only.
+          # Only the pure contract, evaluator, and store compile publicly so
+          # SoberTests can cover them; nothing here links FamilyControls.
+          - Features/Curfew
+          - Services/Curfew/ScreenTime
+          - Services/Curfew/HomeRegion
+          - Services/Curfew/LiveActivity
     info:
       path: Sober/Info.plist
       properties:
@@ -79,12 +86,17 @@ targets:
         NSCameraUsageDescription: Sober processes eye and face landmarks on this iPhone during a check. Raw frames are not saved or uploaded.
         NSFaceIDUsageDescription: Sober uses Face ID only when you choose Privacy Lock to protect History, Your Steady, and Settings on this iPhone.
         NSLocationWhenInUseUsageDescription: Sober Internal uses your location for private Home checks and, only when you turn on Circle sharing, to show your current location to your connected guardian.
-        NSLocationAlwaysAndWhenInUseUsageDescription: When you explicitly enable background Circle sharing, Sober Internal keeps your connected guardian's map current after you leave the app. You can stop sharing at any time.
+        NSLocationAlwaysAndWhenInUseUsageDescription: Always access lets Sober Internal notice, on this iPhone only, when you arrive home so Curfew does not pause your apps at home, and, only when you turn on background Circle sharing, keeps your guardian's map current after you leave the app. You can stop either at any time.
         UIBackgroundModes:
           - location
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         SoberGuardianAPIURL: "$(SOBER_GUARDIAN_API_URL)"
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.soberprototype.internal.curfew
+            CFBundleURLSchemes:
+              - sober-internal
         LSApplicationCategoryType: public.app-category.healthcare-fitness
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
@@ -93,6 +105,17 @@ targets:
           - Satoshi-Regular.otf
           - Satoshi-Medium.otf
           - Satoshi-Bold.otf
+    entitlements:
+      path: Sober/SoberInternal.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.soberprototype.internal.curfew
+    dependencies:
+      - target: CurfewMonitor
+      - target: CurfewShieldConfig
+      - target: CurfewShieldAction
+      - target: CurfewLiveActivity
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal
@@ -109,6 +132,131 @@ targets:
           SOBER_GUARDIAN_API_URL: ""
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD"
     scheme: {}
+
+  # ---------------------------------------------------------------------------
+  # Curfew extensions. Embedded in SoberInternal only. Each shares the App Group
+  # and the Family Controls entitlement with the app. Memory in these processes
+  # is tiny, so they compile only the pure Curfew core, never DesignKit.
+  CurfewMonitor:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CurfewExtensions/Monitor
+      - path: Sober/Models/CurfewContract.swift
+      - path: Sober/Services/Curfew/Core
+      - path: Sober/Services/Curfew/ScreenTime
+    info:
+      path: CurfewExtensions/Monitor/Info.plist
+      properties:
+        CFBundleDisplayName: Curfew Monitor
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CurfewMonitorExtension
+    entitlements:
+      path: CurfewExtensions/Monitor/CurfewMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.soberprototype.internal.curfew
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal.curfew-monitor
+        PRODUCT_NAME: CurfewMonitor
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "3"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
+  CurfewShieldConfig:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CurfewExtensions/ShieldConfig
+      - path: Sober/Models/CurfewContract.swift
+      - path: Sober/Services/Curfew/Core
+    info:
+      path: CurfewExtensions/ShieldConfig/Info.plist
+      properties:
+        CFBundleDisplayName: Curfew Shield
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CurfewShieldConfigurationExtension
+    entitlements:
+      path: CurfewExtensions/ShieldConfig/CurfewShieldConfig.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.soberprototype.internal.curfew
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal.curfew-shield-config
+        PRODUCT_NAME: CurfewShieldConfig
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "3"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
+  CurfewShieldAction:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CurfewExtensions/ShieldAction
+      - path: Sober/Models/CurfewContract.swift
+      - path: Sober/Services/Curfew/Core
+    info:
+      path: CurfewExtensions/ShieldAction/Info.plist
+      properties:
+        CFBundleDisplayName: Curfew Shield Action
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettings.shield-action-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CurfewShieldActionExtension
+    entitlements:
+      path: CurfewExtensions/ShieldAction/CurfewShieldAction.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.soberprototype.internal.curfew
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal.curfew-shield-action
+        PRODUCT_NAME: CurfewShieldAction
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "3"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
+  CurfewLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CurfewExtensions/LiveActivity
+      - path: Sober/Models/CurfewContract.swift
+      - path: Sober/Services/Curfew/Core
+      - path: Sober/Services/Curfew/LiveActivity
+    info:
+      path: CurfewExtensions/LiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Curfew Countdown
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: CurfewExtensions/LiveActivity/CurfewLiveActivity.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.soberprototype.internal.curfew
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.soberprototype.internal.curfew-live-activity
+        PRODUCT_NAME: CurfewLiveActivity
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "3"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
   SoberUITests:
     type: bundle.ui-testing
     platform: iOS

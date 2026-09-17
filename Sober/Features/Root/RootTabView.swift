@@ -29,6 +29,14 @@ struct RootTabView: View {
   }
 
   var body: some View {
+    #if INTERNAL_BUILD
+    shell.curfewHost()
+    #else
+    shell
+    #endif
+  }
+
+  private var shell: some View {
     // `safeAreaInset` rather than a ZStack overlay. Overlaying the bar left it
     // sitting under the home indicator and let scroll content run beneath it;
     // as an inset, SwiftUI both keeps the bar clear of the safe area and insets

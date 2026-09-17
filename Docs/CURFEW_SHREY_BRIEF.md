@@ -1,6 +1,6 @@
 # Curfew — Shrey's brief (teen's phone)
 
-> **Tasks to vibe code, in order:** [`CURFEW_SHREY_TASKS.md`](CURFEW_SHREY_TASKS.md)
+> **Tasks, in order:** [`CURFEW_SHREY_TASKS.md`](CURFEW_SHREY_TASKS.md) · Vinay's half: [`CURFEW_VINAY_TASKS.md`](CURFEW_VINAY_TASKS.md)
 >
 > **Start every AI coding session with:** "Read `Docs/CURFEW_SHREY_BRIEF.md` and
 > `Docs/SOBER_CONTEXT_BRIEF.md` before writing any code. Follow the rules in both."
@@ -9,6 +9,8 @@ You own the **teen's iPhone**: Screen Time integration, the curfew schedule,
 the block screen, the check-in, and the Lock Screen countdown. Vinay owns the
 guardian's side, the backend, and the design system. This document is the
 context an AI assistant needs so it does not guess.
+
+The twist, in one line: **a check-in unlocks the phone; the result never does.**
 
 ---
 
@@ -25,6 +27,9 @@ no questions tonight.
 
 The guardian sees one of: **Home · Checked in 11:42 · Asked for a ride · No
 check-in yet.** Never a Sober result.
+
+Names: Family (the group), Guardian (the parent; the app already uses this),
+Curfew (the feature), Safe Ride Promise.
 
 ---
 
@@ -205,27 +210,22 @@ Teen arrives home → pauses stop for the night
 All four embed in **`SoberInternal` only**. Run `xcodegen generate` after
 editing `project.yml`.
 
-**App Group** (e.g. `group.<bundle-id>.curfew`) shared by SoberInternal and all
-four extensions. Holds: the curfew schedule, the two picker selections,
-`isHome` + timestamp, tonight's state (checked in at / asked for ride), and the
-outbound queue of check-ins not yet sent.
+**App Group** (`group.com.soberprototype.internal.curfew`) shared by
+SoberInternal and all four extensions. Holds: the curfew schedule, the two
+picker selections, `isHome` + timestamp, tonight's state (checked in at / asked
+for ride), and the outbound queue of check-ins not yet sent.
 
-**Entitlements:** there are currently **no `.entitlements` files** in the repo.
-You'll create one for SoberInternal and one per extension, each with
-`family-controls` and the App Group, and wire them in `project.yml`.
+**Entitlements:** one for SoberInternal and one per extension, each with
+`family-controls` and the App Group, wired in `project.yml`.
 
-**Guard the public build:** add `com.apple.developer.family-controls` to the
-forbidden-entitlements loop in `Scripts/check-public-binary.sh` (it currently
-lists `aps-environment` and
-`com.apple.developer.usernotifications.communication`). Then run the script and
-confirm it passes.
+**Guard the public build:** `com.apple.developer.family-controls` is in the
+forbidden-entitlements loop in `Scripts/check-public-binary.sh`, and the public
+binary must not link any Screen Time framework or embed a Curfew extension.
 
-**One decision function, shared everywhere.** Put "should the phone be paused
-right now?" in a single pure function — inputs: now, schedule, `isHome` +
-freshness, last check-in, asked-for-ride — compiled into both the app and the
-monitor extension. Model it on `GuardianCheckInDueEvaluator`. That way the
-logic is unit-tested in `SoberTests` instead of only testable on a device at
-11 p.m.
+**One decision function, shared everywhere.** "Should the phone be paused
+right now?" is `CurfewPauseEvaluator.evaluate` — inputs: now, schedule,
+`isHome` + freshness, tonight's check-ins — compiled into both the app and the
+monitor extension and unit-tested in `SoberTests`.
 
 ---
 
@@ -277,8 +277,7 @@ device-specific and never go to the server.
 | 4 | Lock Screen / Dynamic Island countdown | Shows and updates through curfew |
 | 5 | Wired to Vinay's backend; offline queue | Guardian's phone shows each status; airplane mode shows "No check-in yet" |
 
-Record evidence for each (screen recording or photo) in a short doc — the
-project already expects device evidence in `Docs/PHASE_4_DEVICE_GATES.md`.
+Record evidence for each in `Docs/CURFEW_DEVICE_GATES.md`.
 
 ---
 
@@ -289,7 +288,7 @@ project already expects device evidence in `Docs/PHASE_4_DEVICE_GATES.md`.
   one signed in with a teen (13–17) child Apple ID.
 - Unit-test the decision function (§6) and the contract in `SoberTests`.
 - Existing suites: `xcodebuild -project Sober.xcodeproj -scheme Sober test`
-  (~158 unit, ~31 UI). They must stay green.
+  must stay green.
 - Most "failures" on this machine have been simulator timeouts or a full disk
   — read the failing line before assuming you broke something.
 

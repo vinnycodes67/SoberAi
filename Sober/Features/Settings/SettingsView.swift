@@ -16,12 +16,18 @@ struct SettingsView: View {
   @State private var showingPrivacyPolicy = false
   @State private var showingHowResultsWork = false
   @State private var showingReset = false
+  #if INTERNAL_BUILD
+  @State private var showingCurfew = false
+  #endif
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: DSSpace.xl) {
         header
         safety
+        #if INTERNAL_BUILD
+        curfew
+        #endif
         privacy
         about
         danger
@@ -52,6 +58,13 @@ struct SettingsView: View {
       HowResultsWorkView()
         .preferredColorScheme(.dark)
     }
+    #if INTERNAL_BUILD
+    .sheet(isPresented: $showingCurfew) {
+      CurfewSetupView()
+        .environmentObject(model)
+        .preferredColorScheme(.dark)
+    }
+    #endif
     .alert("Delete everything on this iPhone?", isPresented: $showingReset) {
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) { model.resetPrototype() }
@@ -71,6 +84,9 @@ struct SettingsView: View {
       showingPrivacy = false
       showingPrivacyPolicy = false
       showingReset = false
+      #if INTERNAL_BUILD
+      showingCurfew = false
+      #endif
     }
   }
 
@@ -104,6 +120,20 @@ struct SettingsView: View {
     }
     return "Add a destination, a ride app, and someone to contact"
   }
+
+  #if INTERNAL_BUILD
+  private var curfew: some View {
+    DSSection("Curfew") {
+      DSRows {
+        DSRow(
+          "Curfew",
+          detail: "Schedule, paused apps, check-in",
+          action: { showingCurfew = true }
+        )
+      }
+    }
+  }
+  #endif
 
   private var privacy: some View {
     DSSection("Privacy") {
