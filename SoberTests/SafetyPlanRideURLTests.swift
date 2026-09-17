@@ -57,3 +57,29 @@ final class SafetyPlanRideURLTests: XCTestCase {
     }
   }
 }
+
+/// Curfew's check-in and the result screen must open the identical ride.
+///
+/// Asserted against the source text rather than the symbol: `Features/Curfew`
+/// is excluded from the public target, so `CurfewRideLink` is not linked into
+/// this test bundle. Same approach as `testCurfewSourcesNeverReferenceScreeningOutcomes`.
+final class CurfewRideLinkParityTests: XCTestCase {
+  func testCurfewRideLinkDelegatesRatherThanRebuildingTheURL() throws {
+    let root = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+    let source = try String(
+      contentsOf: root.appendingPathComponent("Sober/Features/Curfew/CurfewRideLink.swift"),
+      encoding: .utf8
+    )
+
+    XCTAssertTrue(
+      source.contains("safetyPlan.rideURL"),
+      "Curfew must open the same ride as the result screen")
+    for rebuilt in ["m.uber.com", "addingPercentEncoding", "lyft.com"] {
+      XCTAssertFalse(
+        source.contains(rebuilt),
+        "Curfew is rebuilding the ride URL again (\(rebuilt)); it silently lost the destination last time")
+    }
+  }
+}
