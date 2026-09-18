@@ -3,7 +3,8 @@ import SwiftUI
 /// Past sessions, and the way into Your Steady.
 ///
 /// Each row says what the session was, when, how well it captured, and — for a
-/// check — which of the three states came out. What it deliberately does not do
+/// check — which of the three states came out, or — for a baseline session —
+/// whether it was left out of the five. What it deliberately does not do
 /// is aggregate: no streak, no count of concerning results, no chart. A handful
 /// of sessions is not a time series, and a running tally would invite reading a
 /// trend the measurement cannot support.
@@ -129,6 +130,8 @@ struct HistoryView: View {
               trailing: {
                 if session.outcome == .signalsDetected {
                   Circle().fill(tint(for: session)).frame(width: 7, height: 7)
+                } else if notCounted(session) {
+                  DSStatusChip(text: "Not added to your steady")
                 }
               }
             )
@@ -217,6 +220,14 @@ struct HistoryView: View {
     let when = entry.startedAt.formatted(date: .abbreviated, time: .shortened)
     guard entry.completedAllTasks else { return "\(when) · not completed" }
     return "\(when) · \(qualityLabel(entry.qualityScore)) capture"
+  }
+
+  /// A baseline session the engine left out of the five. Someone stuck at
+  /// "0 of 5" can then see the pattern across rows instead of guessing. Quiet
+  /// grey, not orange: the session didn't count, the person did not fail.
+  /// Unknown is not "didn't count", so it marks nothing.
+  private func notCounted(_ entry: CheckHistoryEntry) -> Bool {
+    entry.kind == .baseline && model.baselineSessionCounted(startedAt: entry.startedAt) == false
   }
 
   private func qualityLabel(_ score: Double) -> String {
