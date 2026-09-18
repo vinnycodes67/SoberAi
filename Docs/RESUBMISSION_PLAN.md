@@ -4,6 +4,10 @@ Everything remaining before Sober goes back to App Review, with an owner on
 every task. Verified against the repo on 2026-09-18 — several items in
 `APP_STORE_SUBMISSION.md` are stale and already done.
 
+> **Vibe-coding cards, one file each:** [`VIBE_VINAY.md`](VIBE_VINAY.md) ·
+> [`VIBE_AADI.md`](VIBE_AADI.md) · [`VIBE_SHREY.md`](VIBE_SHREY.md) — paste-ready
+> prompts for every task below.
+
 > **Still needed:** the rejection text from App Store Connect — the guideline
 > number and any reviewer screenshot. This plan is built on what the code
 > shows, and the most likely cause is §3. If they rejected for something else,
@@ -22,7 +26,7 @@ every task. Verified against the repo on 2026-09-18 — several items in
 | **VINAY 5** | Vinay | Bump build, archive, upload | Last |
 | **VINAY 6** | Vinay | Update the stale submission checklist | Yes |
 | **AADI 1** | Aadi | "Capture quality too low" state | Yes |
-| **AADI 2** | Aadi | Per-session quality in History | Yes |
+| **AADI 2** | Aadi | Mark which sessions counted, in History | Yes |
 | **AADI 3** | Aadi | DesignKit "didn't count" component | Yes |
 | **AADI 4** | Aadi | Refresh screenshots | After VINAY 1 |
 | **AADI 5** | Aadi | DesignKit parts Vinay asks for | On request |
@@ -120,9 +124,12 @@ Today a session scoring 0.70 silently vanishes and the counter just doesn't
 move — the person gets no idea why. Say what happened and what to change:
 light, distance, glasses. The biggest user-visible hole in the app.
 
-**AADI 2 — Per-session quality in History.** *(start now)*
-Someone stuck at 0 of 5 should see the pattern instead of guessing. A quality
-figure per row, and a quiet marker on sessions that didn't count.
+**AADI 2 — Mark which sessions counted, in History.** *(start now)*
+`HistoryView` **already shows capture quality per row** and already handles
+"not completed" — read lines ~190-220 before touching it. The missing piece is
+narrower than first written here: whether a session **counted toward the
+baseline**. Add that marker so someone stuck at 0 of 5 sees the pattern across
+five rows instead of guessing.
 
 **AADI 3 — A DesignKit "didn't count" component.** *(start now)*
 AADI 1 and AADI 2 both need it — build it once in `DesignKit/`, not twice in
