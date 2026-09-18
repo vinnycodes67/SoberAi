@@ -323,6 +323,44 @@ final class CheckHistoryRecordingTests: XCTestCase {
     XCTAssertNil(model.checkHistory.first?.outcome)
   }
 
+  /// The History marker, end to end: a session under the quality bar is
+  /// recorded, matched back to its archived session across History's
+  /// whole-second dates, and reported as not counted by the engine.
+  func testHistoryCanTellWhichBaselineSessionsCounted() async {
+    let model = makeModel()
+    var lowQuality = completedMetrics
+    lowQuality.qualityScore = 0.5
+    // Recent, so retention keeps it, and off a whole second, so the match has
+    // to survive History's ISO 8601 truncation.
+    let countedStart = Date(
+      timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down) - 1_200 + 0.6)
+    let notCountedStart = countedStart.addingTimeInterval(600)
+
+    await model.recordCompletedSession(
+      mode: .baseline, selfReport: .no, metrics: completedMetrics,
+      reactionSummary: nil, ocularSummary: nil, startedAt: countedStart)
+    await model.recordCompletedSession(
+      mode: .baseline, selfReport: .no, metrics: lowQuality,
+      reactionSummary: nil, ocularSummary: nil, startedAt: notCountedStart)
+
+    let entries = Dictionary(
+      uniqueKeysWithValues: model.checkHistory.map { ($0.qualityScore, $0) })
+    guard let counted = entries[0.9], let notCounted = entries[0.5] else {
+      return XCTFail("both baseline sessions should be in History")
+    }
+    XCTAssertEqual(model.baselineSessionCounted(startedAt: counted.startedAt), true)
+    XCTAssertEqual(model.baselineSessionCounted(startedAt: notCounted.startedAt), false)
+  }
+
+  /// Unknown is not "didn't count". With no archived session to judge, History
+  /// must mark nothing rather than tell someone a session was left out.
+  func testAnUnmatchedSessionIsUnknownRatherThanNotCounted() async {
+    let model = makeModel()
+    await model.reloadResearchData()
+
+    XCTAssertNil(model.baselineSessionCounted(startedAt: Date()))
+  }
+
   /// "Delete all local data" says it deletes everything, so it has to.
   func testDeletingAllDataClearsHistory() async {
     let model = makeModel()

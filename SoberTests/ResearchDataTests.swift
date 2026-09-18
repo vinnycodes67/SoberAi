@@ -194,6 +194,36 @@ final class ResearchDataTests: XCTestCase {
     XCTAssertEqual(summary.metrics?.reactionTimeMilliseconds.median, 303)
   }
 
+  /// History marks sessions through this, so it must agree with `summarize`
+  /// session for session — otherwise a row says "not added" while the count
+  /// moved, or the reverse.
+  func testCountsTowardBaselineAgreesWithSummarize() {
+    let participantID = PseudonymousParticipantID(rawValue: "participant_counted")
+    let sessions = [
+      makeSession(index: 1, participantID: participantID, reactionTimeMilliseconds: 300),
+      makeSession(
+        index: 2, participantID: participantID, reactionTimeMilliseconds: 300, qualityScore: 0.719),
+      makeSession(
+        index: 3, participantID: participantID, reactionTimeMilliseconds: 300, completed: false),
+      makeSession(index: 4, participantID: participantID, reactionTimeMilliseconds: .nan),
+    ]
+    let engine = BaselineProfileEngine()
+
+    XCTAssertEqual(
+      sessions.map { engine.countsTowardBaseline($0, participantID: participantID) },
+      [true, false, false, false]
+    )
+    XCTAssertEqual(
+      sessions.filter { engine.countsTowardBaseline($0, participantID: participantID) }.count,
+      engine.summarize(participantID: participantID, sessions: sessions).eligibleSessionCount
+    )
+    XCTAssertFalse(
+      engine.countsTowardBaseline(
+        sessions[0], participantID: PseudonymousParticipantID(rawValue: "someone_else")),
+      "a session only counts toward its own participant's baseline"
+    )
+  }
+
   func testStoreDeleteAllRemovesEverySession() async throws {
     let directoryURL = temporaryDirectory(named: #function)
     defer { try? FileManager.default.removeItem(at: directoryURL) }
