@@ -57,6 +57,10 @@ struct OnboardingView: View {
             Button("Back") { page -= 1 }
               .font(DSFont.subheadlineStrong)
               .foregroundStyle(Palette.textSecondary)
+              // Text-only buttons are as tall as their text. DESIGN.md sets a
+              // 44 pt floor on every control.
+              .frame(minHeight: DSHit.minimum)
+              .contentShape(Rectangle())
           }
         } else {
           // The real baseline is the primary action. The founder demo fabricates

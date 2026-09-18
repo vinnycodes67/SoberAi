@@ -91,10 +91,14 @@ struct CameraCalibrationView: View {
       .opacity(isBlocked ? 0.42 : 1)
 
       if isPermissionDenied, let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+        // The one control that unblocks someone stuck behind a denied camera
+        // prompt. It was a bare text link, so the tap target was the height of
+        // the words.
         Link("Open Settings to allow camera access", destination: settingsURL)
           .font(DSFont.subheadlineStrong)
           .foregroundStyle(Palette.primary)
-          .frame(maxWidth: .infinity, alignment: .center)
+          .frame(maxWidth: .infinity, minHeight: DSHit.minimum, alignment: .center)
+          .contentShape(Rectangle())
       }
 
       if canOnlyContinueWithLimitedCapture {

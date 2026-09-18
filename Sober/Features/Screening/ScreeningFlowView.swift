@@ -580,6 +580,10 @@ private struct SelfReportView: View {
   }
 
   private func answerButton(_ title: String, value: SelfReport) -> some View {
+    // These are a radio group. The checkmark says which is chosen visually, but
+    // VoiceOver announced every option as a plain button, so a blind person had
+    // no way to hear their own answer back on the one screen that asks whether
+    // they have been drinking.
     Button {
       selection = value
     } label: {
@@ -591,7 +595,7 @@ private struct SelfReportView: View {
       }
       .foregroundStyle(Palette.textPrimary)
       .padding(.horizontal, DSSpace.md)
-      .frame(minHeight: 58)
+      .frame(minHeight: DSHit.primary)
       .background(
         Palette.cardBackground, in: RoundedRectangle(cornerRadius: DSRadius.medium, style: .continuous)
       )
@@ -602,6 +606,8 @@ private struct SelfReportView: View {
       }
     }
     .buttonStyle(.plain)
+    .accessibilityAddTraits(selection == value ? [.isButton, .isSelected] : .isButton)
+    .accessibilityValue(selection == value ? "Selected" : "Not selected")
   }
 }
 
