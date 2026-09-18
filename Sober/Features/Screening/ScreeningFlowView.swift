@@ -384,6 +384,12 @@ struct ScreeningFlowView: View {
           ocularSummary: ocularSummary,
           startedAt: sessionStartedAt
         )
+        // The write has finished by now, so the completion screen can tell the
+        // truth instead of the optimistic state set before it started.
+        if model.localDataError == .sessionNotSaved {
+          baselineAccepted = false
+          baselineCompletionState = BaselineCompletionState(reason: .notSaved)
+        }
         step = .baselineComplete
       }
       return

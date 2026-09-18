@@ -33,6 +33,7 @@ final class AppModel: ObservableObject {
   enum LocalDataError: Equatable {
     case history
     case sessions
+    case sessionNotSaved
 
     var message: String {
       switch self {
@@ -40,6 +41,8 @@ final class AppModel: ObservableObject {
         "Some saved history could not be loaded. It has not been deleted."
       case .sessions:
         "Your saved sessions could not be loaded, so your steady is unavailable right now. Nothing has been deleted."
+      case .sessionNotSaved:
+        "That session could not be saved to this iPhone, so it has not been added to your steady."
       }
     }
   }
@@ -995,8 +998,14 @@ final class AppModel: ObservableObject {
     do {
       try await baselineStore.append(envelope)
       await reloadResearchData()
+      if localDataError == .sessionNotSaved { localDataError = nil }
     } catch {
       researchDataError = error.localizedDescription
+      // `researchDataError` only ever reached the internal Research screen, so
+      // a public build wrote nothing, said "Baseline recorded", and left the
+      // counter unmoved. Telling someone a session saved when it did not is the
+      // one thing this screen must not do.
+      localDataError = .sessionNotSaved
     }
   }
 

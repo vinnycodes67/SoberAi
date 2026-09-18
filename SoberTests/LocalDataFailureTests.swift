@@ -129,6 +129,42 @@ final class LocalDataFailureTests: XCTestCase {
       "a zeroed count without an explanation is indistinguishable from deletion")
   }
 
+  /// A session the app could not write must never be reported as recorded.
+  ///
+  /// The write error was caught into `researchDataError`, which only ever
+  /// reached the internal Research screen. A public build wrote nothing, said
+  /// "Baseline recorded", and left the counter unmoved.
+  func testAFailedBaselineWriteIsReportedRatherThanCalledRecorded() async {
+    let harness = makeHarness()
+    // A corrupt archive is quarantined and recovered from, so that is not a
+    // write failure. An unwritable directory is: a full disk, a restricted
+    // container, a device in a state the app does not control.
+    try? FileManager.default.createDirectory(
+      at: harness.researchDirectory, withIntermediateDirectories: true)
+    try? FileManager.default.setAttributes(
+      [.posixPermissions: 0o500], ofItemAtPath: harness.researchDirectory.path)
+    addTeardownBlock {
+      try? FileManager.default.setAttributes(
+        [.posixPermissions: 0o700], ofItemAtPath: harness.researchDirectory.path)
+    }
+
+    await harness.model.recordCompletedSession(
+      mode: .baseline,
+      selfReport: .no,
+      metrics: ScreeningMetrics(
+        reactionTimeMilliseconds: 318, reactionMisses: 0, trackingError: 0.18,
+        timeEstimateError: 0.08, gazeSmoothness: 0.19, qualityScore: 0.94,
+        completedAllTasks: true),
+      reactionSummary: nil,
+      ocularSummary: nil,
+      startedAt: Date()
+    )
+
+    XCTAssertEqual(
+      harness.model.localDataError, .sessionNotSaved,
+      "a failed write has to surface, or the completion screen lies about it")
+  }
+
   func testRecoveringFromAFailureClearsTheError() async {
     let harness = makeHarness()
     writeGarbage(to: harness.historyDirectory, named: "check-history-v1.json")

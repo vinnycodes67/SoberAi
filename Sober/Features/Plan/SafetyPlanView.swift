@@ -23,7 +23,11 @@ struct SafetyPlanView: View {
             Toggle(isOn: $plan.isActive) {
               VStack(alignment: .leading, spacing: DSSpace.xxs) {
                 Text("Safety Circle").font(DSFont.headline)
-                Text(plan.isActive ? "Ride and contact plan active" : "Safety Circle paused")
+                Text(
+                  plan.isActive
+                    ? "Ride and contact plan active"
+                    : "Paused. Ride and contact stay available; automatic alerts do not."
+                )
                   .font(DSFont.footnote)
                   .foregroundStyle(Palette.textSecondary)
               }

@@ -149,6 +149,7 @@ enum BaselineCompletionReason: Sendable {
   case ready
   case captureQualityTooLow
   case taskUnavailable
+  case notSaved
 }
 
 struct BaselineCompletionState: Equatable, Sendable {
@@ -160,6 +161,11 @@ struct BaselineCompletionState: Equatable, Sendable {
     case .ready:
       self.title = "Baseline recorded"
       self.message = ""
+    case .notSaved:
+      self.title = "This session wasn’t saved"
+      self.message =
+        "Something went wrong writing it to this iPhone, so it has not been added to your steady. Nothing else was lost — record another when you can."
+
     case .captureQualityTooLow:
       self.title = "Capture quality was too low"
       self.message = "The camera view was too weak or unstable. Retry in better light with your face centered."
