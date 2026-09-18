@@ -36,7 +36,10 @@ struct BaselineProfileEngine: Sendable {
   let minimumQuality: Double
   let minimumRequiredSessions: Int
 
-  init(minimumQuality: Double = 0.72, minimumRequiredSessions: Int = 5) {
+  init(
+    minimumQuality: Double = BaselineThresholds.minimumQuality,
+    minimumRequiredSessions: Int = BaselineThresholds.requiredSessions
+  ) {
     precondition((0...1).contains(minimumQuality))
     precondition(minimumRequiredSessions > 0)
     self.minimumQuality = minimumQuality

@@ -213,7 +213,7 @@ struct BaselineSample: Codable, Equatable, Sendable {
 /// fixed population range. Recording a new sample past the window rolls
 /// the oldest one off, so a stale baseline can be refreshed over time.
 struct PersonalBaseline: Codable, Equatable, Sendable {
-  static let requiredSessions = 3
+  static let requiredSessions = BaselineThresholds.scoringWindow
 
   private(set) var samples: [BaselineSample] = []
 

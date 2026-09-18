@@ -2,7 +2,7 @@ import Foundation
 
 /// A deliberately transparent comparison engine. It is not a medical model.
 struct ScreeningEngine: Sendable {
-  static let minimumQuality = 0.72
+  static let minimumQuality = BaselineThresholds.minimumQuality
   private let signalThreshold = 0.58
 
   func evaluate(

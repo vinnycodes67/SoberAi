@@ -371,7 +371,8 @@ struct ScreeningFlowView: View {
     )
 
     if configuration.mode == .baseline {
-      baselineAccepted = metrics.completedAllTasks && metrics.qualityScore >= 0.72
+      baselineAccepted =
+        metrics.completedAllTasks && metrics.qualityScore >= BaselineThresholds.minimumQuality
       baselineCompletionState = BaselineCompletionState(
         reason: baselineAccepted ? .ready : (trackingWasMeasured ? .captureQualityTooLow : .taskUnavailable)
       )
@@ -646,9 +647,9 @@ private struct BaselineCompleteView: View {
           .dsHeroTracking()
         Text(
           accepted
-            ? (sessions >= 5
-              ? "Your five-session personal baseline is ready."
-              : "\(5 - sessions) sober session\(5 - sessions == 1 ? "" : "s") still needed.")
+            ? (sessions >= BaselineThresholds.requiredSessions
+              ? "Your personal baseline is ready."
+              : "\(BaselineThresholds.requiredSessions - sessions) sober session\(BaselineThresholds.requiredSessions - sessions == 1 ? "" : "s") still needed.")
             : completionState.message
         )
         .foregroundStyle(Palette.textSecondary)

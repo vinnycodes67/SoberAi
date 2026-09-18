@@ -214,7 +214,7 @@ final class AppModel: ObservableObject {
     // be scored against population norms while the UI claimed it was comparing
     // to this person -- the same deception the founder preview used to produce.
     if localDataError == .sessions { return false }
-    return measuredEligibleSessions >= 5
+    return measuredEligibleSessions >= BaselineThresholds.requiredSessions
   }
 
   /// The best eligible-session count across protocol variants. It stays zero
