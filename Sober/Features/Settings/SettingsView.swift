@@ -116,7 +116,9 @@ struct SettingsView: View {
 
   private var safetyPlanDetail: String {
     if model.safetyPlan.hasRideDestination {
-      return "\(model.safetyPlan.preferredRide) to \(model.safetyPlan.destinationDisplayName)"
+      return model.safetyPlan.rideCarriesDestination
+        ? "\(model.safetyPlan.preferredRide) to \(model.safetyPlan.destinationDisplayName)"
+        : "\(model.safetyPlan.preferredRide) · add the destination in the app"
     }
     return "Add a destination, a ride app, and someone to contact"
   }

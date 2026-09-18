@@ -45,6 +45,7 @@
 		312565781DA1FBF2E8A2B930 /* StimulusPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4140C2A150B816F736F4404 /* StimulusPalette.swift */; };
 		31463DBCB8555A12DF3AA4C6 /* PupilSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = FA1285417D984728C5CA0F62 /* PupilSegmentation.mlpackage */; };
 		325B0BF0F596A5E13070D562 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
+		326415F7BDDD8ED1315DB456 /* SafetyPlanRidePromiseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A3DE405948BE9C5DB883CA /* SafetyPlanRidePromiseTests.swift */; };
 		33891F10756188C7FE383924 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		36032A7E300F9C9213981F51 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
 		3708147E573D6A4C6814F9E7 /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
@@ -161,6 +162,7 @@
 		A1071C9EAA96BB9754B1EA72 /* CurfewLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F84FFD58288F22C52D4F66 /* CurfewLiveActivityController.swift */; };
 		A107BDACFB3A6EA075C6855B /* CurfewMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 514ED508B7982AD9A2C8DBFF /* CurfewMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A2D6113F96A89F7A087A1D96 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
+		A35B4B46B4EC33B62482FC5F /* OnboardingGateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 587D79C332C6AF5E0E871EA5 /* OnboardingGateUITests.swift */; };
 		A4657F61EB270A966DB12398 /* GuardianSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */; };
 		A476623DC27596BDEE2C1536 /* DSTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6127949ED5CD1BF168B4251C /* DSTabBar.swift */; };
 		A80B3F23583ADB494E615179 /* GuardianCheckInServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */; };
@@ -316,6 +318,7 @@
 		0688BB4567ADCA25DAA96F46 /* StateStores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateStores.swift; sourceTree = "<group>"; };
 		073988A5B67D68A322D05A27 /* ReviewerPathUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewerPathUITests.swift; sourceTree = "<group>"; };
 		08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModeTests.swift; sourceTree = "<group>"; };
+		09A3DE405948BE9C5DB883CA /* SafetyPlanRidePromiseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanRidePromiseTests.swift; sourceTree = "<group>"; };
 		0AD3BB909477CDDCBA26D6D3 /* DSFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSFont.swift; sourceTree = "<group>"; };
 		0B3EFD4DB4DBCB29DA687024 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0B77BB710C5315F758F0D499 /* ResearchModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModeView.swift; sourceTree = "<group>"; };
@@ -362,6 +365,7 @@
 		514ED508B7982AD9A2C8DBFF /* CurfewMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CurfewMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		544A09CBF8D0B39D953DC3AC /* ScreeningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngine.swift; sourceTree = "<group>"; };
 		56DC81AC367AC772D70BDCA6 /* HowResultsWorkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowResultsWorkView.swift; sourceTree = "<group>"; };
+		587D79C332C6AF5E0E871EA5 /* OnboardingGateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingGateUITests.swift; sourceTree = "<group>"; };
 		5CC4ABD7C8C61568C96A1423 /* SoberInternal.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SoberInternal.entitlements; sourceTree = "<group>"; };
 		6127949ED5CD1BF168B4251C /* DSTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTabBar.swift; sourceTree = "<group>"; };
 		616165D94342FAF91BACCACD /* CurfewShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewShieldActionExtension.swift; sourceTree = "<group>"; };
@@ -478,6 +482,7 @@
 				F5CE17DDAF1811BF0F4C6C18 /* PersistenceFoundationTests.swift */,
 				DF7530F57438E70B5D8D576E /* ResearchDataTests.swift */,
 				A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */,
+				09A3DE405948BE9C5DB883CA /* SafetyPlanRidePromiseTests.swift */,
 				EBB8912F166C1B9D65E91FBE /* SafetyPlanRideURLTests.swift */,
 				6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */,
 				845DB8F174E092281695AC2E /* StimulusIsolationTests.swift */,
@@ -710,6 +715,7 @@
 				FA18DBB71AB47CE423D96907 /* AccessibilityUITests.swift */,
 				9850F73C9FFC3D32B1615817 /* DemoRecordingUITests.swift */,
 				35ABD6127F23F09013D16BF9 /* JourneySmokeUITests.swift */,
+				587D79C332C6AF5E0E871EA5 /* OnboardingGateUITests.swift */,
 				989CC81D39FF9EB4FB80B6DB /* PublicBoundaryUITests.swift */,
 				073988A5B67D68A322D05A27 /* ReviewerPathUITests.swift */,
 				4774E23D01BA58560B461B2E /* SoberUITests.swift */,
@@ -1296,6 +1302,7 @@
 				7401480EE6E5354FBED50A36 /* AccessibilityUITests.swift in Sources */,
 				70EC17B29971548D3E0C7F71 /* DemoRecordingUITests.swift in Sources */,
 				7A81F2DBDA1256D3ED3B4BD9 /* JourneySmokeUITests.swift in Sources */,
+				A35B4B46B4EC33B62482FC5F /* OnboardingGateUITests.swift in Sources */,
 				B3B717A7585F81ACF1F8D1BF /* PublicBoundaryUITests.swift in Sources */,
 				165C267256A7800A47A7B2A0 /* ReviewerPathUITests.swift in Sources */,
 				B78325E9AD2709B514F93ABB /* SoberUITests.swift in Sources */,
@@ -1319,6 +1326,7 @@
 				FC0446B060F94C806FA23A8C /* PersistenceFoundationTests.swift in Sources */,
 				45A9CFA18E73738D0779B36E /* ResearchDataTests.swift in Sources */,
 				8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */,
+				326415F7BDDD8ED1315DB456 /* SafetyPlanRidePromiseTests.swift in Sources */,
 				0514A666D367EE50F9E20E2E /* SafetyPlanRideURLTests.swift in Sources */,
 				4D64B64690636893D56287E9 /* ScreeningEngineTests.swift in Sources */,
 				624F30A3820DF1AC72468ABC /* StimulusIsolationTests.swift in Sources */,

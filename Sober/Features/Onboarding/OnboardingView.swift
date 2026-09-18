@@ -30,7 +30,7 @@ struct OnboardingView: View {
       .padding(.horizontal, DSSpace.margin)
       .padding(.top, DSSpace.sm)
 
-      TabView(selection: $page) {
+      TabView(selection: pageBinding) {
         introduction.tag(0)
         boundaries.tag(1)
         profile.tag(2)
@@ -43,10 +43,7 @@ struct OnboardingView: View {
         StepProgress(current: page, total: Self.pageCount)
 
         if page < Self.pageCount - 1 {
-          Button("Continue") {
-            if page == 2 { commitProfile() }
-            page += 1
-          }
+          Button("Continue") { pageBinding.wrappedValue = page + 1 }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(page == 2 && profileValidation.isBlocked)
           .opacity(page == 2 && profileValidation.isBlocked ? 0.42 : 1)
@@ -165,6 +162,30 @@ struct OnboardingView: View {
       safetyPlan: model.safetyPlan,
       requiresName: BuildChannel.allowsInternalTools,
       validatesGuardian: BuildChannel.allowsInternalTools
+    )
+  }
+
+  /// Swipes and the Continue button obey the same gate.
+  ///
+  /// The page-style `TabView` writes `selection` directly, so binding it to
+  /// `page` let a swipe carry someone past the profile step without ever
+  /// committing a name and age — `.disabled` only governs the button, not the
+  /// gesture. On an app with an age requirement that is the whole point of the
+  /// step, so the gate lives in the binding where both paths must pass it.
+  private var pageBinding: Binding<Int> {
+    Binding(
+      get: { page },
+      set: { requested in
+        guard requested != page else { return }
+        // Going back is always allowed — that is how someone fixes an entry.
+        guard requested > page else {
+          page = requested
+          return
+        }
+        guard !(page == 2 && profileValidation.isBlocked) else { return }
+        if page == 2 { commitProfile() }
+        page = requested
+      }
     )
   }
 

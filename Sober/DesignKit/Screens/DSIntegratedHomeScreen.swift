@@ -163,7 +163,7 @@ struct DSIntegratedHomeScreen: View {
 
   private var readinessDetail: String {
     if !model.baselineReady {
-      return "Five high-quality sessions while sober build your personal comparison range."
+      return "Five high-quality sessions while sober unlock your first check."
     }
     #if INTERNAL_BUILD
     if model.guardianRelationshipIsActive {
@@ -449,7 +449,9 @@ struct DSIntegratedHomeScreen: View {
 
   private var safetyPlanSummary: String {
     if model.safetyPlan.hasRideDestination {
-      return "\(model.safetyPlan.preferredRide) to \(model.safetyPlan.destinationDisplayName)"
+      return model.safetyPlan.rideCarriesDestination
+        ? "\(model.safetyPlan.preferredRide) to \(model.safetyPlan.destinationDisplayName)"
+        : "\(model.safetyPlan.preferredRide) · add the destination in the app"
     }
     return "Add a named destination, ride, and direct contact"
   }

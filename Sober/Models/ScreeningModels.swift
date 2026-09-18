@@ -297,6 +297,14 @@ struct SafetyPlan: Codable, Equatable, Sendable {
 
   var hasRideDestination: Bool { !trimmedHomeAddress.isEmpty }
 
+  /// True only when `rideURL` actually hands the destination to the provider.
+  ///
+  /// Uber's universal link takes a formatted address; Lyft's takes coordinates
+  /// we do not have, and the public build has no network to geocode with. So
+  /// the Lyft link opens the app without a destination — and any screen that
+  /// promises "Lyft to Home" is claiming something that does not happen.
+  var rideCarriesDestination: Bool { preferredRide != "Lyft" && hasRideDestination }
+
   /// The ride deep link for this plan.
   ///
   /// Shared rather than rebuilt per screen. The result screen and Curfew's
