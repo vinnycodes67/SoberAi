@@ -8,13 +8,15 @@ The DesignKit is compiled and shipping on Home, result, and Guardian Mode. The d
 
 | File | Contains |
 | --- | --- |
-| `Foundation/DSTokens.swift` | `DSSpace`, `DSRadius`, `DSHit`, `DSMotion` |
-| `Foundation/DSPalette.swift` | Semantic colour roles |
-| `Foundation/DSFont.swift` | Satoshi type roles and Dynamic Type scaling |
-| `Components/DSComponents.swift` | Buttons, cards, rows, sections, badges, progress, and page modifiers |
-| `Components/DSTabBar.swift` | Floating, accessibility-aware tab bar |
-| `Components/DSBaselinePortrait.swift` | Per-measure baseline portrait and legend |
-| `Gallery/DSGallery.swift` | Debug-only live component gallery |
+| `DSTokens.swift` | `DSSpace`, `DSRadius`, `DSHit`, `DSMotion` |
+| `DSPalette.swift` | Semantic colour roles |
+| `DSFont.swift` | Satoshi type roles and Dynamic Type scaling |
+| `DSComponents.swift` | Buttons, cards, rows, sections, badges, progress, and page modifiers |
+| `DSStatusChip.swift` | A short state label with a tone and no success colour; also marks a session that did not count |
+| `DSCountdownRing.swift` | A draining ring for time being spent |
+| `DSTabBar.swift` | Floating, accessibility-aware tab bar |
+| `DSBaselinePortrait.swift` | Per-measure baseline portrait and legend |
+| `DSGallery.swift` | Debug-only live component gallery |
 | `Screens/DSIntegratedHomeScreen.swift` | Production Home surface backed by `AppModel` environment state |
 | `Screens/DSIntegratedResultScreen.swift` | Production result and intervention surface |
 

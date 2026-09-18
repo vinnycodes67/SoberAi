@@ -177,6 +177,10 @@ struct DSGallery: View {
             .font(DSFont.footnote)
             .foregroundStyle(DSPalette.textMuted)
         }
+        HStack(spacing: DSSpace.xs) {
+          DSStatusChip(text: "Not added to your steady")
+          DSStatusChip(text: "No check-in yet", tone: .attention)
+        }
         Toggle(isOn: $toggle) {
           Text("Safety Circle active").font(DSFont.body)
         }
