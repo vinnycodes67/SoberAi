@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IncubatorEDU schools banner</title>
+  <style>
+    :root {
+      --canvas: #f8f9f8;
+      --line: #dfe4e3;
+      --yellow: #c9bc2f;
+      --orange: #dd572b;
+      --red: #e72829;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: var(--canvas);
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .banner {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--canvas);
+    }
+
+    .brand-line {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 12px;
+      background: linear-gradient(90deg, var(--yellow), var(--orange) 48%, var(--red));
+    }
+
+    .top-arc,
+    .bottom-arc {
+      position: absolute;
+      width: 760px;
+      height: 760px;
+      border: 2px solid var(--line);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .top-arc {
+      top: -570px;
+      right: -190px;
+    }
+
+    .bottom-arc {
+      bottom: -630px;
+      left: -250px;
+    }
+
+    .incubator-lockup {
+      position: absolute;
+      top: 194px;
+      left: 50%;
+      width: 760px;
+      height: 120px;
+      overflow: hidden;
+      transform: translateX(-50%);
+    }
+
+    .incubator-lockup img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .divider {
+      position: absolute;
+      top: 530px;
+      left: 160px;
+      right: 160px;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .divider::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      width: 210px;
+      height: 2px;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, var(--yellow), var(--orange), var(--red));
+    }
+
+    .school-line {
+      position: absolute;
+      right: 112px;
+      bottom: 130px;
+      left: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 42px;
+    }
+
+    .school {
+      display: grid;
+      flex: 1 1 0;
+      height: 230px;
+      place-items: center;
+    }
+
+    .school img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .titans { flex-basis: 330px; }
+    .titans img { width: 335px; }
+
+    .emerson { flex-basis: 330px; }
+    .emerson img { width: 340px; }
+
+    .frisco { flex-basis: 305px; }
+    .frisco img { width: 320px; }
+
+    .heritage { flex-basis: 230px; }
+    .heritage img { height: 220px; }
+
+    .lone-star { flex-basis: 230px; }
+    .lone-star img { height: 212px; }
+  </style>
+</head>
+<body>
+  <main class="banner" aria-label="IncubatorEDU banner with Centennial, Emerson, Frisco, Heritage, and Lone Star school logos">
+    <div class="brand-line" aria-hidden="true"></div>
+    <div class="top-arc" aria-hidden="true"></div>
+    <div class="bottom-arc" aria-hidden="true"></div>
+
+    <header class="incubator-lockup">
+      <img src="assets/incubatoredu.svg" alt="IncubatorEDU">
+    </header>
+
+    <div class="divider" aria-hidden="true"></div>
+
+    <section class="school-line" aria-label="School logos">
+      <div class="school titans"><img src="assets/centennial-titans.png" alt="Centennial Titans"></div>
+      <div class="school emerson"><img src="assets/emerson-mavericks.png" alt="Emerson Mavericks"></div>
+      <div class="school frisco"><img src="assets/frisco-raccoons.png" alt="Frisco Raccoons"></div>
+      <div class="school heritage"><img src="assets/heritage-coyotes.png" alt="Heritage Coyotes"></div>
+      <div class="school lone-star"><img src="assets/lone-star-rangers.png" alt="Lone Star Rangers"></div>
+    </section>
+  </main>
+</body>
+</html>

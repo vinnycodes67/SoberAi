@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IncubatorEDU vertical schools banner</title>
+  <style>
+    :root { --ink: #142b52; --surface: #f7f8f5; --accent: #df5d2d; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: var(--ink); }
+    body { display: grid; place-items: center; overflow: hidden; }
+
+    .banner { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+    .paper { position: absolute; inset: 48px; background: var(--surface); }
+    .accent-rule { position: absolute; right: 48px; bottom: 48px; left: 48px; height: 12px; background: var(--accent); }
+
+    .incubator-lockup { position: absolute; top: 190px; left: 126px; width: 828px; height: 132px; overflow: hidden; }
+    .incubator-lockup img { display: block; width: 100%; height: auto; }
+
+    .navy-field { position: absolute; top: 558px; right: 48px; bottom: 60px; left: 48px; background: var(--ink); }
+    .logo-shelf {
+      position: absolute;
+      top: 1322px;
+      right: 86px;
+      left: 86px;
+      height: 334px;
+      display: grid;
+      grid-template-columns: 1.22fr 1.18fr 1.08fr .78fr .78fr;
+      align-items: center;
+      column-gap: 16px;
+      padding: 44px 34px;
+      background: #ffffff;
+    }
+    .school { display: grid; min-width: 0; height: 220px; place-items: center; }
+    .school img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+    .titans img { width: 194px; }
+    .emerson img { width: 188px; }
+    .frisco img { width: 174px; }
+    .heritage img { height: 182px; }
+    .lone-star img { height: 172px; }
+  </style>
+</head>
+<body>
+  <main class="banner" aria-label="IncubatorEDU banner with Centennial, Emerson, Frisco, Heritage, and Lone Star school logos">
+    <div class="paper" aria-hidden="true"></div>
+    <div class="accent-rule" aria-hidden="true"></div>
+    <header class="incubator-lockup"><img src="assets/incubatoredu.svg" alt="IncubatorEDU"></header>
+    <div class="navy-field" aria-hidden="true"></div>
+    <section class="logo-shelf" aria-label="School logos">
+      <div class="school titans"><img src="assets/centennial-titans.png" alt="Centennial Titans"></div>
+      <div class="school emerson"><img src="assets/emerson-mavericks.png" alt="Emerson Mavericks"></div>
+      <div class="school frisco"><img src="assets/frisco-raccoons.png" alt="Frisco Raccoons"></div>
+      <div class="school heritage"><img src="assets/heritage-coyotes.png" alt="Heritage Coyotes"></div>
+      <div class="school lone-star"><img src="assets/lone-star-rangers.png" alt="Lone Star Rangers"></div>
+    </section>
+  </main>
+</body>
+</html>
