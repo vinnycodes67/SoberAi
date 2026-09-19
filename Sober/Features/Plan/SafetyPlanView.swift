@@ -67,6 +67,34 @@ struct SafetyPlanView: View {
                 .submitLabel(.next)
                 .textFieldStyle(SoberTextFieldStyle())
 
+              // Most people name this one of four things. The address still has
+              // to be typed -- or filled from the Contacts card by iOS AutoFill,
+              // since the public build has no network to look addresses up with.
+              HStack(spacing: DSSpace.xs) {
+                ForEach(["Home", "Dorm", "Campus", "Work"], id: \.self) { suggestion in
+                  Button(suggestion) { plan.homeLabel = suggestion }
+                    .font(DSFont.footnoteStrong)
+                    .foregroundStyle(
+                      plan.trimmedHomeLabel == suggestion
+                        ? DSPalette.onAccent : DSPalette.textSecondary
+                    )
+                    .padding(.horizontal, DSSpace.sm)
+                    .frame(minHeight: DSHit.minimum)
+                    .background(
+                      Capsule(style: .continuous)
+                        .fill(
+                          plan.trimmedHomeLabel == suggestion
+                            ? DSPalette.accent : DSPalette.surface
+                        )
+                    )
+                    .contentShape(Capsule(style: .continuous))
+                    .accessibilityAddTraits(
+                      plan.trimmedHomeLabel == suggestion ? [.isButton, .isSelected] : .isButton
+                    )
+                }
+                Spacer(minLength: 0)
+              }
+
               TextField("Full street address", text: $plan.homeAddress)
                 .textContentType(.fullStreetAddress)
                 .textInputAutocapitalization(.words)
