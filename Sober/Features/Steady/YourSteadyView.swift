@@ -12,6 +12,7 @@ import SwiftUI
 /// chart, and it never implies a partial baseline is usable.
 struct YourSteadyView: View {
   @EnvironmentObject private var model: AppModel
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     ScrollView {
@@ -91,9 +92,13 @@ struct YourSteadyView: View {
       DSRows {
         DSValueRow(label: "Eligible sessions", value: "\(eligibleCount)")
         DSSeparator()
-        DSValueRow(label: "Excluded for quality", value: "\(excludedCount)")
+        DSValueRow(label: "Not added", value: "\(excludedCount)")
         DSSeparator()
         DSValueRow(label: "Minimum required", value: "\(minimumRequired)")
+        if let profileVariant, profileVariant != .full {
+          DSSeparator()
+          DSValueRow(label: "Recorded with", value: profileVariant.displayName)
+        }
       }
     }
   }
@@ -120,7 +125,7 @@ struct YourSteadyView: View {
 
           if excludedCount > 0 {
             Text(
-              "\(excludedCount) session\(excludedCount == 1 ? " was" : "s were") left out because the capture quality was too low to trust."
+              "\(excludedCount) session\(excludedCount == 1 ? " wasn’t" : "s weren’t") added — the camera couldn’t get a clear enough read, or not every task finished. History shows which."
             )
             .font(DSFont.footnote)
             .foregroundStyle(DSPalette.textMuted)
@@ -140,7 +145,8 @@ struct YourSteadyView: View {
           limitation("It is not a medical or diagnostic measure.")
           limitation("Being inside your usual range does not mean it is safe to drive.")
           limitation(
-            "Five sessions is enough to start comparing, not enough to be a validated reference.")
+            "\(BaselineThresholds.requiredSessionsInWordsCapitalized) sessions is enough to start comparing, not enough to be a validated reference."
+          )
         }
       }
     }
@@ -158,15 +164,34 @@ struct YourSteadyView: View {
   // Read from the measured profile, falling back to the stored count before
   // research data has loaded. Never from the founder preview.
 
+  /// The protocol readiness is counting. Readiness takes the best of the
+  /// variants, so someone who records with Reduce Motion is ready on their
+  /// reduced-motion sessions; reading the full-protocol profile here showed
+  /// "0 eligible" beside a ready steady. A tie goes to the variant this
+  /// iPhone's next check would run.
+  private var profileVariant: OcularProtocolVariant? {
+    let current: OcularProtocolVariant = reduceMotion ? .reducedMotion : .full
+    return model.baselineVariantBreakdown
+      .max { lhs, rhs in
+        (lhs.value.eligibleSessionCount, lhs.key == current ? 1 : 0)
+          < (rhs.value.eligibleSessionCount, rhs.key == current ? 1 : 0)
+      }?
+      .key
+  }
+
+  private var profile: BaselineProfileSummary? {
+    profileVariant.flatMap { model.baselineVariantBreakdown[$0] } ?? model.baselineProfile
+  }
+
   private var eligibleCount: Int {
-    model.baselineProfile?.eligibleSessionCount ?? model.measuredEligibleSessions
+    profile?.eligibleSessionCount ?? model.measuredEligibleSessions
   }
 
   private var excludedCount: Int {
-    model.baselineProfile?.excludedSessionCount ?? 0
+    profile?.excludedSessionCount ?? 0
   }
 
   private var minimumRequired: Int {
-    model.baselineProfile?.minimumRequiredSessions ?? 5
+    profile?.minimumRequiredSessions ?? BaselineThresholds.requiredSessions
   }
 }

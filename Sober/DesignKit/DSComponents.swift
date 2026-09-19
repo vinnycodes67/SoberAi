@@ -178,12 +178,17 @@ struct DSRows<Content: View>: View {
 }
 
 /// A row: title, optional secondary line, optional accessory.
+///
+/// At accessibility sizes the accessory moves under the text, as `DSValueRow`
+/// does. Beside it, a badge or chip takes half the width and the title wraps a
+/// word per line.
 struct DSRow<Trailing: View>: View {
   let title: String
   var detail: String?
   var showsChevron = true
   @ViewBuilder var trailing: Trailing
   var action: (() -> Void)?
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   init(
     _ title: String,
@@ -211,9 +216,14 @@ struct DSRow<Trailing: View>: View {
             .foregroundStyle(DSPalette.textMuted)
             .fixedSize(horizontal: false, vertical: true)
         }
+        if dynamicTypeSize.isAccessibilitySize {
+          trailing.padding(.top, DSSpace.xxs)
+        }
       }
       Spacer(minLength: DSSpace.xs)
-      trailing
+      if !dynamicTypeSize.isAccessibilitySize {
+        trailing
+      }
       if showsChevron {
         Image(systemName: "chevron.right")
           .font(.system(size: 13, weight: .medium))

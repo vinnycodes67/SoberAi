@@ -104,6 +104,19 @@ struct BaselineProfileEngine: Sendable {
     return baseline.isReady ? baseline : nil
   }
 
+  /// Whether one session counts toward this participant's baseline — the same
+  /// decision `summarize` makes, exposed so a surface listing past sessions can
+  /// say which counted without restating the rules and drifting from them.
+  /// Judged against the session's own protocol variant, as readiness is.
+  func countsTowardBaseline(
+    _ session: ResearchSessionEnvelope,
+    participantID: PseudonymousParticipantID
+  ) -> Bool {
+    session.participantID == participantID
+      && session.context.sessionKind == .soberBaseline
+      && isEligible(session, protocolVariant: session.protocolVariant)
+  }
+
   private func isEligible(_ session: ResearchSessionEnvelope, protocolVariant: OcularProtocolVariant) -> Bool {
     guard session.schemaVersion == ResearchSessionEnvelope.currentSchemaVersion,
       session.completedAt != nil,

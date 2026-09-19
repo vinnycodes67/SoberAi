@@ -3,7 +3,8 @@ import SwiftUI
 /// Past sessions, and the way into Your Steady.
 ///
 /// Each row says what the session was, when, how well it captured, and — for a
-/// check — which of the three states came out. What it deliberately does not do
+/// check — which of the three states came out, or — for a baseline session —
+/// whether it was left out of the five. What it deliberately does not do
 /// is aggregate: no streak, no count of concerning results, no chart. A handful
 /// of sessions is not a time series, and a running tally would invite reading a
 /// trend the measurement cannot support.
@@ -94,7 +95,7 @@ struct HistoryView: View {
         "Your steady",
         detail: model.baselineReady
           ? "The range your checks compare against"
-          : "\(model.baselineSessions) of 5 baseline sessions recorded",
+          : "\(model.baselineSessions) of \(BaselineThresholds.requiredSessions) baseline sessions recorded",
         action: { showingSteady = true }
       )
     }
@@ -129,6 +130,8 @@ struct HistoryView: View {
               trailing: {
                 if session.outcome == .signalsDetected {
                   Circle().fill(tint(for: session)).frame(width: 7, height: 7)
+                } else if notCounted(session) {
+                  DSStatusChip(text: "Not added to your steady")
                 }
               }
             )
@@ -219,11 +222,21 @@ struct HistoryView: View {
     return "\(when) · \(qualityLabel(entry.qualityScore)) capture"
   }
 
+  /// A baseline session the engine left out of the five. Someone stuck at
+  /// "0 of 5" can then see the pattern across rows instead of guessing. Quiet
+  /// grey, not orange: the session didn't count, the person did not fail.
+  /// Unknown is not "didn't count", so it marks nothing.
+  private func notCounted(_ entry: CheckHistoryEntry) -> Bool {
+    entry.kind == .baseline && model.baselineSessionCounted(startedAt: entry.startedAt) == false
+  }
+
+  /// "usable" starts where the engine's quality bar does, so a row cannot call
+  /// a capture usable that the baseline rejected on quality. "strong" is a
+  /// display band only, kept above the bar if the bar ever moves past it.
   private func qualityLabel(_ score: Double) -> String {
-    switch score {
-    case 0.85...: "strong"
-    case 0.72..<0.85: "usable"
-    default: "low"
-    }
+    let usable = BaselineThresholds.minimumQuality
+    if score >= max(0.85, usable) { return "strong" }
+    if score >= usable { return "usable" }
+    return "low"
   }
 }

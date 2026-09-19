@@ -124,10 +124,16 @@ struct DSIntegratedHomeScreen: View {
 
         if !model.baselineReady {
           VStack(alignment: .leading, spacing: DSSpace.xs) {
-            DSStepMeter(filled: model.baselineSessions, total: 5)
-            Text("\(model.baselineSessions) of 5 baseline sessions recorded")
-              .font(DSFont.footnote)
-              .foregroundStyle(DSPalette.textMuted)
+            DSStepMeter(filled: model.baselineSessions, total: BaselineThresholds.requiredSessions)
+            Text(
+              "\(model.baselineSessions) of \(BaselineThresholds.requiredSessions) baseline sessions recorded"
+            )
+            .font(DSFont.footnote)
+            .foregroundStyle(DSPalette.textMuted)
+
+            if let lastSessionNotAdded {
+              notAddedNotice(lastSessionNotAdded)
+            }
 
             // An unreadable archive is quarantined, so the count above drops to
             // zero. Without this line that reads as "your sessions are gone",
@@ -147,6 +153,40 @@ struct DSIntegratedHomeScreen: View {
     }
   }
 
+  /// The latest baseline session, when the engine left it out of the count.
+  ///
+  /// This is where the person is looking when the number fails to move. Without
+  /// it they can record five times, see "0 of 5" each time, and reasonably
+  /// conclude the app is broken. Only the latest session: once a newer one
+  /// counts, the notice has nothing left to explain. Unknown marks nothing.
+  private var lastSessionNotAdded: CheckHistoryEntry? {
+    guard
+      let latest = model.checkHistory
+        .filter({ $0.kind == .baseline })
+        .max(by: { $0.startedAt < $1.startedAt }),
+      model.baselineSessionCounted(startedAt: latest.startedAt) == false
+    else { return nil }
+    return latest
+  }
+
+  /// Says the session didn't count and what to change. Never "failed": the
+  /// session didn't count, the person did not fail.
+  private func notAddedNotice(_ entry: CheckHistoryEntry) -> some View {
+    VStack(alignment: .leading, spacing: DSSpace.xs) {
+      DSStatusChip(text: "Last session not added", tone: .attention)
+      Text(
+        entry.completedAllTasks
+          ? "The camera couldn’t get a clear enough read to use it. Next time, try more light, hold the phone at arm’s length, take off glasses if you can, and keep still."
+          : "Not every task finished, so there was nothing complete to add. A session counts once all of its tasks are done."
+      )
+      .font(DSFont.footnote)
+      .foregroundStyle(DSPalette.textSecondary)
+      .dsReadingLine()
+    }
+    .padding(.top, DSSpace.xs)
+    .accessibilityElement(children: .combine)
+  }
+
   private var readinessNeedsAttention: Bool {
     !model.baselineReady
   }
@@ -163,7 +203,8 @@ struct DSIntegratedHomeScreen: View {
 
   private var readinessDetail: String {
     if !model.baselineReady {
-      return "Five high-quality sessions while sober unlock your first check."
+      return
+        "\(BaselineThresholds.requiredSessionsInWordsCapitalized) high-quality sessions while sober unlock your first check."
     }
     #if INTERNAL_BUILD
     if model.guardianRelationshipIsActive {
@@ -296,11 +337,13 @@ struct DSIntegratedHomeScreen: View {
     DSSection("Your steady", action: ("Record", onStartBaseline)) {
       Button(action: onStartBaseline) {
         VStack(alignment: .leading, spacing: DSSpace.sm) {
-          DSStepMeter(filled: min(model.baselineSessions, 5), total: 5)
+          DSStepMeter(
+            filled: min(model.baselineSessions, BaselineThresholds.requiredSessions),
+            total: BaselineThresholds.requiredSessions)
           Text(
             model.baselineReady
               ? "Your starter baseline is ready. Record only while sober and rested."
-              : "Five sober sessions build the comparison range used by every check."
+              : "\(BaselineThresholds.requiredSessionsInWordsCapitalized) sober sessions unlock your first check."
           )
           .font(DSFont.footnote)
           .foregroundStyle(DSPalette.textMuted)

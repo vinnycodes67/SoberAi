@@ -231,6 +231,26 @@ final class AppModel: ObservableObject {
     )
   }
 
+  /// Whether the baseline session that started at `startedAt` counted toward
+  /// the five, as the engine decided it. History calls this so it never
+  /// restates the eligibility rules itself.
+  ///
+  /// `nil` when that cannot be known — the session archive failed to load, or
+  /// holds no session matching this start — so a caller marks nothing rather
+  /// than claiming a session did not count.
+  func baselineSessionCounted(startedAt: Date) -> Bool? {
+    guard localDataError != .sessions else { return nil }
+    // History stores whole seconds (ISO 8601); the archive keeps full
+    // precision. Baseline sessions last minutes, so a second cannot match two.
+    guard
+      let session = researchSessions.first(where: {
+        $0.context.sessionKind == .soberBaseline
+          && abs($0.startedAt.timeIntervalSince(startedAt)) < 1
+      })
+    else { return nil }
+    return baselineEngine.countsTowardBaseline(session, participantID: participantID)
+  }
+
   var cameraPermissionState: CameraPermissionState {
     permissionStore.cameraAuthorization
   }

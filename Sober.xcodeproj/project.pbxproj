@@ -53,6 +53,7 @@
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
 		3913393AC13E7C6B038C3535 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
 		39185688945D36C4BA39DCE5 /* CurfewContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D20348E09CA314BDF125D8E /* CurfewContractTests.swift */; };
+		39D528EDA36D0C7C0483E975 /* BaselineThresholds+Wording.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A14FBA70AC63E2E7923540 /* BaselineThresholds+Wording.swift */; };
 		3A2AA0EE6A8B49E03198873C /* CurfewContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8150D19D8281A6719F7B3F6E /* CurfewContract.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
@@ -106,6 +107,7 @@
 		65F5CD02AA7AFB755CD8A507 /* ResearchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281945014B1C95CFDF4E271C /* ResearchPreferences.swift */; };
 		674907C06B5829FA87311557 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
 		682FB198136E7D1795584E14 /* ResearchSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D3F8ADA890C91516A0DC1 /* ResearchSessionStore.swift */; };
+		689541990FD35A98A07D1AED /* BaselineThresholds+Wording.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A14FBA70AC63E2E7923540 /* BaselineThresholds+Wording.swift */; };
 		68C92C9287575412ADEC850D /* CurfewRideLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA6875D4FF59C8B79DBEEE6 /* CurfewRideLink.swift */; };
 		69BC63D8C1ACB2AE62EE1053 /* OnboardingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */; };
 		69D7D7B5E7E7F19ADDD0629E /* UITestLaunchConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3314A34E9DD328C72F63E9B /* UITestLaunchConfigurationTests.swift */; };
@@ -444,6 +446,7 @@
 		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F1154AF077381776EE9F825A /* DSTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTokens.swift; sourceTree = "<group>"; };
 		F131DE43C85F16FD9A5CB6DB /* CurfewShieldConfig.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CurfewShieldConfig.entitlements; sourceTree = "<group>"; };
+		F1A14FBA70AC63E2E7923540 /* BaselineThresholds+Wording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BaselineThresholds+Wording.swift"; sourceTree = "<group>"; };
 		F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Regular.otf"; sourceTree = "<group>"; };
 		F3B672229219BA823966CB5A /* CurfewActivityScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewActivityScheduler.swift; sourceTree = "<group>"; };
 		F45F75C0251A2017B9471DC9 /* DSIntegratedHomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSIntegratedHomeScreen.swift; sourceTree = "<group>"; };
@@ -710,6 +713,7 @@
 		87F942BD56CC0E4167659644 /* Steady */ = {
 			isa = PBXGroup;
 			children = (
+				F1A14FBA70AC63E2E7923540 /* BaselineThresholds+Wording.swift */,
 				4FC54FC880C1A3D97062FCDE /* YourSteadyView.swift */,
 			);
 			path = Steady;
@@ -1158,6 +1162,7 @@
 			files = (
 				9B222019430D22DD7B06D15F /* AppModel.swift in Sources */,
 				2D07B8D0B6262C3C51AC56B9 /* BaselineProfileEngine.swift in Sources */,
+				689541990FD35A98A07D1AED /* BaselineThresholds+Wording.swift in Sources */,
 				E558225125BB47CE000D9907 /* BaselineThresholds.swift in Sources */,
 				4F9264D1878E28A209723FC3 /* BuildChannel.swift in Sources */,
 				25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */,
@@ -1349,6 +1354,7 @@
 			files = (
 				857568F4B503E22D9B628C11 /* AppModel.swift in Sources */,
 				439F5160C69E50720CBFC354 /* BaselineProfileEngine.swift in Sources */,
+				39D528EDA36D0C7C0483E975 /* BaselineThresholds+Wording.swift in Sources */,
 				DFE08E6A38D2E624FFD5A24E /* BaselineThresholds.swift in Sources */,
 				4F62F042E27D34C126E97BA6 /* BuildChannel.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
