@@ -92,7 +92,7 @@ struct YourSteadyView: View {
       DSRows {
         DSValueRow(label: "Eligible sessions", value: "\(eligibleCount)")
         DSSeparator()
-        DSValueRow(label: "Excluded for quality", value: "\(excludedCount)")
+        DSValueRow(label: "Not added", value: "\(excludedCount)")
         DSSeparator()
         DSValueRow(label: "Minimum required", value: "\(minimumRequired)")
         if let profileVariant, profileVariant != .full {
@@ -125,7 +125,7 @@ struct YourSteadyView: View {
 
           if excludedCount > 0 {
             Text(
-              "\(excludedCount) session\(excludedCount == 1 ? " was" : "s were") left out because the capture quality was too low to trust."
+              "\(excludedCount) session\(excludedCount == 1 ? " wasn’t" : "s weren’t") added — the camera couldn’t get a clear enough read, or not every task finished. History shows which."
             )
             .font(DSFont.footnote)
             .foregroundStyle(DSPalette.textMuted)

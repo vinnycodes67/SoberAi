@@ -128,8 +128,8 @@ struct DSIntegratedHomeScreen: View {
             Text(
               "\(model.baselineSessions) of \(BaselineThresholds.requiredSessions) baseline sessions recorded"
             )
-              .font(DSFont.footnote)
-              .foregroundStyle(DSPalette.textMuted)
+            .font(DSFont.footnote)
+            .foregroundStyle(DSPalette.textMuted)
 
             if let lastSessionNotAdded {
               notAddedNotice(lastSessionNotAdded)
