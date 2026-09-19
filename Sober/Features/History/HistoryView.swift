@@ -95,7 +95,7 @@ struct HistoryView: View {
         "Your steady",
         detail: model.baselineReady
           ? "The range your checks compare against"
-          : "\(model.baselineSessions) of 5 baseline sessions recorded",
+          : "\(model.baselineSessions) of \(BaselineThresholds.requiredSessions) baseline sessions recorded",
         action: { showingSteady = true }
       )
     }
@@ -230,11 +230,13 @@ struct HistoryView: View {
     entry.kind == .baseline && model.baselineSessionCounted(startedAt: entry.startedAt) == false
   }
 
+  /// "usable" starts where the engine's quality bar does, so a row cannot call
+  /// a capture usable that the baseline rejected on quality. "strong" is a
+  /// display band only, kept above the bar if the bar ever moves past it.
   private func qualityLabel(_ score: Double) -> String {
-    switch score {
-    case 0.85...: "strong"
-    case 0.72..<0.85: "usable"
-    default: "low"
-    }
+    let usable = BaselineThresholds.minimumQuality
+    if score >= max(0.85, usable) { return "strong" }
+    if score >= usable { return "usable" }
+    return "low"
   }
 }

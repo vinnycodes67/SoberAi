@@ -145,7 +145,8 @@ struct YourSteadyView: View {
           limitation("It is not a medical or diagnostic measure.")
           limitation("Being inside your usual range does not mean it is safe to drive.")
           limitation(
-            "Five sessions is enough to start comparing, not enough to be a validated reference.")
+            "\(BaselineThresholds.requiredSessionsInWordsCapitalized) sessions is enough to start comparing, not enough to be a validated reference."
+          )
         }
       }
     }
@@ -191,6 +192,6 @@ struct YourSteadyView: View {
   }
 
   private var minimumRequired: Int {
-    profile?.minimumRequiredSessions ?? 5
+    profile?.minimumRequiredSessions ?? BaselineThresholds.requiredSessions
   }
 }

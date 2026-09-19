@@ -67,4 +67,41 @@ final class BaselineThresholdTests: XCTestCase {
       }
     }
   }
+
+  /// The screens that show progress toward the requirement. A typed `5` here
+  /// is cosmetic until the number moves, and then the meter and the engine
+  /// disagree in front of the person.
+  func testNoScreenHardcodesAThreshold() throws {
+    let root = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+
+    let scanned = [
+      "Sober/DesignKit/Screens/DSIntegratedHomeScreen.swift",
+      "Sober/DesignKit/DSGallery.swift",
+      "Sober/Features/History/HistoryView.swift",
+      "Sober/Features/Steady/YourSteadyView.swift",
+    ]
+
+    for path in scanned {
+      let source = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+      for offender in ["of 5 ", "total: 5", "?? 5\n", "0.72", "\"Five "] {
+        XCTAssertFalse(
+          source.contains(offender),
+          "\(path) hardcodes \"\(offender.trimmingCharacters(in: .whitespacesAndNewlines))\" — use BaselineThresholds")
+      }
+    }
+  }
+
+  func testRequiredSessionsInWordsFollowsTheConstant() {
+    let words = BaselineThresholds.requiredSessionsInWords
+    XCTAssertEqual(
+      words,
+      NumberFormatter.localizedString(
+        from: NSNumber(value: BaselineThresholds.requiredSessions), number: .spellOut))
+    XCTAssertEqual(
+      BaselineThresholds.requiredSessionsInWordsCapitalized.lowercased(), words.lowercased())
+    XCTAssertEqual(
+      BaselineThresholds.requiredSessionsInWordsCapitalized.first?.isUppercase, true)
+  }
 }

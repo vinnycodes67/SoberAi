@@ -172,8 +172,8 @@ struct DSGallery: View {
     DSSection("States") {
       VStack(alignment: .leading, spacing: DSSpace.lg) {
         VStack(alignment: .leading, spacing: DSSpace.xs) {
-          DSStepMeter(filled: 2, total: 5)
-          Text("2 of 5 baseline sessions recorded")
+          DSStepMeter(filled: 2, total: BaselineThresholds.requiredSessions)
+          Text("2 of \(BaselineThresholds.requiredSessions) baseline sessions recorded")
             .font(DSFont.footnote)
             .foregroundStyle(DSPalette.textMuted)
         }

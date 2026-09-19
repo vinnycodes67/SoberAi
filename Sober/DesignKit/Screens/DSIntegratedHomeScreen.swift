@@ -124,8 +124,10 @@ struct DSIntegratedHomeScreen: View {
 
         if !model.baselineReady {
           VStack(alignment: .leading, spacing: DSSpace.xs) {
-            DSStepMeter(filled: model.baselineSessions, total: 5)
-            Text("\(model.baselineSessions) of 5 baseline sessions recorded")
+            DSStepMeter(filled: model.baselineSessions, total: BaselineThresholds.requiredSessions)
+            Text(
+              "\(model.baselineSessions) of \(BaselineThresholds.requiredSessions) baseline sessions recorded"
+            )
               .font(DSFont.footnote)
               .foregroundStyle(DSPalette.textMuted)
 
@@ -163,7 +165,8 @@ struct DSIntegratedHomeScreen: View {
 
   private var readinessDetail: String {
     if !model.baselineReady {
-      return "Five high-quality sessions while sober unlock your first check."
+      return
+        "\(BaselineThresholds.requiredSessionsInWordsCapitalized) high-quality sessions while sober unlock your first check."
     }
     #if INTERNAL_BUILD
     if model.guardianRelationshipIsActive {
@@ -296,11 +299,13 @@ struct DSIntegratedHomeScreen: View {
     DSSection("Your steady", action: ("Record", onStartBaseline)) {
       Button(action: onStartBaseline) {
         VStack(alignment: .leading, spacing: DSSpace.sm) {
-          DSStepMeter(filled: min(model.baselineSessions, 5), total: 5)
+          DSStepMeter(
+            filled: min(model.baselineSessions, BaselineThresholds.requiredSessions),
+            total: BaselineThresholds.requiredSessions)
           Text(
             model.baselineReady
               ? "Your starter baseline is ready. Record only while sober and rested."
-              : "Five sober sessions build the comparison range used by every check."
+              : "\(BaselineThresholds.requiredSessionsInWordsCapitalized) sober sessions unlock your first check."
           )
           .font(DSFont.footnote)
           .foregroundStyle(DSPalette.textMuted)
