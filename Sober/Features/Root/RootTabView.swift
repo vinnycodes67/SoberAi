@@ -47,6 +47,18 @@ struct RootTabView: View {
     .safeAreaInset(edge: .bottom, spacing: 0) {
       DSTabBar(selection: tabSelection)
         .padding(.top, DSSpace.xs)
+        // The bar is a floating capsule with transparent space beside and below
+        // it. The inset keeps the last row reachable, but at rest the next rows
+        // showed through those gaps and read as text cut in half. An opaque
+        // ground down through the home indicator hides what is behind the bar.
+        .background(DSPalette.background.ignoresSafeArea(edges: .bottom))
+    }
+    // Same problem at the top: nothing masked the status bar, so headings
+    // scrolled straight under the clock and battery.
+    .safeAreaInset(edge: .top, spacing: 0) {
+      Color.clear
+        .frame(height: 0)
+        .background(DSPalette.background.ignoresSafeArea(edges: .top))
     }
     .preferredColorScheme(.dark)
     .onChange(of: model.privacyLockIsLocked) { _, isLocked in

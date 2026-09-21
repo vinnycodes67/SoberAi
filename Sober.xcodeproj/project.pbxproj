@@ -185,6 +185,7 @@
 		B6EE46C2B49B2CD1D195B5C6 /* ResearchModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B77BB710C5315F758F0D499 /* ResearchModeView.swift */; };
 		B77BB0335635E2F5AB2E60B6 /* CurfewDeviceContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9731A6D24C194BF6F28FB423 /* CurfewDeviceContract.swift */; };
 		B78325E9AD2709B514F93ABB /* SoberUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4774E23D01BA58560B461B2E /* SoberUITests.swift */; };
+		BE59B7CE823B8C7530BE5D41 /* TabBarClearanceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5A16CF50568F8D102B7380 /* TabBarClearanceUITests.swift */; };
 		BE6A415DAF213AB35C1B663E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA8BCEEE16E4133908B99020 /* Assets.xcassets */; };
 		BFE566F52B3631C09451167F /* CurfewSlotPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB98E819782059342B21E177 /* CurfewSlotPlan.swift */; };
 		C0A9178F272AFDFD2B42D30B /* BaselineThresholdTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0724AA465C66F138ACD59616 /* BaselineThresholdTests.swift */; };
@@ -344,6 +345,7 @@
 		23942604D2736802062223EA /* SignalHalo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalHalo.swift; sourceTree = "<group>"; };
 		25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewPauseEvaluator.swift; sourceTree = "<group>"; };
 		281945014B1C95CFDF4E271C /* ResearchPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchPreferences.swift; sourceTree = "<group>"; };
+		2B5A16CF50568F8D102B7380 /* TabBarClearanceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarClearanceUITests.swift; sourceTree = "<group>"; };
 		2D117214C47BD9D0F74EB077 /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
 		2E6732CF2B5D184B14D10AED /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2F94E1D416D72BB8721C5301 /* CurfewCountdownPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCountdownPalette.swift; sourceTree = "<group>"; };
@@ -729,6 +731,7 @@
 				989CC81D39FF9EB4FB80B6DB /* PublicBoundaryUITests.swift */,
 				073988A5B67D68A322D05A27 /* ReviewerPathUITests.swift */,
 				4774E23D01BA58560B461B2E /* SoberUITests.swift */,
+				2B5A16CF50568F8D102B7380 /* TabBarClearanceUITests.swift */,
 			);
 			path = SoberUITests;
 			sourceTree = "<group>";
@@ -1319,6 +1322,7 @@
 				B3B717A7585F81ACF1F8D1BF /* PublicBoundaryUITests.swift in Sources */,
 				165C267256A7800A47A7B2A0 /* ReviewerPathUITests.swift in Sources */,
 				B78325E9AD2709B514F93ABB /* SoberUITests.swift in Sources */,
+				BE59B7CE823B8C7530BE5D41 /* TabBarClearanceUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

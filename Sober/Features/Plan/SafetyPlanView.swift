@@ -19,6 +19,12 @@ struct SafetyPlanView: View {
               "Set the exact ride destination and a person you can call or message while clear-headed."
           )
 
+          // Internal only. `isActive` feeds `canAutomaticallyAlertParent`, which
+          // also needs `automaticParentAlerts` -- and nothing in the public app
+          // can set that. So in the build we ship this toggle changed nothing
+          // either way: a working-looking control wired to nothing, which is
+          // exactly what an App Completeness review flags.
+          #if INTERNAL_BUILD
           SoberCard {
             Toggle(isOn: $plan.isActive) {
               VStack(alignment: .leading, spacing: DSSpace.xxs) {
@@ -34,6 +40,7 @@ struct SafetyPlanView: View {
             }
             .tint(Palette.primary)
           }
+          #endif
 
           SoberCard {
             VStack(alignment: .leading, spacing: DSSpace.md) {
