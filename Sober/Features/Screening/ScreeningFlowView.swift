@@ -127,7 +127,7 @@ struct ScreeningFlowView: View {
           switch step {
           case .attestation:
             if configuration.mode == .baseline {
-              BaselineAttestationView { step = .environment }
+              BaselineAttestationView { step = firstCaptureStep }
             } else {
               SelfReportView { answer in
                 handleSelfReport(answer)
@@ -158,7 +158,9 @@ struct ScreeningFlowView: View {
             TimeEstimateTaskView { error in
               guard interruptedStep == nil else { return }
               timingError = error
-              step = .gaze
+              // No camera, no eye task: go straight to scoring rather than to a
+              // screen that can only ever report "unsupported".
+              step = usesNoCameraProtocol ? .analyzing : .gaze
             }
           case .gaze:
             OcularTaskView(
@@ -327,7 +329,7 @@ struct ScreeningFlowView: View {
       }
       return
     }
-    step = .environment
+    step = firstCaptureStep
   }
 
   private func handleAccessibilityUnavailableRoute(_ answer: SelfReport) {
@@ -358,7 +360,21 @@ struct ScreeningFlowView: View {
     }
   }
 
+  /// True on hardware with no TrueDepth camera -- every iPhone without Face ID,
+  /// and every simulator. Never true for a *denied* camera: someone who can grant
+  /// access gets the full check, so a denial is not a way to skip the eye task.
+  private var usesNoCameraProtocol: Bool { !faceTracking.isSupported }
+
+  private var firstCaptureStep: ScreeningStep {
+    usesNoCameraProtocol ? .reaction : .environment
+  }
+
+  private var activeProtocolVariant: OcularProtocolVariant {
+    usesNoCameraProtocol ? .noCamera : (ocularSummary?.protocolVariant ?? .full)
+  }
+
   private func finishScoring() {
+    let protocolVariant = activeProtocolVariant
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: reactionTime,
       reactionMisses: reactionMisses,
@@ -371,11 +387,22 @@ struct ScreeningFlowView: View {
     )
 
     if configuration.mode == .baseline {
-      baselineAccepted =
-        metrics.completedAllTasks && metrics.qualityScore >= BaselineThresholds.minimumQuality
-      baselineCompletionState = BaselineCompletionState(
-        reason: baselineAccepted ? .ready : (trackingWasMeasured ? .captureQualityTooLow : .taskUnavailable)
-      )
+      // Without a camera there is no capture quality to judge, so a session
+      // counts when its three tasks were all measured. That mirrors
+      // BaselineProfileEngine's noCamera eligibility rule.
+      if protocolVariant == .noCamera {
+        baselineAccepted =
+          metrics.completedAllTasks && metrics.reactionWasMeasured && metrics.timingWasMeasured
+        baselineCompletionState = BaselineCompletionState(
+          reason: baselineAccepted ? .ready : .taskUnavailable)
+      } else {
+        baselineAccepted =
+          metrics.completedAllTasks && metrics.qualityScore >= BaselineThresholds.minimumQuality
+        baselineCompletionState = BaselineCompletionState(
+          reason: baselineAccepted
+            ? .ready : (trackingWasMeasured ? .captureQualityTooLow : .taskUnavailable)
+        )
+      }
       Task {
         await model.recordCompletedSession(
           mode: .baseline,
@@ -383,7 +410,8 @@ struct ScreeningFlowView: View {
           metrics: metrics,
           reactionSummary: reactionSummary,
           ocularSummary: ocularSummary,
-          startedAt: sessionStartedAt
+          startedAt: sessionStartedAt,
+          protocolVariant: protocolVariant
         )
         // The write has finished by now, so the completion screen can tell the
         // truth instead of the optimistic state set before it started.
@@ -396,11 +424,11 @@ struct ScreeningFlowView: View {
       return
     }
 
-    let protocolVariant = ocularSummary?.protocolVariant ?? .full
     let scoredOutcome = engine.evaluate(
       selfReport: selfReport,
       metrics: metrics,
-      personalBaseline: model.personalBaseline(for: protocolVariant)
+      personalBaseline: model.personalBaseline(for: protocolVariant),
+      protocolVariant: protocolVariant
     )
     presentOutcome(scoredOutcome)
     Task {
@@ -411,7 +439,8 @@ struct ScreeningFlowView: View {
         reactionSummary: reactionSummary,
         ocularSummary: ocularSummary,
         startedAt: sessionStartedAt,
-        outcome: scoredOutcome
+        outcome: scoredOutcome,
+        protocolVariant: protocolVariant
       )
     }
   }

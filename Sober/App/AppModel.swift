@@ -949,7 +949,8 @@ final class AppModel: ObservableObject {
     reactionSummary: ChoiceReactionSummary?,
     ocularSummary: GazeCaptureSummary?,
     startedAt: Date,
-    outcome: ScreeningOutcome? = nil
+    outcome: ScreeningOutcome? = nil,
+    protocolVariant: OcularProtocolVariant? = nil
   ) async {
     // History first, and unconditionally. It is a record for the person and has
     // nothing to do with research consent; gating it on consent meant a public
@@ -1012,7 +1013,11 @@ final class AppModel: ObservableObject {
       ocularSummary: ocularSummary,
       ocularQuality: ocularQuality,
       breathReference: nil,
-      protocolVariant: ocularSummary?.protocolVariant ?? .full
+      // Explicit variant first. With no camera there is no ocular summary, and
+      // falling back to `.full` filed camera-free sessions into the camera
+      // baseline -- a check would then be compared against sessions that
+      // measured different things.
+      protocolVariant: protocolVariant ?? ocularSummary?.protocolVariant ?? .full
     )
 
     do {
@@ -1115,15 +1120,26 @@ final class AppModel: ObservableObject {
         return
       }
       researchSessions = sessions
-      baselineProfile = baselineEngine.summarize(
-        participantID: participantID,
-        sessions: sessions,
-        protocolVariant: .full
-      )
-      baselineVariantBreakdown = [
-        .full: baselineEngine.summarize(participantID: participantID, sessions: sessions, protocolVariant: .full),
-        .reducedMotion: baselineEngine.summarize(participantID: participantID, sessions: sessions, protocolVariant: .reducedMotion)
-      ]
+      let breakdown = Dictionary(
+        uniqueKeysWithValues: OcularProtocolVariant.allCases.map { variant in
+          (
+            variant,
+            baselineEngine.summarize(
+              participantID: participantID, sessions: sessions, protocolVariant: variant)
+          )
+        })
+      baselineVariantBreakdown = breakdown
+      // Your Steady shows the partition that is actually driving readiness.
+      // This was hardwired to `.full`, so a Reduced Motion or no-camera user
+      // could reach "ready" while Your Steady showed an empty baseline.
+      var activeVariant = OcularProtocolVariant.full
+      for variant in OcularProtocolVariant.allCases
+      where (breakdown[variant]?.eligibleSessionCount ?? 0)
+        > (breakdown[activeVariant]?.eligibleSessionCount ?? 0)
+      {
+        activeVariant = variant
+      }
+      baselineProfile = breakdown[activeVariant]
       // Recompute unconditionally. Skipping this in the founder preview froze
       // the stored count, so real sessions recorded afterwards never counted.
       baselineSessions = max(
