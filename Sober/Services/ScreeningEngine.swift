@@ -9,7 +9,8 @@ struct ScreeningEngine: Sendable {
     selfReport: SelfReport,
     metrics: ScreeningMetrics,
     personalBaseline: PersonalBaseline? = nil,
-    founderScenario: FounderScenario = .live
+    founderScenario: FounderScenario = .live,
+    protocolVariant: OcularProtocolVariant = .full
   ) -> ScreeningOutcome {
     #if INTERNAL_BUILD
     if founderScenario != .live {
@@ -61,9 +62,18 @@ struct ScreeningEngine: Sendable {
       + ((trackingRisk ?? 1) * 0.18)
       + (timingRisk * 0.10)
       + ((gazeRisk ?? 1) * 0.15)
-    let riskScore = BuildChannel.allowsInternalTools
-      ? measuredTaskRisk + ((pupilRisk ?? 1) * 0.25)
-      : measuredTaskRisk / 0.75
+    let riskScore: Double
+    if protocolVariant == .noCamera {
+      riskScore =
+        ((reactionRisk * 0.20)
+          + (missRisk * 0.12)
+          + ((trackingRisk ?? 1) * 0.18)
+          + (timingRisk * 0.10)) / 0.60
+    } else {
+      riskScore = BuildChannel.allowsInternalTools
+        ? measuredTaskRisk + ((pupilRisk ?? 1) * 0.25)
+        : measuredTaskRisk / 0.75
+    }
 
     let allDetails = details(
       reactionRisk: reactionRisk,
@@ -71,7 +81,8 @@ struct ScreeningEngine: Sendable {
       timingRisk: timingRisk,
       gazeRisk: gazeRisk,
       pupilRisk: pupilRisk,
-      metrics: metrics
+      metrics: metrics,
+      protocolVariant: protocolVariant
     )
     let details = BuildChannel.allowsInternalTools
       ? allDetails
@@ -101,12 +112,22 @@ struct ScreeningEngine: Sendable {
     // Deliberately does not require metrics.pupillometry here. It is absent
     // from the public protocol, and an internal experimental miss must not
     // overrule otherwise complete established tasks.
-    guard
-      metrics.completedAllTasks,
-      metrics.qualityScore >= Self.minimumQuality,
-      metrics.trackingError != nil,
-      metrics.gazeSmoothness != nil
-    else {
+    let hasRequiredMeasurements: Bool
+    if protocolVariant == .noCamera {
+      hasRequiredMeasurements =
+        metrics.completedAllTasks
+        && metrics.reactionWasMeasured
+        && metrics.timingWasMeasured
+        && metrics.trackingError?.isFinite == true
+    } else {
+      hasRequiredMeasurements =
+        metrics.completedAllTasks
+        && metrics.qualityScore >= Self.minimumQuality
+        && metrics.trackingError != nil
+        && metrics.gazeSmoothness != nil
+    }
+
+    guard hasRequiredMeasurements else {
       return ScreeningOutcome(
         state: .inconclusive,
         qualityScore: metrics.qualityScore,
@@ -218,13 +239,18 @@ struct ScreeningEngine: Sendable {
     timingRisk: Double,
     gazeRisk: Double?,
     pupilRisk: Double?,
-    metrics: ScreeningMetrics
+    metrics: ScreeningMetrics,
+    protocolVariant: OcularProtocolVariant
   ) -> [SignalDetail] {
     [
       reactionDetail(risk: reactionRisk, metrics: metrics),
       trackingDetail(risk: trackingRisk, error: metrics.trackingError),
       timingDetail(risk: timingRisk, metrics: metrics),
-      gazeDetail(risk: gazeRisk, smoothness: metrics.gazeSmoothness),
+      gazeDetail(
+        risk: gazeRisk,
+        smoothness: metrics.gazeSmoothness,
+        protocolVariant: protocolVariant
+      ),
       pupilDetail(risk: pupilRisk, sample: metrics.pupillometry),
     ]
   }
@@ -294,7 +320,21 @@ struct ScreeningEngine: Sendable {
   }
 
   /// Never prints a percentage for a task that didn't run.
-  private func gazeDetail(risk: Double?, smoothness: Double?) -> SignalDetail {
+  private func gazeDetail(
+    risk: Double?,
+    smoothness: Double?,
+    protocolVariant: OcularProtocolVariant
+  ) -> SignalDetail {
+    if protocolVariant == .noCamera {
+      return SignalDetail(
+        id: "gaze",
+        label: "Guided gaze — this iPhone has no TrueDepth camera",
+        value: "Not measured",
+        concern: false,
+        wasMeasured: false
+      )
+    }
+
     guard let risk, let smoothness else {
       return SignalDetail(
         id: "gaze", label: "Guided gaze", value: "Not measured", concern: false,
