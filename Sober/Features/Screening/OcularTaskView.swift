@@ -206,6 +206,7 @@ struct OcularTaskView: View {
     switch activeVariant {
     case .full: return [.fixation, .horizontalPursuit, .verticalPursuit, .saccades]
     case .reducedMotion: return [.fixation, .saccades]
+    case .noCamera: return []
     }
   }
 

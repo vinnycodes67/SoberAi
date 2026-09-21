@@ -102,6 +102,10 @@ struct OcularSignalAnalyzer: Sendable {
           + (features.headCompensation * 0.15 / total),
         0
       ), 1)
+    case .noCamera:
+      // Unreachable: nothing is captured without a camera. If it ever were
+      // called, the most conservative value is the only defensible one.
+      smoothnessRisk = 1
     case .reducedMotion:
       let total = 0.22 + 0.2 + 0.15
       smoothnessRisk = min(max(

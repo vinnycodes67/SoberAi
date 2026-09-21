@@ -117,11 +117,20 @@ struct CaptureQualitySnapshot: Codable, Equatable, Sendable {
 enum OcularProtocolVariant: String, Codable, CaseIterable, Sendable {
   case full
   case reducedMotion
+  /// No eye task at all: the device has no TrueDepth camera, so the check runs
+  /// reaction, tracking and timing only. Its sessions form a baseline of their
+  /// own and are never mixed into a camera baseline -- a check is only ever
+  /// compared against sessions that measured the same things.
+  ///
+  /// Chosen for unsupported hardware only, never for a denied camera: someone
+  /// who can grant access should get the full check.
+  case noCamera
 
   var displayName: String {
     switch self {
     case .full: "Full protocol"
     case .reducedMotion: "Reduced motion"
+    case .noCamera: "Without eye task"
     }
   }
 }
@@ -234,6 +243,8 @@ enum OcularProtocolSchedule {
     switch variant {
     case .full: return fixationDuration + horizontalDuration + verticalDuration + saccadeDuration
     case .reducedMotion: return fixationDuration + saccadeDuration
+    // No ocular protocol runs without a camera.
+    case .noCamera: return 0
     }
   }
 
@@ -242,6 +253,10 @@ enum OcularProtocolSchedule {
     let time = min(max(elapsed, 0), duration)
 
     switch variant {
+    case .noCamera:
+      // Unreachable: the ocular task never starts without a camera. Neutral
+      // rather than a crash if that ever changes.
+      return OcularTarget(phase: .fixation, x: 0.5, y: 0.5)
     case .full:
       if time < fixationDuration {
         return OcularTarget(phase: .fixation, x: 0.5, y: 0.5)
