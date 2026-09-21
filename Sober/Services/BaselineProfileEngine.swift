@@ -11,7 +11,7 @@ struct BaselineMetricsSummary: Codable, Equatable, Sendable {
   let reactionMisses: RobustBaselineStatistic
   let trackingError: RobustBaselineStatistic
   let timeEstimateError: RobustBaselineStatistic
-  let gazeSmoothness: RobustBaselineStatistic
+  let gazeSmoothness: RobustBaselineStatistic?
   let qualityScore: RobustBaselineStatistic
 }
 
@@ -120,8 +120,7 @@ struct BaselineProfileEngine: Sendable {
   private func isEligible(_ session: ResearchSessionEnvelope, protocolVariant: OcularProtocolVariant) -> Bool {
     guard session.schemaVersion == ResearchSessionEnvelope.currentSchemaVersion,
       session.completedAt != nil,
-      session.metrics.completedAllTasks,
-      session.metrics.qualityScore >= minimumQuality
+      session.metrics.completedAllTasks
     else {
       return false
     }
@@ -129,18 +128,32 @@ struct BaselineProfileEngine: Sendable {
     guard session.protocolVariant == protocolVariant else { return false }
 
     let metrics = session.metrics
-    guard metrics.reactionWasMeasured,
-      metrics.timingWasMeasured,
-      let trackingError = metrics.trackingError,
-      let gazeSmoothness = metrics.gazeSmoothness
-    else {
-      return false
+    switch protocolVariant {
+    case .noCamera:
+      guard metrics.reactionWasMeasured,
+        metrics.timingWasMeasured,
+        let trackingError = metrics.trackingError
+      else {
+        return false
+      }
+      return metrics.reactionTimeMilliseconds.isFinite
+        && trackingError.isFinite
+        && metrics.timeEstimateError.isFinite
+    case .full, .reducedMotion:
+      guard metrics.qualityScore >= minimumQuality,
+        metrics.reactionWasMeasured,
+        metrics.timingWasMeasured,
+        let trackingError = metrics.trackingError,
+        let gazeSmoothness = metrics.gazeSmoothness
+      else {
+        return false
+      }
+      return metrics.reactionTimeMilliseconds.isFinite
+        && trackingError.isFinite
+        && metrics.timeEstimateError.isFinite
+        && gazeSmoothness.isFinite
+        && metrics.qualityScore.isFinite
     }
-    return metrics.reactionTimeMilliseconds.isFinite
-      && trackingError.isFinite
-      && metrics.timeEstimateError.isFinite
-      && gazeSmoothness.isFinite
-      && metrics.qualityScore.isFinite
   }
 
   private func makeMetricsSummary(
@@ -155,7 +168,7 @@ struct BaselineProfileEngine: Sendable {
       reactionMisses: robustStatistic(sessions.map { Double($0.metrics.reactionMisses) }),
       trackingError: robustStatistic(sessions.compactMap(\.metrics.trackingError)),
       timeEstimateError: robustStatistic(sessions.map(\.metrics.timeEstimateError)),
-      gazeSmoothness: robustStatistic(sessions.compactMap(\.metrics.gazeSmoothness)),
+      gazeSmoothness: optionalRobustStatistic(sessions.compactMap(\.metrics.gazeSmoothness)),
       qualityScore: robustStatistic(sessions.map(\.metrics.qualityScore))
     )
   }
@@ -167,6 +180,10 @@ struct BaselineProfileEngine: Sendable {
       median: center,
       medianAbsoluteDeviation: median(deviations)
     )
+  }
+
+  private func optionalRobustStatistic(_ values: [Double]) -> RobustBaselineStatistic? {
+    values.isEmpty ? nil : robustStatistic(values)
   }
 
   private func median(_ values: [Double]) -> Double {
