@@ -49,10 +49,11 @@ final class JourneySmokeUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Start Sober check"].waitForExistence(timeout: 10))
   }
 
-  /// Simulators and non-TrueDepth iPhones cannot run AR face tracking. That
-  /// must degrade to an explicitly limited, inconclusive path rather than
-  /// stranding someone at camera setup.
-  func testUnsupportedCameraStillOffersALimitedCapturePath() {
+  /// Simulators and non-TrueDepth iPhones cannot run AR face tracking. They
+  /// used to be sent through camera setup to a check that could only ever come
+  /// back inconclusive. They now skip the camera screens and run the
+  /// camera-free check, scored against its own baseline.
+  func testUnsupportedCameraRunsTheCameraFreeCheck() {
     let app = launchApp([
       "-sober-onboarding-complete", "-sober-baseline-sessions", "5",
     ])
@@ -69,16 +70,10 @@ final class JourneySmokeUITests: XCTestCase {
     XCTAssertTrue(continueToSetup.waitForExistence(timeout: 10))
     continueToSetup.tap()
 
-    let limitedCapture = app.buttons["Continue with limited capture"]
-    XCTAssertTrue(limitedCapture.waitForExistence(timeout: 20))
-    for _ in 0..<4 where !limitedCapture.isHittable {
-      app.swipeUp()
-    }
-    XCTAssertTrue(limitedCapture.isHittable)
-    XCTAssertTrue(
-      app.staticTexts[
-        "A live check can continue, but its result will be inconclusive without usable camera capture."
-      ].exists)
+    XCTAssertTrue(app.buttons["Begin reaction task"].waitForExistence(timeout: 20))
+    XCTAssertFalse(
+      app.buttons["Continue with limited capture"].exists,
+      "no camera setup on hardware that cannot track a face")
   }
 
   func testHowResultsWorkDoesNotCreateHistoryOrABaseline() {
@@ -87,7 +82,12 @@ final class JourneySmokeUITests: XCTestCase {
     let education = app.buttons.matching(
       NSPredicate(format: "label BEGINSWITH %@", "How results work")
     ).firstMatch
-    for _ in 0..<5 where !education.exists || !education.isHittable {
+    // Scroll until the whole card clears the tab bar. The bar has an opaque
+    // backdrop, so a card that is merely "hittable" can still take its tap on
+    // the bar.
+    let tabBar = app.buttons["Home"]
+    for _ in 0..<6
+    where !education.exists || education.frame.maxY > tabBar.frame.minY {
       app.swipeUp()
     }
     XCTAssertTrue(education.waitForExistence(timeout: 10))
