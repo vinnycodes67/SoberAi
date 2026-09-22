@@ -87,6 +87,7 @@
 		4F9264D1878E28A209723FC3 /* BuildChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FE4F8F275081E3EC620E82 /* BuildChannel.swift */; };
 		5108275C9415E69F6D8708FF /* ScreeningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */; };
 		519D1D4EC0B75FFC96D7979B /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC25F72A27335610F808FA8 /* HomeView.swift */; };
+		54B4350DA350982944083C2F /* NoCameraAppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFFE8C005A94D223172FD1A /* NoCameraAppModelTests.swift */; };
 		554AD224071C5C26118571A6 /* OcularModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9001A9459892F746005CE25 /* OcularModels.swift */; };
 		555EA5EDEA5A17AB2EFE72D3 /* SignalHalo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23942604D2736802062223EA /* SignalHalo.swift */; };
 		5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
@@ -130,6 +131,7 @@
 		7927D50C9628B61ED2BCC976 /* GuardianCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */; };
 		7A81F2DBDA1256D3ED3B4BD9 /* JourneySmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35ABD6127F23F09013D16BF9 /* JourneySmokeUITests.swift */; };
 		7A863EAD4660CE869529952E /* CurfewShieldAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 61A160615FB9599F7C31B1D2 /* CurfewShieldAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7C5F4712B12879AA0EE5840F /* NoCameraProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936205F2F1EC9A596CC1D406 /* NoCameraProtocolTests.swift */; };
 		7EBA40F956766444F18FE110 /* CurfewContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8150D19D8281A6719F7B3F6E /* CurfewContract.swift */; };
 		802FFB9735C57233EC3EA9DB /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		82A825E392D3535B4BEE1D80 /* CurfewCountdownAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12431CD9C4F7AB45F82A7A49 /* CurfewCountdownAttributes.swift */; };
@@ -401,6 +403,7 @@
 		8D20348E09CA314BDF125D8E /* CurfewContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewContractTests.swift; sourceTree = "<group>"; };
 		900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianLiveLocationService.swift; sourceTree = "<group>"; };
 		9089BACEC0735F03F703E526 /* DSStatusChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSStatusChip.swift; sourceTree = "<group>"; };
+		936205F2F1EC9A596CC1D406 /* NoCameraProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoCameraProtocolTests.swift; sourceTree = "<group>"; };
 		93A7EBEB5D05FF9B5F5E4736 /* Satoshi-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Satoshi-LICENSE.txt"; sourceTree = "<group>"; };
 		9578CA43E138C16E0045DB01 /* UITestLaunchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunchConfiguration.swift; sourceTree = "<group>"; };
 		96BC6D05A1487CC39BD2D5CC /* CurfewSelectionCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewSelectionCodec.swift; sourceTree = "<group>"; };
@@ -444,6 +447,7 @@
 		E9CEE37C8964AF05459CDA9F /* CheckHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckHistoryStore.swift; sourceTree = "<group>"; };
 		EB3617C72DF6BA3AF37764DF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		EBB8912F166C1B9D65E91FBE /* SafetyPlanRideURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanRideURLTests.swift; sourceTree = "<group>"; };
+		EDFFE8C005A94D223172FD1A /* NoCameraAppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoCameraAppModelTests.swift; sourceTree = "<group>"; };
 		EF48AFF2B048115E6939DAEC /* GuardianCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCenterView.swift; sourceTree = "<group>"; };
 		F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F1154AF077381776EE9F825A /* DSTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTokens.swift; sourceTree = "<group>"; };
@@ -487,6 +491,8 @@
 				08C8CC181D5834CDC8CC2408 /* GuardianModeTests.swift */,
 				3AB736360F8E779AC1692AC9 /* InterruptionPolicyTests.swift */,
 				A98FC21A7803343F0B5A7C80 /* LocalDataFailureTests.swift */,
+				EDFFE8C005A94D223172FD1A /* NoCameraAppModelTests.swift */,
+				936205F2F1EC9A596CC1D406 /* NoCameraProtocolTests.swift */,
 				3A306DA8403F659ED8E1428B /* NoNetworkInPublicBuildTests.swift */,
 				17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */,
 				BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */,
@@ -1338,6 +1344,8 @@
 				9DBE5A8CA3BCA27B3DEB32F7 /* GuardianModeTests.swift in Sources */,
 				571BAE02276B52C64862F6FC /* InterruptionPolicyTests.swift in Sources */,
 				65834F5A8D15E008A6F1288B /* LocalDataFailureTests.swift in Sources */,
+				54B4350DA350982944083C2F /* NoCameraAppModelTests.swift in Sources */,
+				7C5F4712B12879AA0EE5840F /* NoCameraProtocolTests.swift in Sources */,
 				993362015F1CB50EC0BA8377 /* NoNetworkInPublicBuildTests.swift in Sources */,
 				FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */,
 				1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */,
