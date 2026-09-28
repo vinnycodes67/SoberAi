@@ -71,6 +71,31 @@ final class NoCameraProtocolTests: XCTestCase {
     XCTAssertFalse(gaze.wasMeasured)
   }
 
+  /// The result screen prints capture quality as a percentage. A camera-free
+  /// check captured nothing, so the outcome has to say so rather than let the
+  /// screen render a number that grades a recording that never happened.
+  func testACameraFreeOutcomeReportsThatNothingWasCaptured() {
+    let outcome = ScreeningEngine().evaluate(
+      selfReport: .no,
+      metrics: noCameraMetrics(),
+      personalBaseline: nil,
+      protocolVariant: .noCamera
+    )
+
+    XCTAssertFalse(outcome.measuredCapture)
+  }
+
+  func testACameraCheckStillReportsItsCapture() {
+    let outcome = ScreeningEngine().evaluate(
+      selfReport: .no,
+      metrics: noCameraMetrics(),
+      personalBaseline: nil,
+      protocolVariant: .full
+    )
+
+    XCTAssertTrue(outcome.measuredCapture)
+  }
+
   func testFullProtocolStillRequiresGaze() {
     let outcome = screeningEngine.evaluate(
       selfReport: .no,
@@ -96,6 +121,30 @@ final class NoCameraProtocolTests: XCTestCase {
     )
 
     XCTAssertEqual(summary.candidateSessionCount, 1)
+    XCTAssertEqual(summary.eligibleSessionCount, 1)
+    XCTAssertNil(summary.metrics?.gazeSmoothness)
+  }
+
+  /// Defence in depth for the partition boundary. The check flow now stores a
+  /// nil gaze figure for a camera-free run, but the baseline a check is scored
+  /// against must not depend on every producer remembering to: a stray value in
+  /// the field cannot become a gaze statistic in a partition that has no eyes.
+  func testACameraFreeBaselineIgnoresAStrayGazeValue() {
+    let participantID = PseudonymousParticipantID(rawValue: "participant_stray_gaze")
+    var metrics = noCameraMetrics()
+    metrics.gazeSmoothness = 0
+    let session = makeSession(
+      participantID: participantID,
+      metrics: ResearchScreeningMetrics(metrics),
+      protocolVariant: .noCamera
+    )
+
+    let summary = BaselineProfileEngine().summarize(
+      participantID: participantID,
+      sessions: [session],
+      protocolVariant: .noCamera
+    )
+
     XCTAssertEqual(summary.eligibleSessionCount, 1)
     XCTAssertNil(summary.metrics?.gazeSmoothness)
   }

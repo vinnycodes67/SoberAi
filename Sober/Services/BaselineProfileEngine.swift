@@ -65,7 +65,7 @@ struct BaselineProfileEngine: Sendable {
       excludedSessionCount: candidates.count - eligible.count,
       minimumRequiredSessions: minimumRequiredSessions,
       minimumQuality: minimumQuality,
-      metrics: makeMetricsSummary(from: eligible)
+      metrics: makeMetricsSummary(from: eligible, protocolVariant: protocolVariant)
     )
   }
 
@@ -157,9 +157,17 @@ struct BaselineProfileEngine: Sendable {
   }
 
   private func makeMetricsSummary(
-    from sessions: [ResearchSessionEnvelope]
+    from sessions: [ResearchSessionEnvelope],
+    protocolVariant: OcularProtocolVariant
   ) -> BaselineMetricsSummary? {
     guard !sessions.isEmpty else { return nil }
+
+    // A camera-free partition has no gaze statistic by definition, whatever a
+    // stored session happens to carry in that field. Deciding it here means one
+    // producer writing a stray value cannot put a fabricated gaze figure into
+    // the baseline a check is scored against.
+    let gazeValues =
+      protocolVariant == .noCamera ? [] : sessions.compactMap(\.metrics.gazeSmoothness)
 
     return BaselineMetricsSummary(
       reactionTimeMilliseconds: robustStatistic(
@@ -168,7 +176,7 @@ struct BaselineProfileEngine: Sendable {
       reactionMisses: robustStatistic(sessions.map { Double($0.metrics.reactionMisses) }),
       trackingError: robustStatistic(sessions.compactMap(\.metrics.trackingError)),
       timeEstimateError: robustStatistic(sessions.map(\.metrics.timeEstimateError)),
-      gazeSmoothness: optionalRobustStatistic(sessions.compactMap(\.metrics.gazeSmoothness)),
+      gazeSmoothness: optionalRobustStatistic(gazeValues),
       qualityScore: robustStatistic(sessions.map(\.metrics.qualityScore))
     )
   }

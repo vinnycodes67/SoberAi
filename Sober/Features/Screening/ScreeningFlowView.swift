@@ -314,7 +314,8 @@ struct ScreeningFlowView: View {
         qualityScore: 0,
         completedAllTasks: false
       )
-      let earlyOutcome = engine.evaluate(selfReport: answer, metrics: metrics)
+      let earlyOutcome = engine.evaluate(
+        selfReport: answer, metrics: metrics, protocolVariant: activeProtocolVariant)
       presentOutcome(earlyOutcome)
       Task {
         await model.recordCompletedSession(
@@ -324,7 +325,8 @@ struct ScreeningFlowView: View {
           reactionSummary: nil,
           ocularSummary: nil,
           startedAt: sessionStartedAt,
-          outcome: earlyOutcome
+          outcome: earlyOutcome,
+          protocolVariant: activeProtocolVariant
         )
       }
       return
@@ -345,7 +347,8 @@ struct ScreeningFlowView: View {
       qualityScore: 0,
       completedAllTasks: false
     )
-    let unavailableOutcome = engine.evaluate(selfReport: answer, metrics: metrics)
+    let unavailableOutcome = engine.evaluate(
+      selfReport: answer, metrics: metrics, protocolVariant: activeProtocolVariant)
     presentOutcome(unavailableOutcome)
     Task {
       await model.recordCompletedSession(
@@ -355,7 +358,8 @@ struct ScreeningFlowView: View {
         reactionSummary: nil,
         ocularSummary: nil,
         startedAt: sessionStartedAt,
-        outcome: unavailableOutcome
+        outcome: unavailableOutcome,
+        protocolVariant: activeProtocolVariant
       )
     }
   }
@@ -380,8 +384,14 @@ struct ScreeningFlowView: View {
       reactionMisses: reactionMisses,
       trackingError: trackingError,
       timeEstimateError: timingError,
-      gazeSmoothness: gazeSmoothness,
-      qualityScore: qualityScore,
+      // `gazeSmoothness` and `qualityScore` start at values that describe a
+      // camera run. Without a camera that run never happens and nothing
+      // overwrites them, so storing them files a gaze figure of 0 and a
+      // perfect capture score into a session that looked at neither. The
+      // engine already treats a camera-free baseline as carrying no gaze
+      // statistic; these are the values that make that true.
+      gazeSmoothness: protocolVariant == .noCamera ? nil : gazeSmoothness,
+      qualityScore: protocolVariant == .noCamera ? 0 : qualityScore,
       // A task the participant could not perform is not a completed task.
       completedAllTasks: trackingWasMeasured
     )

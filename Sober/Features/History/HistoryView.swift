@@ -219,6 +219,10 @@ struct HistoryView: View {
   private func detail(for entry: CheckHistoryEntry) -> String {
     let when = entry.startedAt.formatted(date: .abbreviated, time: .shortened)
     guard entry.completedAllTasks else { return "\(when) · not completed" }
+    // This iPhone has no TrueDepth camera, so nothing was captured and there is
+    // no capture band to report. Saying "strong capture" here would describe a
+    // recording that never happened.
+    guard entry.measuredCapture else { return "\(when) · without eye task" }
     return "\(when) · \(qualityLabel(entry.qualityScore)) capture"
   }
 
