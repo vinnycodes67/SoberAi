@@ -315,9 +315,14 @@ struct DSIntegratedResultScreen: View {
   private var measurements: some View {
     DSSection("Measurements") {
       DSRows {
+        // Without a TrueDepth camera nothing was captured, so there is no
+        // percentage to print. 0% reads as a ruined capture and 100% as a
+        // perfect one; both describe a recording that never happened.
         DSValueRow(
           label: "Capture quality",
-          value: "\(Int(outcome.qualityScore * 100))%"
+          value: outcome.measuredCapture
+            ? "\(Int(outcome.qualityScore * 100))%" : "Not measured",
+          tint: outcome.measuredCapture ? DSPalette.textPrimary : DSPalette.textMuted
         )
         .padding(.vertical, DSSpace.sm)
 

@@ -68,6 +68,48 @@ final class NoCameraAppModelTests: XCTestCase {
     XCTAssertEqual(model.researchSessions.last?.protocolVariant, .noCamera)
   }
 
+  /// History says how good the capture was. A camera-free session captured
+  /// nothing, so it must not borrow a capture band -- "strong capture" about a
+  /// run that never opened the camera is simply untrue.
+  func testACameraFreeSessionRecordsThatNothingWasCaptured() async {
+    let model = makeModel()
+    await recordBaseline(model, variant: .noCamera)
+
+    XCTAssertEqual(model.checkHistory.count, 1)
+    XCTAssertEqual(model.checkHistory.first?.measuredCapture, false)
+  }
+
+  func testACameraSessionStillRecordsItsCapture() async {
+    let model = makeModel()
+    await recordBaseline(model, variant: .full)
+
+    XCTAssertEqual(model.checkHistory.first?.measuredCapture, true)
+  }
+
+  /// Every entry written before camera-free checks existed ran the camera, so
+  /// a record with no flag must read as a captured one rather than as a
+  /// camera-free session that never happened.
+  func testHistoryWrittenBeforeTheFlagExistedStillReadsAsCaptured() throws {
+    let json = Data(
+      """
+      {
+        "id": "10000000-0000-0000-0000-000000000009",
+        "startedAt": 780000000,
+        "kind": "check",
+        "outcome": "inconclusive",
+        "qualityScore": 0.88,
+        "completedAllTasks": true,
+        "schemaVersion": 1
+      }
+      """.utf8)
+
+    let decoder = JSONDecoder()
+    let entry = try decoder.decode(CheckHistoryEntry.self, from: json)
+
+    XCTAssertTrue(entry.measuredCapture)
+    XCTAssertEqual(entry.qualityScore, 0.88, accuracy: 0.0001)
+  }
+
   /// Callers that pass no variant keep today's behaviour exactly.
   func testOmittingTheVariantKeepsTheExistingFallback() async {
     let model = makeModel()

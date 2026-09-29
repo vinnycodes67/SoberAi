@@ -115,18 +115,26 @@ struct ScreeningOutcome: Equatable, Sendable {
   let details: [SignalDetail]
   let reason: ScreeningOutcomeReason
 
+  /// False when the check ran on hardware with no TrueDepth camera. Nothing was
+  /// captured, so `qualityScore` grades nothing and must not be shown as a
+  /// percentage: 0% reads as a ruined capture and 100% as a perfect one, and
+  /// the honest answer is that the question does not apply.
+  let measuredCapture: Bool
+
   init(
     state: ScreeningResultState,
     qualityScore: Double,
     riskScore: Double,
     details: [SignalDetail],
-    reason: ScreeningOutcomeReason = .measuredComparison
+    reason: ScreeningOutcomeReason = .measuredComparison,
+    measuredCapture: Bool = true
   ) {
     self.state = state
     self.qualityScore = qualityScore
     self.riskScore = riskScore
     self.details = details
     self.reason = reason
+    self.measuredCapture = measuredCapture
   }
 
   var title: String {

@@ -956,7 +956,11 @@ final class AppModel: ObservableObject {
     // nothing to do with research consent; gating it on consent meant a public
     // build — which has no way to grant consent — recorded no checks at all.
     await appendCheckHistory(
-      mode: mode, metrics: metrics, startedAt: startedAt, outcome: outcome)
+      mode: mode,
+      metrics: metrics,
+      startedAt: startedAt,
+      outcome: outcome,
+      measuredCapture: (protocolVariant ?? ocularSummary?.protocolVariant ?? .full) != .noCamera)
 
     guard mode == .baseline || researchConsent else { return }
 
@@ -1038,7 +1042,8 @@ final class AppModel: ObservableObject {
     mode: ScreeningMode,
     metrics: ScreeningMetrics,
     startedAt: Date,
-    outcome: ScreeningOutcome?
+    outcome: ScreeningOutcome?,
+    measuredCapture: Bool = true
   ) async {
     let entry = CheckHistoryEntry(
       id: UUID(),
@@ -1046,7 +1051,8 @@ final class AppModel: ObservableObject {
       kind: mode == .baseline ? .baseline : .check,
       outcome: outcome.map(Self.historyOutcome),
       qualityScore: metrics.qualityScore,
-      completedAllTasks: metrics.completedAllTasks
+      completedAllTasks: metrics.completedAllTasks,
+      measuredCapture: measuredCapture
     )
     do {
       try await checkHistoryStore.append(entry)

@@ -50,6 +50,14 @@ struct CheckHistoryEntry: Codable, Equatable, Identifiable, Sendable {
   let outcome: Outcome?
   let qualityScore: Double
   let completedAllTasks: Bool
+
+  /// False when the session ran on hardware with no TrueDepth camera, so the
+  /// eye task never ran and `qualityScore` describes nothing. Stored as a plain
+  /// flag rather than the protocol variant: this type deliberately mirrors what
+  /// it needs instead of importing scoring semantics. Absent in records written
+  /// before camera-free checks existed, and every one of those ran the camera.
+  let measuredCapture: Bool
+
   let schemaVersion: Int
 
   init(
@@ -59,6 +67,7 @@ struct CheckHistoryEntry: Codable, Equatable, Identifiable, Sendable {
     outcome: Outcome?,
     qualityScore: Double,
     completedAllTasks: Bool,
+    measuredCapture: Bool = true,
     schemaVersion: Int = CheckHistoryEntry.currentSchemaVersion
   ) {
     self.id = id
@@ -67,6 +76,7 @@ struct CheckHistoryEntry: Codable, Equatable, Identifiable, Sendable {
     self.outcome = outcome
     self.qualityScore = qualityScore
     self.completedAllTasks = completedAllTasks
+    self.measuredCapture = measuredCapture
     self.schemaVersion = schemaVersion
   }
 
@@ -77,6 +87,7 @@ struct CheckHistoryEntry: Codable, Equatable, Identifiable, Sendable {
     case outcome
     case qualityScore
     case completedAllTasks
+    case measuredCapture
     case schemaVersion
   }
 
@@ -88,6 +99,7 @@ struct CheckHistoryEntry: Codable, Equatable, Identifiable, Sendable {
     outcome = try values.decodeIfPresent(Outcome.self, forKey: .outcome)
     qualityScore = try values.decode(Double.self, forKey: .qualityScore)
     completedAllTasks = try values.decode(Bool.self, forKey: .completedAllTasks)
+    measuredCapture = try values.decodeIfPresent(Bool.self, forKey: .measuredCapture) ?? true
     // The co-founder checkpoint briefly wrote entries before record-level
     // versioning landed. Those records are schema 1, not corrupt data.
     schemaVersion = try values.decodeIfPresent(Int.self, forKey: .schemaVersion)

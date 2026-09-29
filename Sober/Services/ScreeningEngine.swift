@@ -87,6 +87,7 @@ struct ScreeningEngine: Sendable {
     let details = BuildChannel.allowsInternalTools
       ? allDetails
       : allDetails.filter { $0.id != "pupil" }
+    let measuredCapture = protocolVariant != .noCamera
 
     // Self-report is a hard safety gate. A reported use can never produce
     // NO_SIGNALS_DETECTED, regardless of task performance.
@@ -96,7 +97,8 @@ struct ScreeningEngine: Sendable {
         qualityScore: metrics.qualityScore,
         riskScore: max(riskScore, signalThreshold),
         details: details,
-        reason: .reportedUse
+        reason: .reportedUse,
+        measuredCapture: measuredCapture
       )
     }
 
@@ -105,7 +107,8 @@ struct ScreeningEngine: Sendable {
         state: .inconclusive,
         qualityScore: metrics.qualityScore,
         riskScore: riskScore,
-        details: details
+        details: details,
+        measuredCapture: measuredCapture
       )
     }
 
@@ -132,7 +135,8 @@ struct ScreeningEngine: Sendable {
         state: .inconclusive,
         qualityScore: metrics.qualityScore,
         riskScore: riskScore,
-        details: details
+        details: details,
+        measuredCapture: measuredCapture
       )
     }
 
@@ -140,7 +144,8 @@ struct ScreeningEngine: Sendable {
       state: riskScore >= signalThreshold ? .signalsDetected : .noSignalsDetected,
       qualityScore: metrics.qualityScore,
       riskScore: riskScore,
-      details: details
+      details: details,
+      measuredCapture: measuredCapture
     )
   }
 
