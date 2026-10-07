@@ -192,6 +192,15 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
   let reactionTimeMilliseconds: Double
   let reactionMisses: Int
   let reactionWasMeasured: Bool
+  /// The error breakdown behind `reactionMisses`. Optional, and decoded as nil
+  /// for sessions written before the reaction task recorded them separately —
+  /// those sessions genuinely do not know, and a zero would claim they did.
+  let reactionMedianMilliseconds: Double?
+  let reactionIncorrectChoices: Int?
+  let reactionAnticipations: Int?
+  let reactionMissedResponses: Int?
+  let reactionVariabilityMilliseconds: Double?
+  let reactionTrialCount: Int?
   let trackingError: Double?
   let timeEstimateError: Double
   let timingWasMeasured: Bool
@@ -203,6 +212,12 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
     reactionTimeMilliseconds: Double,
     reactionMisses: Int,
     reactionWasMeasured: Bool = true,
+    reactionMedianMilliseconds: Double? = nil,
+    reactionIncorrectChoices: Int? = nil,
+    reactionAnticipations: Int? = nil,
+    reactionMissedResponses: Int? = nil,
+    reactionVariabilityMilliseconds: Double? = nil,
+    reactionTrialCount: Int? = nil,
     trackingError: Double?,
     timeEstimateError: Double,
     timingWasMeasured: Bool = true,
@@ -213,6 +228,12 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
     self.reactionTimeMilliseconds = reactionTimeMilliseconds
     self.reactionMisses = reactionMisses
     self.reactionWasMeasured = reactionWasMeasured
+    self.reactionMedianMilliseconds = reactionMedianMilliseconds
+    self.reactionIncorrectChoices = reactionIncorrectChoices
+    self.reactionAnticipations = reactionAnticipations
+    self.reactionMissedResponses = reactionMissedResponses
+    self.reactionVariabilityMilliseconds = reactionVariabilityMilliseconds
+    self.reactionTrialCount = reactionTrialCount
     self.trackingError = trackingError
     self.timeEstimateError = timeEstimateError
     self.timingWasMeasured = timingWasMeasured
@@ -226,6 +247,12 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
       reactionTimeMilliseconds: metrics.reactionTimeMilliseconds,
       reactionMisses: metrics.reactionMisses,
       reactionWasMeasured: metrics.reactionWasMeasured,
+      reactionMedianMilliseconds: metrics.reactionMedianMilliseconds,
+      reactionIncorrectChoices: metrics.reactionIncorrectChoices,
+      reactionAnticipations: metrics.reactionAnticipations,
+      reactionMissedResponses: metrics.reactionMissedResponses,
+      reactionVariabilityMilliseconds: metrics.reactionVariabilityMilliseconds,
+      reactionTrialCount: metrics.reactionTrialCount,
       trackingError: metrics.trackingError,
       timeEstimateError: metrics.timeEstimateError,
       timingWasMeasured: metrics.timingWasMeasured,
@@ -239,6 +266,12 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
     case reactionTimeMilliseconds
     case reactionMisses
     case reactionWasMeasured
+    case reactionMedianMilliseconds
+    case reactionIncorrectChoices
+    case reactionAnticipations
+    case reactionMissedResponses
+    case reactionVariabilityMilliseconds
+    case reactionTrialCount
     case trackingError
     case timeEstimateError
     case timingWasMeasured
@@ -252,6 +285,16 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
     reactionTimeMilliseconds = try values.decode(Double.self, forKey: .reactionTimeMilliseconds)
     reactionMisses = try values.decode(Int.self, forKey: .reactionMisses)
     reactionWasMeasured = try values.decodeIfPresent(Bool.self, forKey: .reactionWasMeasured) ?? true
+    reactionMedianMilliseconds =
+      try values.decodeIfPresent(Double.self, forKey: .reactionMedianMilliseconds)
+    reactionIncorrectChoices =
+      try values.decodeIfPresent(Int.self, forKey: .reactionIncorrectChoices)
+    reactionAnticipations = try values.decodeIfPresent(Int.self, forKey: .reactionAnticipations)
+    reactionMissedResponses =
+      try values.decodeIfPresent(Int.self, forKey: .reactionMissedResponses)
+    reactionVariabilityMilliseconds =
+      try values.decodeIfPresent(Double.self, forKey: .reactionVariabilityMilliseconds)
+    reactionTrialCount = try values.decodeIfPresent(Int.self, forKey: .reactionTrialCount)
     trackingError = try values.decodeIfPresent(Double.self, forKey: .trackingError)
     timeEstimateError = try values.decode(Double.self, forKey: .timeEstimateError)
     timingWasMeasured = try values.decodeIfPresent(Bool.self, forKey: .timingWasMeasured) ?? true
@@ -265,6 +308,12 @@ struct ResearchScreeningMetrics: Codable, Equatable, Sendable {
       reactionTimeMilliseconds: reactionTimeMilliseconds,
       reactionMisses: reactionMisses,
       reactionWasMeasured: reactionWasMeasured,
+      reactionMedianMilliseconds: reactionMedianMilliseconds,
+      reactionIncorrectChoices: reactionIncorrectChoices,
+      reactionAnticipations: reactionAnticipations,
+      reactionMissedResponses: reactionMissedResponses,
+      reactionVariabilityMilliseconds: reactionVariabilityMilliseconds,
+      reactionTrialCount: reactionTrialCount,
       trackingError: trackingError,
       timeEstimateError: timeEstimateError,
       timingWasMeasured: timingWasMeasured,
