@@ -37,10 +37,48 @@ enum ScreeningOutcomeReason: Equatable, Sendable {
 }
 
 struct ScreeningMetrics: Equatable, Sendable {
+  /// The session's mean correct latency, which is what scoring and the
+  /// baseline use. See `reactionMedianMilliseconds` for why that may change.
   var reactionTimeMilliseconds: Double
+  /// Every reaction error in one number, which is what risk scoring weighs.
+  ///
+  /// Kept as the total because the three kinds below are not interchangeable
+  /// and summing them is a deliberate scoring choice, not a storage one.
   var reactionMisses: Int
   /// `false` when the reaction task never ran, such as a self-report-only result.
   var reactionWasMeasured: Bool = true
+
+  // The error breakdown behind `reactionMisses`.
+  //
+  // A wrong choice, a response before the target appeared, and no response at
+  // all are three different behaviours with three different causes, and the
+  // reaction task already tells them apart. They were being summed into one
+  // `Int` at the point of capture, which threw the distinction away before
+  // anything could use it. Stored separately so a baseline can eventually
+  // speak about them separately.
+  //
+  // Optional because sessions recorded before this existed genuinely do not
+  // know, and a zero would claim they did.
+
+  /// Median correct latency. Recorded alongside the mean, not instead of it.
+  ///
+  /// The median is the robust summary of a right-skewed reaction-time
+  /// distribution and is what the baseline should eventually compare. Scoring
+  /// still uses the mean because switching it would score new sessions against
+  /// baselines built from means — and the alternative, retiring every existing
+  /// baseline, is what `ReviewRegressionTests` exists to prevent. Recording both
+  /// now lets the switch be made later against real data rather than guessed.
+  var reactionMedianMilliseconds: Double?
+  /// Responded, but chose the wrong target.
+  var reactionIncorrectChoices: Int?
+  /// Responded before the target appeared.
+  var reactionAnticipations: Int?
+  /// Did not respond within the trial window.
+  var reactionMissedResponses: Int?
+  /// Standard deviation of correct latencies, in milliseconds.
+  var reactionVariabilityMilliseconds: Double?
+  /// How many trials the session actually presented.
+  var reactionTrialCount: Int?
   /// `nil` means the task was skipped or the capture failed. An unmeasured
   /// metric is never substituted with a stand-in value.
   var trackingError: Double?

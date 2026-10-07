@@ -54,6 +54,12 @@ struct ScreeningFlowView: View {
   @State private var selfReport: SelfReport = .no
   @State private var reactionTime = 0.0
   @State private var reactionMisses = 0
+  @State private var reactionMedian: Double?
+  @State private var reactionIncorrectChoices: Int?
+  @State private var reactionAnticipations: Int?
+  @State private var reactionMissedResponses: Int?
+  @State private var reactionVariability: Double?
+  @State private var reactionTrialCount: Int?
   @State private var reactionSummary: ChoiceReactionSummary?
   @State private var trackingError: Double?
   @State private var trackingWasMeasured = true
@@ -144,7 +150,13 @@ struct ScreeningFlowView: View {
               guard interruptedStep == nil else { return }
               reactionSummary = summary
               reactionTime = summary.averageMilliseconds
+              reactionMedian = summary.medianMilliseconds
               reactionMisses = summary.totalErrors
+              reactionIncorrectChoices = summary.incorrectChoices
+              reactionAnticipations = summary.anticipations
+              reactionMissedResponses = summary.misses
+              reactionVariability = summary.variabilityMilliseconds
+              reactionTrialCount = summary.trials.count
               step = .tracking
             }
           case .tracking:
@@ -382,6 +394,12 @@ struct ScreeningFlowView: View {
     let metrics = ScreeningMetrics(
       reactionTimeMilliseconds: reactionTime,
       reactionMisses: reactionMisses,
+      reactionMedianMilliseconds: reactionMedian,
+      reactionIncorrectChoices: reactionIncorrectChoices,
+      reactionAnticipations: reactionAnticipations,
+      reactionMissedResponses: reactionMissedResponses,
+      reactionVariabilityMilliseconds: reactionVariability,
+      reactionTrialCount: reactionTrialCount,
       trackingError: trackingError,
       timeEstimateError: timingError,
       // `gazeSmoothness` and `qualityScore` start at values that describe a
