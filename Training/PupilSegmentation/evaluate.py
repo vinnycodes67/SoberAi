@@ -8,7 +8,8 @@ import torch
 from torch.utils.data import DataLoader
 
 from model import PupilSegmentationModel
-from splits import make_splits
+from dataset import OpenEDSSegmentationDataset
+from splits import LEGACY_HELD_OUT_SUBJECTS, LEGACY_TRAINING_SUBJECTS
 
 CLASS_NAMES = ["background", "iris", "pupil"]
 
@@ -58,7 +59,10 @@ def evaluate(model: PupilSegmentationModel, loader: DataLoader, device: str) -> 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="/tmp/openeds_data/train")
+    parser.add_argument("--data", default="/tmp/openeds_prepared/train",
+                        help="legacy split: held-out subjects 106/107 are read from here")
+    parser.add_argument("--eval-data", default=None,
+                        help="evaluate on this prepared directory (e.g. the val split) instead")
     parser.add_argument("--weights", default=None, help="fine-tuned checkpoint; omit for pretrained-only")
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
@@ -70,9 +74,18 @@ def main():
         model.load_pretrained_backbone("vendor_ritnet/ritnet_openeds2019_pretrained.pkl")
     model.to(args.device)
 
-    _, eval_set = make_splits(args.data)
+    # Only the evaluation frames are loaded; the training split is not needed
+    # here and would only cost memory.
+    if args.eval_data:
+        eval_set = OpenEDSSegmentationDataset(args.eval_data)
+    else:
+        eval_set = OpenEDSSegmentationDataset(args.data, include=LEGACY_HELD_OUT_SUBJECTS)
+    seen = eval_set.subject_set & LEGACY_TRAINING_SUBJECTS
+    if seen:
+        print(f"WARNING: subjects {sorted(seen)} trained the legacy model; "
+              "its score on this set is inflated")
     loader = DataLoader(eval_set, batch_size=4, shuffle=False, num_workers=0)
-    print(f"Evaluating on {len(eval_set)} held-out frames from subjects not seen during fine-tuning...")
+    print(f"Evaluating on {len(eval_set)} frames from {len(eval_set.subject_set)} subjects...")
     metrics = evaluate(model, loader, args.device)
 
     print(f"Pixel accuracy: {metrics['pixel_accuracy']:.4f}")

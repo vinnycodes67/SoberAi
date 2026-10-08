@@ -49,7 +49,10 @@ def log(message: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="/tmp/openeds_data/train")
+    parser.add_argument("--data", default="/tmp/openeds_prepared/train",
+                        help="prepare_data.py output for the training split")
+    parser.add_argument("--eval-data", default=None,
+                        help="prepare_data.py output for the val split; omit for the legacy 106/107 split")
     parser.add_argument("--epochs", type=int, default=8)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--batch-size", type=int, default=8)
@@ -66,8 +69,9 @@ def main():
 
     log("loading + preprocessing dataset into memory...")
     t0 = time.time()
-    train_set, eval_set = make_splits(args.data)
-    log(f"train frames: {len(train_set)}   held-out eval frames: {len(eval_set)}   "
+    train_set, eval_set = make_splits(args.data, args.eval_data)
+    log(f"train frames: {len(train_set)} from {len(train_set.subject_set)} subjects   "
+        f"held-out eval frames: {len(eval_set)} from {len(eval_set.subject_set)} subjects   "
         f"(loaded in {time.time() - t0:.1f}s)")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=0)
     eval_loader = DataLoader(eval_set, batch_size=8, shuffle=False, num_workers=0)

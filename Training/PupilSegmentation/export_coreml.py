@@ -30,6 +30,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", default="finetuned_pupil_segmentation.pt")
     parser.add_argument("--out", default="PupilSegmentation.mlpackage")
+    # float32 by default. The mlprogram default is float16, and on held-out
+    # subjects that cost the shipped model ~2 points of iris IoU against its
+    # own PyTorch weights (verify_coreml.py). At ~249K parameters the float32
+    # package is still about 1 MB, so there is nothing to save by halving it.
+    parser.add_argument("--precision", choices=["float32", "float16"], default="float32")
     args = parser.parse_args()
 
     model = PupilSegmentationModel()
@@ -54,6 +59,9 @@ def main():
         minimum_deployment_target=ct.target.iOS16,
         compute_units=ct.ComputeUnit.ALL,
         convert_to="mlprogram",
+        compute_precision=(
+            ct.precision.FLOAT32 if args.precision == "float32" else ct.precision.FLOAT16
+        ),
     )
 
     mlmodel.author = "Sober prototype — fine-tuned from RITnet (Chaudhary et al., ICCVW 2019), MIT License"
