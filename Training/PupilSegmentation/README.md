@@ -99,6 +99,43 @@ with no sign of overfitting at this frame count. Per-epoch checkpoints
 (`finetuned_pupil_segmentation.pt.epoch1..6`) are kept alongside the
 final weights.
 
+### Re-measured 2026-10-07: unseen people, and the package that ships
+
+The table above scores 156 frames from 2 subjects. The official OpenEDS2020
+`val` split holds 10 further subjects that appear in no training shard, so
+it is a larger held-out set and is fair to both this model and any retrained
+one. `verify_coreml.py` scores the exported Core ML package itself, which is
+what the app runs, rather than the PyTorch weights it came from.
+
+| Same weights, 1,349 val frames / 10 subjects (Core ML: every 4th frame) | IoU iris | IoU pupil | Pixels differing from PyTorch |
+|---|---|---|---|
+| PyTorch | 0.9478 | 0.9729 | — |
+| Core ML, float16 (shipped until now) | 0.9251 | 0.9688 | 0.29% |
+| **Core ML, float32 (ships now)** | **0.9490** | **0.9730** | 0.00002% |
+
+The mlprogram default of float16 cost about 2 points of iris IoU. The model
+has ~249K parameters, so float32 only grows the package from 592 KB to
+1.0 MB. Float32 may run on the GPU rather than the Neural Engine; latency on
+a phone has not been measured. `export_coreml.py` now defaults to float32.
+
+**Tooling changes.** `prepare_data.py` downloads shards and stores them as
+compact uint8 `.npz` files, reading the MDS format directly instead of
+installing `mosaicml-streaming`, whose import pulls in `transformers`.
+`dataset.py` holds frames as uint8: the old float32/int64 storage was about
+3 MB a frame, roughly 4 GB at 1,348 frames rather than the ~350 MB its
+docstring claimed, which ruled out training on more than four shards.
+`splits.py` keeps the legacy 106/107 split so the table above still
+reproduces exactly (it does), and adds the train/val split, which refuses to
+run if a subject appears on both sides.
+
+Export needs coremltools' tested torch (2.7). coremltools 9 crashed
+(SIGSEGV) converting under torch 2.12, so export from a separate environment:
+
+```bash
+python3 -m venv /tmp/exportenv
+/tmp/exportenv/bin/pip install "torch==2.7.0" "coremltools==9.0" "numpy<2.3" pillow
+```
+
 **Read this number correctly**: 94-95% IoU is genuinely strong — *on
 OpenEDS-style NIR VR-headset imagery, the same distribution as both the
 pretrained backbone's original training data and this fine-tuning set*.
@@ -110,13 +147,22 @@ yet.
 
 ```bash
 cd Training/PupilSegmentation
-pip install torch torchvision mosaicml-streaming pillow opencv-python-headless coremltools
+pip install torch numpy pillow zstandard
 
-# fine-tune (downloads/points at local OpenEDS2020 shards — see dataset.py)
-python3 train.py --data /path/to/openeds2020/shards --epochs 8 --out finetuned_pupil_segmentation.pt
+# download and compact the data (about 65 MB per shard)
+python3 prepare_data.py --split train --shards 0-9
+python3 prepare_data.py --split val --shards 0-3
 
-# evaluate any checkpoint against the held-out subjects
-python3 evaluate.py --weights finetuned_pupil_segmentation.pt
+# fine-tune, scoring on people never trained on
+python3 train.py --data /tmp/openeds_prepared/train --eval-data /tmp/openeds_prepared/val \
+    --epochs 6 --out finetuned_pupil_segmentation.pt
+
+# evaluate any checkpoint (omit --eval-data for the legacy 106/107 split)
+python3 evaluate.py --weights finetuned_pupil_segmentation.pt --eval-data /tmp/openeds_prepared/val
+
+# score the exported package the app actually runs (export environment, see above)
+python3 verify_coreml.py --package PupilSegmentation.mlpackage \
+    --weights finetuned_pupil_segmentation.pt --eval-data /tmp/openeds_prepared/val
 
 # export to the .mlpackage Xcode compiles into PupilSegmentation.mlmodelc
 python3 export_coreml.py --weights finetuned_pupil_segmentation.pt --out PupilSegmentation.mlpackage
