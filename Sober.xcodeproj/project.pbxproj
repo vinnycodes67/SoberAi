@@ -60,6 +60,7 @@
 		3A2AA0EE6A8B49E03198873C /* CurfewContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8150D19D8281A6719F7B3F6E /* CurfewContract.swift */; };
 		3A884C52287D98149E445215 /* SafetyPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */; };
 		3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */; };
+		3C5851BF6A72CB283C9E70DE /* OcularDetailedMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D51E5C81951D30F65BF20DB /* OcularDetailedMetrics.swift */; };
 		3C9BBD5FB58748FA8EC1C3AE /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		3E17DC666D3BCE6B93E971AB /* CurfewShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0452A4FC811F4BF82B7646 /* CurfewShieldConfigurationExtension.swift */; };
 		3E62B03B8D4C99BB33987CCC /* CurfewDeviceContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9731A6D24C194BF6F28FB423 /* CurfewDeviceContract.swift */; };
@@ -97,6 +98,7 @@
 		5652FD191404BF073A0B86F6 /* SoberComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF16FB9F7B0082399E074 /* SoberComponents.swift */; };
 		5672B347F10C149F6A9068C5 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		571BAE02276B52C64862F6FC /* InterruptionPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AB736360F8E779AC1692AC9 /* InterruptionPolicyTests.swift */; };
+		5A1C42C635CA283A242CE885 /* OcularDetailedMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D80CAAAC591D7A0CE79C8C /* OcularDetailedMetricsTests.swift */; };
 		5AE4A5DF9A63217B6A922096 /* CurfewEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BAE19D755330A3E02BEB58C /* CurfewEvaluatorTests.swift */; };
 		5C06CFD44B35DDEF0131EA78 /* SoberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8648A1BF4A54BDA96FE775 /* SoberApp.swift */; };
 		5C37A5C2968056C2E8BB3D29 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
@@ -145,8 +147,10 @@
 		82A825E392D3535B4BEE1D80 /* CurfewCountdownAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12431CD9C4F7AB45F82A7A49 /* CurfewCountdownAttributes.swift */; };
 		83E49DEE02D66122A9D0F339 /* CurfewSlotPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB98E819782059342B21E177 /* CurfewSlotPlan.swift */; };
 		857568F4B503E22D9B628C11 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
+		861C9EA4A5F101F49833E717 /* OcularDetailedAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33E195D606510F743EE9D3A /* OcularDetailedAnalyzer.swift */; };
 		870CEAC234FC3FCCCF391525 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA8BCEEE16E4133908B99020 /* Assets.xcassets */; };
 		87D8424BCC49703BEB5956E8 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
+		8836DB79642BA4D09CC8E538 /* OcularDetailedMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D51E5C81951D30F65BF20DB /* OcularDetailedMetrics.swift */; };
 		89C872F604789BD16689E0A4 /* PupilMetricsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EA0850B072AECB23B6F573 /* PupilMetricsAnalyzer.swift */; };
 		8A579B641F45808FC4C51471 /* ReviewRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2530230715C6FC2DF59AA /* ReviewRegressionTests.swift */; };
 		8A7801282589E1B6707C385D /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B992B649C74F7395F2D97 /* DSComponents.swift */; };
@@ -164,6 +168,7 @@
 		967B2062EFDB159A727A41BF /* CurfewPauseEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */; };
 		9832990078C70120AAC43A1F /* DSTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1154AF077381776EE9F825A /* DSTokens.swift */; };
 		993362015F1CB50EC0BA8377 /* NoNetworkInPublicBuildTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A306DA8403F659ED8E1428B /* NoNetworkInPublicBuildTests.swift */; };
+		9A4F613F54C538C8E4FB868A /* OcularDetailedAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33E195D606510F743EE9D3A /* OcularDetailedAnalyzer.swift */; };
 		9B222019430D22DD7B06D15F /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CB031B0DAC7F8FCAFD491B /* AppModel.swift */; };
 		9B4D39A988D1B0C3CDB4466C /* CurfewLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1F6E93B88F5CA07CA4A0669F /* CurfewLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9C3BB664041E1712E930065E /* CurfewSlotPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB98E819782059342B21E177 /* CurfewSlotPlan.swift */; };
@@ -351,6 +356,7 @@
 		12CCE2721A98BF446D4AA3A2 /* CircleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleMapView.swift; sourceTree = "<group>"; };
 		12FD7A0C2617A8B4053F94FE /* SafetyPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyPlanView.swift; sourceTree = "<group>"; };
 		13A596808C5944580D9A323B /* CameraCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCalibrationView.swift; sourceTree = "<group>"; };
+		13D80CAAAC591D7A0CE79C8C /* OcularDetailedMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularDetailedMetricsTests.swift; sourceTree = "<group>"; };
 		1557DFCB0CAF8442F7F1A688 /* ScreeningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningModels.swift; sourceTree = "<group>"; };
 		163B5DA258E5BFD05E401DB4 /* CurfewRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewRuntime.swift; sourceTree = "<group>"; };
 		172BFDAC3F2ED9099EFA4180 /* ScreeningEnginePropertyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEnginePropertyTests.swift; sourceTree = "<group>"; };
@@ -365,6 +371,7 @@
 		281945014B1C95CFDF4E271C /* ResearchPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchPreferences.swift; sourceTree = "<group>"; };
 		2B5A16CF50568F8D102B7380 /* TabBarClearanceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarClearanceUITests.swift; sourceTree = "<group>"; };
 		2D117214C47BD9D0F74EB077 /* GuardianModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianModels.swift; sourceTree = "<group>"; };
+		2D51E5C81951D30F65BF20DB /* OcularDetailedMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularDetailedMetrics.swift; sourceTree = "<group>"; };
 		2E6732CF2B5D184B14D10AED /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2F94E1D416D72BB8721C5301 /* CurfewCountdownPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewCountdownPalette.swift; sourceTree = "<group>"; };
 		314E02FCE19ACB2DFDDF555C /* CaptureRecoveryOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureRecoveryOverlay.swift; sourceTree = "<group>"; };
@@ -455,6 +462,7 @@
 		CE4313F77F4236B18D0FAD78 /* CurfewLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewLiveActivityBundle.swift; sourceTree = "<group>"; };
 		CEFC16FCCBD46F044B569CE3 /* HeadPositionGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadPositionGuide.swift; sourceTree = "<group>"; };
 		D14013F7673B50FE4AF10D1B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D33E195D606510F743EE9D3A /* OcularDetailedAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcularDetailedAnalyzer.swift; sourceTree = "<group>"; };
 		D8827D89E62B14AB79DCF2E6 /* CurfewHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewHost.swift; sourceTree = "<group>"; };
 		D98B992B649C74F7395F2D97 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSComponents.swift; sourceTree = "<group>"; };
 		DA4059ED8B1CDC2C0837E26A /* Satoshi-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Bold.otf"; sourceTree = "<group>"; };
@@ -522,6 +530,7 @@
 				936205F2F1EC9A596CC1D406 /* NoCameraProtocolTests.swift */,
 				3A306DA8403F659ED8E1428B /* NoNetworkInPublicBuildTests.swift */,
 				17C93C19D2DFBA53C1B97033 /* OcularAndTaskTests.swift */,
+				13D80CAAAC591D7A0CE79C8C /* OcularDetailedMetricsTests.swift */,
 				BD193D291F9D389951B550D1 /* OnboardingRiskTests.swift */,
 				F5CE17DDAF1811BF0F4C6C18 /* PersistenceFoundationTests.swift */,
 				1B2572C8D23C3C12C50A9A14 /* ReactionMetricsTests.swift */,
@@ -893,6 +902,7 @@
 				900C0EB485A259CFC3531C09 /* GuardianLiveLocationService.swift */,
 				37C9FB807BB29095D995C38A /* GuardianSessionStore.swift */,
 				CEFC16FCCBD46F044B569CE3 /* HeadPositionGuide.swift */,
+				D33E195D606510F743EE9D3A /* OcularDetailedAnalyzer.swift */,
 				E4FEFFB98D7564B843351EA3 /* OcularSignalAnalyzer.swift */,
 				85B3AD8AE892ED87DD4AAEEA /* OnboardingValidator.swift */,
 				FC092ACD54BAE55BF8380675 /* PermissionStore.swift */,
@@ -923,6 +933,7 @@
 				3D601AA48A600955444F8D54 /* BaselineThresholds.swift */,
 				BF626406650B7AE35DBAA532 /* CaptureDiagnostics.swift */,
 				8150D19D8281A6719F7B3F6E /* CurfewContract.swift */,
+				2D51E5C81951D30F65BF20DB /* OcularDetailedMetrics.swift */,
 				C9001A9459892F746005CE25 /* OcularModels.swift */,
 				6F6340F71509A4C6A8614A52 /* OnboardingModels.swift */,
 				804D0A298DBB719A4493299F /* ResearchModels.swift */,
@@ -1259,6 +1270,8 @@
 				519D1D4EC0B75FFC96D7979B /* HomeView.swift in Sources */,
 				DCB1000C5637C85C341E85E4 /* HowResultsWorkView.swift in Sources */,
 				618AEF43622793DB3C2938F0 /* InterruptedTaskView.swift in Sources */,
+				9A4F613F54C538C8E4FB868A /* OcularDetailedAnalyzer.swift in Sources */,
+				8836DB79642BA4D09CC8E538 /* OcularDetailedMetrics.swift in Sources */,
 				8C83DCF07328987A65E39935 /* OcularModels.swift in Sources */,
 				DBE3C36740FEC98793240D0A /* OcularSignalAnalyzer.swift in Sources */,
 				D59C851AEEB911F3B54376CD /* OcularTaskView.swift in Sources */,
@@ -1387,6 +1400,7 @@
 				7C5F4712B12879AA0EE5840F /* NoCameraProtocolTests.swift in Sources */,
 				993362015F1CB50EC0BA8377 /* NoNetworkInPublicBuildTests.swift in Sources */,
 				FABC36E95F69798E797ADD9A /* OcularAndTaskTests.swift in Sources */,
+				5A1C42C635CA283A242CE885 /* OcularDetailedMetricsTests.swift in Sources */,
 				1D4BDDF59794DB3265604243 /* OnboardingRiskTests.swift in Sources */,
 				FC0446B060F94C806FA23A8C /* PersistenceFoundationTests.swift in Sources */,
 				43641845D59D8E7E649C1984 /* ReactionMetricsTests.swift in Sources */,
@@ -1448,6 +1462,8 @@
 				906D837DEDF3AA3B6CCA5851 /* HomeView.swift in Sources */,
 				C95BB01E59852C259B9EB775 /* HowResultsWorkView.swift in Sources */,
 				E23A809C154FFA56F40F2171 /* InterruptedTaskView.swift in Sources */,
+				861C9EA4A5F101F49833E717 /* OcularDetailedAnalyzer.swift in Sources */,
+				3C5851BF6A72CB283C9E70DE /* OcularDetailedMetrics.swift in Sources */,
 				554AD224071C5C26118571A6 /* OcularModels.swift in Sources */,
 				D5A41CA6A9E9B4A3089483DD /* OcularSignalAnalyzer.swift in Sources */,
 				3F6DC813101ECF9A30552ABC /* OcularTaskView.swift in Sources */,
