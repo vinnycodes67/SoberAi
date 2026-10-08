@@ -37,8 +37,21 @@ model on this Mac. Training runs in tmux session `pupil-train` under
 1. **Pick a checkpoint** from the `selection_eval` events only (never the
    test set). Eligible: clean iris IoU and clean pupil IoU each at least the
    epoch-0 value minus 0.003. Among eligible epochs choose the highest mean
-   of (iris IoU + pupil IoU) / 2 over the non-clean conditions. If no epoch
-   is eligible, say so: the run failed to keep clean accuracy.
+   of (iris IoU + pupil IoU) / 2 over the non-clean conditions.
+
+   **If no epoch is eligible**, run one cool-down epoch: mostly clean frames,
+   low learning rate, starting from the epoch with the best non-clean mean.
+   This is the only training you may start, and only once.
+   ```bash
+   cd /tmp/pupil_code
+   caffeinate -dimsu python3 -u train_phone.py --init /tmp/pupil_run/epochN.pt \
+     --out-dir /tmp/pupil_run/cooldown --epochs 1 --lr 1e-5 --augment-prob 0.3 \
+     > /tmp/pupil_run/cooldown.log 2>&1
+   ```
+   It takes about 70 minutes. Then apply the same rule to its
+   `/tmp/pupil_run/cooldown/metrics.jsonl` (epoch-0 values still come from `/tmp/pupil_run/metrics.jsonl`). If it
+   is still not eligible, say the run failed to keep clean accuracy and
+   benchmark the best non-clean epoch anyway, marked as failing that rule.
 2. **Benchmark** the shipped model against the chosen one, every condition,
    every frame:
    ```bash

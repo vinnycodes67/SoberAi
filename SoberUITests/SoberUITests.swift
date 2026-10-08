@@ -84,6 +84,24 @@ final class SoberUITests: XCTestCase {
     capture(app, named: "result-signals")
   }
 
+  /// Other contacts sit behind one collapsed line so the ride stays the one
+  /// obvious action, and each contact only offers what it allows: Sam is
+  /// message-only in the fixture.
+  func testResultOffersOtherContactsWithoutCrowdingTheRide() {
+    let app = launch(fixture: "result-signals")
+
+    let more = app.buttons["More contacts, 1"]
+    for _ in 0..<6 where !more.exists || !more.isHittable { app.swipeUp() }
+    XCTAssertTrue(more.waitForExistence(timeout: 30))
+    XCTAssertFalse(app.buttons["Message Sam"].exists, "collapsed until asked for")
+    XCTAssertTrue(app.buttons["Open Uber"].exists)
+
+    more.tap()
+    XCTAssertTrue(app.buttons["Message Sam"].waitForExistence(timeout: 10))
+    XCTAssertFalse(app.buttons["Call Sam"].exists, "Sam allows messages only")
+    capture(app, named: "result-more-contacts")
+  }
+
   func testInconclusiveResultRefusesAFalseClearance() {
     let app = launch(fixture: "result-inconclusive")
 

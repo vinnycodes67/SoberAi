@@ -104,7 +104,12 @@ struct UITestLaunchConfiguration {
     privacyStore.saveSafetyPlan(
       SafetyPlan(
         userName: "Alex",
-        contacts: [GuardianContact(name: "Jordan", phone: "3125550100")],
+        // Two contacts, so result-screen evidence includes "More contacts",
+        // and the second message-only so per-contact permissions show too.
+        contacts: [
+          GuardianContact(name: "Jordan", phone: "3125550100"),
+          GuardianContact(name: "Sam", phone: "3125550144", canCall: false),
+        ],
         homeLabel: "Home",
         homeAddress: "123 Main Street, Chicago, IL",
         preferredRide: "Uber"

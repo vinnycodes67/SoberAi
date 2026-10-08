@@ -35,17 +35,19 @@ enum CurfewNotifications {
   /// Registers the check-in category without disturbing categories other
   /// features may have registered. Call from the app at launch.
   static func registerCategories() {
-    let center = UNUserNotificationCenter.current()
-    let category = UNNotificationCategory(
-      identifier: checkInCategoryIdentifier,
-      actions: [],
-      intentIdentifiers: [],
-      options: []
-    )
-    center.getNotificationCategories { existing in
+    // The center and category are made inside the callback rather than
+    // captured: neither type is Sendable, and the callback runs on another
+    // queue.
+    UNUserNotificationCenter.current().getNotificationCategories { existing in
+      let category = UNNotificationCategory(
+        identifier: checkInCategoryIdentifier,
+        actions: [],
+        intentIdentifiers: [],
+        options: []
+      )
       var categories = existing.filter { $0.identifier != checkInCategoryIdentifier }
       categories.insert(category)
-      center.setNotificationCategories(categories)
+      UNUserNotificationCenter.current().setNotificationCategories(categories)
     }
   }
 
