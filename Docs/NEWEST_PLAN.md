@@ -5,6 +5,9 @@ is left. Written 2026-10-07 against `main`, build `1.0 (4)`. The detailed,
 file-and-line evidence is in [`ENGINEERING_AUDIT.md`](ENGINEERING_AUDIT.md); this
 is the plan that comes out of it.
 
+> **Handing over?** [`HANDOFF.md`](HANDOFF.md) lists only what is left —
+> untested, unbuilt, undecided, blocked — with owners and how to check each.
+
 ## Where things stand
 
 The code side is in better shape than the app's history suggests. The crash

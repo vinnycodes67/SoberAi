@@ -42,6 +42,14 @@ def resolve_device(requested: str) -> str:
     return "cpu"
 
 
+def release_cached_memory(device: torch.device) -> None:
+    """MPS shares system RAM with everything else. Its allocator keeps freed
+    blocks cached, so after a full evaluation pass that cache can push an
+    8 GB machine into swap, where training stops making progress."""
+    if device.type == "mps":
+        torch.mps.empty_cache()
+
+
 def log(message: str) -> None:
     print(message, flush=True)
     sys.stdout.flush()
@@ -58,6 +66,8 @@ def main():
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--out", default="finetuned_pupil_segmentation.pt")
+    parser.add_argument("--skip-baseline", action="store_true",
+                        help="skip scoring the untrained model; it is known to score 0 IoU")
     args = parser.parse_args()
 
     device = torch.device(resolve_device(args.device))
@@ -84,12 +94,14 @@ def main():
     class_weights = torch.tensor([1.0, 4.0, 8.0], device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    log("=== Before fine-tuning ===")
-    t0 = time.time()
-    baseline_metrics = evaluate(model, eval_loader, str(device))
-    log(f"Pixel accuracy: {baseline_metrics['pixel_accuracy']:.4f}, "
-        f"mean IoU (iris, pupil): {baseline_metrics['mean_iou_iris_pupil']:.4f} "
-        f"(eval took {time.time() - t0:.1f}s)")
+    if not args.skip_baseline:
+        log("=== Before fine-tuning ===")
+        t0 = time.time()
+        baseline_metrics = evaluate(model, eval_loader, str(device))
+        log(f"Pixel accuracy: {baseline_metrics['pixel_accuracy']:.4f}, "
+            f"mean IoU (iris, pupil): {baseline_metrics['mean_iou_iris_pupil']:.4f} "
+            f"(eval took {time.time() - t0:.1f}s)")
+        release_cached_memory(device)
 
     for epoch in range(args.epochs):
         model.train()
