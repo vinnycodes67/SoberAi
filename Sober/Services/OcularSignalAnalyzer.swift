@@ -75,7 +75,14 @@ struct OcularSignalAnalyzer: Sendable {
     quality.frameRate = frameRate
     quality.sampleCount = samples.count
     quality.dropoutRatio = dropoutRatio
-    var issues = quality.issues.filter { ![.lowFrameRate, .interrupted, .insufficientSamples].contains($0) }
+    // Frame rate and sample sufficiency were live estimates and are recomputed
+    // here from what was actually captured. `.interrupted` is not stripped:
+    // nothing live sets it -- it arrives from `stopOcularProtocol` when the
+    // face vanished before the end or ARKit reported the session interrupted
+    // or failed. Stripping it erased that reason while `facePresent` still
+    // made the capture unusable, leaving a rejected capture with no stated
+    // cause. Dropout above 30% adds it too; `deduplicated` keeps one.
+    var issues = quality.issues.filter { ![.lowFrameRate, .insufficientSamples].contains($0) }
     if frameRate < 20 { issues.append(.lowFrameRate) }
     if dropoutRatio > 0.3 { issues.append(.interrupted) }
     quality.issues = deduplicated(issues)

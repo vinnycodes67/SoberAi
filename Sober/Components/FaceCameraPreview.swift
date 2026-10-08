@@ -10,7 +10,12 @@ struct FaceCameraPreview: UIViewRepresentable {
     view.automaticallyUpdatesLighting = true
     view.backgroundColor = .black
     view.contentMode = .scaleAspectFill
-    view.transform = CGAffineTransform(scaleX: -1, y: 1)
+    // No transform. ARSCNView already presents the front camera the way a
+    // mirror does, and draws its anchors in that same space. Flipping the view
+    // again un-mirrored the image -- move right, the picture moved left --
+    // which is the "inverted camera" people reported. Left alone, the image,
+    // the face anchors and any overlay share one coordinate system.
+    // Needs one check on a TrueDepth iPhone; the simulator cannot show it.
     service.attach(to: view.session)
     return view
   }

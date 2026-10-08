@@ -92,6 +92,9 @@ final class FaceTrackingService: NSObject, ObservableObject {
   @Published private(set) var status: FaceTrackingStatus = .idle
   @Published private(set) var sampleCount = 0
   @Published private(set) var quality: CaptureQualitySnapshot = .idle
+  /// Smoothed, debounced head position for guidance. Never used to judge
+  /// whether a capture is valid -- `quality` still does that.
+  @Published private(set) var headPosition: HeadPosition = .faceNotDetected
 
   private(set) var session = ARSession()
 
@@ -107,6 +110,11 @@ final class FaceTrackingService: NSObject, ObservableObject {
   private var wantsSessionRunning = false
   private var lastFaceSeenAt: TimeInterval?
   private var activeProtocolVariant: OcularProtocolVariant = .full
+  private var positionGuide = HeadPositionGuide()
+  /// Set when ARKit reports the session failed or was interrupted during this
+  /// capture. The samples on either side of the gap are not one continuous
+  /// recording, so the capture is not scored, however good it looks after.
+  private var captureWasInterrupted = false
 
   init(permissionStore: any PermissionStore = SystemPermissionStore()) {
     self.permissionStore = permissionStore
@@ -152,6 +160,12 @@ final class FaceTrackingService: NSObject, ObservableObject {
     session.pause()
 
     var finalQuality = qualityHistory.applying(to: quality)
+    if captureWasInterrupted {
+      // Same treatment as a face lost at the end: `isUsable` does not read
+      // `issues`, so the capture is invalidated through `facePresent`.
+      finalQuality.facePresent = false
+      finalQuality.issues = mergeIssues(finalQuality.issues, [.interrupted])
+    }
     if let lastFaceSeenAt,
       ProcessInfo.processInfo.systemUptime - lastFaceSeenAt > 0.75
     {
@@ -212,6 +226,9 @@ final class FaceTrackingService: NSObject, ObservableObject {
     recentHeadPositions.removeAll(keepingCapacity: true)
     qualityHistory = CaptureQualityHistory()
     lastFaceSeenAt = nil
+    positionGuide.reset()
+    headPosition = .faceNotDetected
+    captureWasInterrupted = false
     wantsSessionRunning = true
     if !preserveProtocolStart { protocolStartedAt = nil }
 
@@ -310,6 +327,13 @@ final class FaceTrackingService: NSObject, ObservableObject {
       target = OcularTarget(phase: .calibration, x: 0.5, y: 0.5)
     }
 
+    // `headPosition` in this scope is the local SIMD3; the guide is published
+    // on the property of the same name.
+    self.headPosition = face.isTracked
+      ? positionGuide.update(
+        x: Double(headPosition.x), y: Double(headPosition.y), z: Double(headPosition.z))
+      : positionGuide.update(x: nil, y: nil, z: nil)
+
     let blinkLeft = face.blendShapes[.eyeBlinkLeft]?.doubleValue
     let blinkRight = face.blendShapes[.eyeBlinkRight]?.doubleValue
     samples.append(OcularSample(
@@ -373,7 +397,60 @@ final class FaceTrackingService: NSObject, ObservableObject {
       dropoutRatio: dropoutRatio,
       issues: issues
     )
-    status = quality.isUsable ? .tracking : .limited(quality.primaryGuidance)
+    status = quality.isUsable ? .tracking : .limited(liveGuidance)
+  }
+
+  /// What to tell the person while the capture is not yet usable.
+  ///
+  /// Position comes from the debounced guide rather than the raw per-frame
+  /// issues, which flip whenever a head rests on a threshold. Once the guide
+  /// is satisfied, raw position issues are ignored for copy and the next real
+  /// problem -- light, stillness, frame rate -- is shown instead.
+  private var liveGuidance: String {
+    if headPosition != .centered { return headPosition.guidance }
+    let positional: [CaptureQualityIssue] = [.noFace, .offCenter, .distance]
+    return quality.issues.first { !positional.contains($0) }?.guidance
+      ?? HeadPosition.centered.guidance
+  }
+
+  // MARK: - Session failure and interruption
+
+  /// ARKit stopped delivering frames while the app stayed in the foreground
+  /// -- another process took the camera, or the hardware became unavailable.
+  /// Backgrounding is handled separately by `ScreeningFlowView` through
+  /// `scenePhase`.
+  func handleSessionInterrupted() {
+    guard wantsSessionRunning else { return }
+    captureWasInterrupted = true
+    status = .limited("Camera interrupted. Hold on while it reconnects.")
+  }
+
+  /// The camera is back. Restart from a clean tracking state so the frames
+  /// that resume are not stitched onto the ones before the gap; the capture
+  /// itself stays marked interrupted and will not be scored.
+  func handleSessionInterruptionEnded() {
+    guard wantsSessionRunning, isSupported,
+      permissionStore.cameraAuthorization == .authorized
+    else { return }
+    recentHeadPositions.removeAll(keepingCapacity: true)
+    positionGuide.reset()
+    headPosition = .faceNotDetected
+    startAuthorizedSession()
+  }
+
+  /// ARKit gave up. Permission revoked mid-session is reported as such so the
+  /// existing Settings path applies; anything else is a camera failure the
+  /// person cannot fix by moving, so the capture ends rather than waiting.
+  func handleSessionFailure(_ error: any Error) {
+    captureWasInterrupted = true
+    if let arError = error as? ARError, arError.code == .cameraUnauthorized {
+      markPermissionDenied()
+      return
+    }
+    wantsSessionRunning = false
+    session.pause()
+    quality.issues = mergeIssues(quality.issues, [.interrupted])
+    status = .limited("The camera stopped. End the task and try again.")
   }
 
   private func recentHeadMovement() -> Double {
@@ -411,6 +488,18 @@ extension FaceTrackingService: ARSessionDelegate {
     Task { @MainActor [weak self] in
       self?.ingest(face: face, timestamp: timestamp, ambientIntensity: ambientIntensity)
     }
+  }
+
+  nonisolated func session(_ session: ARSession, didFailWithError error: any Error) {
+    Task { @MainActor [weak self] in self?.handleSessionFailure(error) }
+  }
+
+  nonisolated func sessionWasInterrupted(_ session: ARSession) {
+    Task { @MainActor [weak self] in self?.handleSessionInterrupted() }
+  }
+
+  nonisolated func sessionInterruptionEnded(_ session: ARSession) {
+    Task { @MainActor [weak self] in self?.handleSessionInterruptionEnded() }
   }
 
   nonisolated func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
