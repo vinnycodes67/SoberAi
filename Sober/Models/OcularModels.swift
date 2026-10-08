@@ -293,8 +293,11 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     quality = try values.decode(CaptureQualitySnapshot.self, forKey: .quality)
     features = try values.decode(OcularSignalFeatures.self, forKey: .features)
     protocolVariant = try values.decodeIfPresent(OcularProtocolVariant.self, forKey: .protocolVariant) ?? .full
-    telemetry = try values.decodeIfPresent(CaptureTelemetry.self, forKey: .telemetry)
-    detailed = try values.decodeIfPresent(OcularDetailedMetrics.self, forKey: .detailed)
+    // Record-only extras fail soft. A record from a later schema, or a
+    // damaged one, loses just that field; throwing here would make the whole
+    // session unreadable, and with it a baseline session.
+    telemetry = (try? values.decodeIfPresent(CaptureTelemetry.self, forKey: .telemetry)) ?? nil
+    detailed = (try? values.decodeIfPresent(OcularDetailedMetrics.self, forKey: .detailed)) ?? nil
   }
 }
 

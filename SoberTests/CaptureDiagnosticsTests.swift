@@ -85,6 +85,20 @@ final class CaptureDiagnosticsTests: XCTestCase {
     XCTAssertNil(old.telemetry)
   }
 
+  /// A damaged record-only field costs that field, not the session.
+  func testADamagedTelemetryOrEyeMeasureBlobDoesNotLoseTheSession() throws {
+    let summary = GazeCaptureSummary(
+      smoothnessRisk: 0.2, qualityScore: 0.9, sampleCount: 100, quality: usable())
+    var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(summary)) as! [String: Any]
+    object["telemetry"] = ["framesObserved": "not a number"]
+    object["detailed"] = [1, 2, 3]
+    let decoded = try JSONDecoder().decode(
+      GazeCaptureSummary.self, from: JSONSerialization.data(withJSONObject: object))
+    XCTAssertNil(decoded.telemetry)
+    XCTAssertNil(decoded.detailed)
+    XCTAssertEqual(decoded.sampleCount, 100)
+  }
+
   // MARK: - Image statistics
 
   private func stats(width: Int = 64, height: Int = 48, _ pixel: (Int, Int) -> UInt8) -> CaptureImageStats {
