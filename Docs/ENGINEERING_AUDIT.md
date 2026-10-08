@@ -2,6 +2,10 @@
 
 Against `efe7c67` on `main`, build `1.0 (4)`. 18,554 lines of Swift.
 
+> **Progress and corrections since this was written are in
+> [`NEWEST_PLAN.md`](NEWEST_PLAN.md)** — see its section 6. Rows below marked
+> *(updated)* reflect work done after the original audit.
+
 Status vocabulary, per the audit brief: **WORKS** (verified running), **PARTIAL**
 (built, with a named gap), **MODEL ONLY** (type exists, nothing populates it),
 **MISSING**, **BLOCKED** (cannot be built here, reason given).
@@ -91,12 +95,12 @@ coding task. **Not started. Flagged rather than half-built.**
 | --- | --- | --- |
 | Face detection / tracking | **WORKS** | ARKit `ARFaceTrackingConfiguration`, correctly gated on `isSupported` |
 | Camera-free fallback | **WORKS** | `.noCamera` variant; verified by `testUnsupportedCameraRunsTheCameraFreeCheck` |
-| Head centering | **PARTIAL** | Single threshold `abs(x)<=0.13 && abs(y)<=0.18` (`FaceTrackingService.swift:340`). Boolean only — no LEFT/RIGHT/HIGH/LOW/CLOSE/FAR. Counter-based smoothing exists (`centeredCount`), true hysteresis does not |
-| Distance | **PARTIAL** | `distanceAcceptable` tracked, but boolean — cannot say "too close" vs "too far" |
+| Head centering *(updated)* | **PARTIAL** | Guidance now runs through `HeadPositionGuide`: smoothed, debounced, with hysteresis, and too-close / too-far told apart. Left/right copy waits on a device check of ARKit's axes. The quality gate still uses the raw threshold, deliberately |
+| Distance *(updated)* | **WORKS** | Guidance distinguishes too close from too far; thresholds still unmeasured on a person |
 | Multiple faces | **MISSING** | No anchor-count check anywhere. A second face in frame is unhandled |
 | Camera quality | **PARTIAL** | `FaceTrackingStatus` covers tracking state, lighting and motion via ARKit. No explicit VALID/DEGRADED/INVALID aggregate; no blur, exposure or frame-rate measure |
-| Camera interruption | **MISSING** | `ARSessionDelegate` implements only `didUpdate frame`, `didUpdate anchors`, `cameraDidChangeTrackingState`. **`sessionWasInterrupted`, `sessionInterruptionEnded` and `session(_:didFailWithError:)` are absent** — a call, a backgrounding, or another app taking the camera is not handled |
-| Inverted camera | **PARTIAL** | See 1.2 — masked by `abs()`, not fixed |
+| Camera interruption *(updated)* | **WORKS, NEEDS DEVICE** | Backgrounding and calls were already handled through `scenePhase` — the original row overstated the gap. The ARKit callbacks are now implemented: an interrupted or failed capture is invalidated and the person is told |
+| Inverted camera *(updated)* | **BUILT, NEEDS DEVICE** | Extra mirror transform removed from `FaceCameraPreview` |
 | Eye tracking | **PARTIAL** | `OcularSignalAnalyzer` is all-or-nothing: a score only when capture is fully usable, else zero. No fixation duration, gaze transitions, blink state, or per-eye consistency |
 | Eye calibration | **MISSING** | `CameraCalibrationView` checks framing and lighting. There is no target-following calibration, no per-user profile, no calibration quality gate |
 | Reaction / tracking / timing tasks | **WORKS** | Three tasks run and record |
