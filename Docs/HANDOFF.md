@@ -42,22 +42,23 @@ Use a Face ID iPhone, with the internal build for the model items.
 | 1.4 | Distance band 0.25–0.75 m | Note the real distance where "too close" and "too far" start | Adjust both `HeadPositionGuide.Thresholds` and the gate in `FaceTrackingService.ingest`, keeping them in step |
 | 1.5 | Float32 pupil model, `Sober/Resources/PupilSegmentation.mlpackage` | Time one inference in `PupilCaptureService`. Float32 may run on the GPU instead of the Neural Engine. | If it's too slow, re-export at `--precision float16`. That costs about 2 points of iris IoU (see the model README). |
 | 1.6 | Pupil model on real iPhone eye images | **Never measured.** Every published number comes from infrared VR-headset footage. | See section 3 |
+| 1.7 | Second face, `FaceTrackingService` (tracks up to 3, follows the nearest) | During the eye task, have someone lean into frame for a few seconds. "Only you should be in view…" should appear and the run should not count. A one-frame glimpse should not end it. | Check `trackedFaceCount` really exceeds 1; ARKit needs an A12 or later for more than one face |
+| 1.8 | Directional words, `DirectionalGuidance` (built, **off**) | Set `isEnabled = true` in a local build, move your head to your right: it must say "Move left". Then up/down. | If backwards, flip the sign in `mirroredOffset`, record why, and update `CaptureDiagnosticsTests` |
+| 1.9 | Image brightness/sharpness thresholds, `CaptureImageStats` | Note the verdict line on camera setup in a dim room, facing a window, and with a smudged lens | Tune `darkMeanLuma`, `clippedLimit`, `blurLimit`. They only ever mark a capture *degraded* |
+| 1.10 | Capture benchmark, Research screen (internal build) | After a few eye tasks it shows detection rate, tracking losses, recovery time and processing delay | Those are the first real vision numbers; quote nothing before it shows them |
 
 ## 2. Not built (open work, in priority order)
 
-### P0
-- **2.1 "Move left / right" wording.** `HeadPosition.offCenter` already
-  records which way, as ARKit axes. The wording is deliberately neutral until
-  one device session confirms which ARKit direction is the user's left. After
-  that, change only `HeadPosition.guidance`, and update
-  `testOffCenterCopyNamesNoDirection`.
-- **2.2 More than one face in frame.** Not detected. Set
-  `maximumNumberOfTrackedFaces`, count the `ARFaceAnchor`s, and treat two or
-  more as an invalid capture.
-- **2.3 Camera-quality verdict.** Validity is still the yes/no
-  `CaptureQualitySnapshot.isUsable`. There's no VALID / DEGRADED / INVALID
-  level, and no blur or exposure measurement. ARKit's light estimate is the
-  only lighting input.
+### P0 (built 2026-10-08; each needs the device check in section 1)
+- **2.1 "Move left / right" wording.** Built in `DirectionalGuidance`, from
+  where the face appears on the mirrored preview rather than ARKit's world
+  axes. **Off** until 1.8 confirms it.
+- **2.2 More than one face in frame.** Built: up to 3 faces tracked, the
+  nearest followed; another face in more than 5% of frames makes the capture
+  unusable. Needs 1.7.
+- **2.3 Camera-quality verdict.** Built: `CaptureAssessment` gives VALID /
+  DEGRADED / INVALID with one sentence, using new brightness, clipping and
+  sharpness measures (`CaptureImageStats`). Thresholds are guesses until 1.9.
 
 ### P1: measurement depth
 - **2.4 Score reaction time by median, not mean.** Both are now recorded
@@ -87,9 +88,11 @@ Use a Face ID iPhone, with the internal build for the model items.
   location permission and reverse geocoding (network), so it's tied to 4.2.
 - **2.11 Uber fallbacks.** Nothing handles "Uber isn't installed", and
   nothing handles the return to the app.
-- **2.12 Benchmark harness.** Nothing records detection rate, latency,
-  tracking loss or recovery time. **Don't quote any vision performance
-  numbers until this exists.**
+- **2.12 Benchmark harness.** Built: every eye-task capture records detection
+  rate, tracking losses, recovery time, processing delay, second-face frames
+  and image quality (`CaptureTelemetry`, kept with the session on the phone),
+  summarised on the internal Research screen. **Still don't quote vision
+  numbers until real captures have filled it (1.10).**
 
 ## 3. Pupil model: unfinished work (Shrey)
 

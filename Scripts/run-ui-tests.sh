@@ -21,13 +21,17 @@ run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 small_result="$PWD/.artifacts/ui-tests/small-$run_id.xcresult"
 large_result="$PWD/.artifacts/ui-tests/large-accessibility-$run_id.xcresult"
 
-# Boot both simulators now. A simulator that has only just finished booting
-# is still doing first-boot work, and XCUITest's accessibility snapshots time
-# out against it: the first large-device test used to spend its whole
-# allowance on 30-second existence checks. Booting the large one here gives it
-# the length of the compact suite to settle.
+# Hosted macOS runners are small. On them an app launch can take 90 s, and
+# XCUITest's accessibility snapshots time out against a simulator that is
+# still doing first-boot work, so single tests used to run out their 2-minute
+# allowance on 30-second existence checks while passing in seconds locally.
+# Three things keep that from failing the job without hiding real failures:
+#
+# - one simulator at a time: two booted together starve the runner;
+# - a longer allowance per test, so a slow launch is not a failure;
+# - one retry of a failed test. A real failure fails both attempts, and the
+#   result bundle records any test that only passed on retry.
 xcrun simctl boot "$small_udid" >/dev/null 2>&1 || true
-xcrun simctl boot "$large_udid" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "$small_udid" -b
 
 # Runs one suite. If the simulator itself has gone (xcodebuild exit 70, "Unable
@@ -61,8 +65,10 @@ xcodebuild_suite() {
     -resultBundlePath "$result" \
     -parallel-testing-enabled NO \
     -test-timeouts-enabled YES \
-    -default-test-execution-time-allowance 120 \
-    -maximum-test-execution-time-allowance 180 \
+    -default-test-execution-time-allowance 180 \
+    -maximum-test-execution-time-allowance 300 \
+    -retry-tests-on-failure \
+    -test-iterations 2 \
     -quiet \
     test \
     "$@"
@@ -74,6 +80,8 @@ run_suite "$small_udid" "$small_result" \
   -only-testing:SoberUITests/PublicBoundaryUITests \
   -only-testing:SoberUITests/SoberUITests
 
+xcrun simctl shutdown "$small_udid" >/dev/null 2>&1 || true
+xcrun simctl boot "$large_udid" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "$large_udid" -b
 
 echo "==> Large-device accessibility UI suite"

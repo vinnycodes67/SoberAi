@@ -21,6 +21,7 @@ struct ResearchModeView: View {
 
           consentCard
           baselineCard
+          captureBenchmarkCard
           contextCard
           dataCard
 
@@ -129,6 +130,59 @@ struct ResearchModeView: View {
           .fixedSize(horizontal: false, vertical: true)
       }
     }
+  }
+
+  /// Vision performance from real captures on this phone (HANDOFF 2.12). It
+  /// says nothing until a capture with telemetry exists, so no figure here is
+  /// ever a placeholder.
+  private var captureBenchmarkCard: some View {
+    SoberCard {
+      VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Capture benchmark")
+            .font(DSFont.headline)
+          Text("Measured from eye-task captures on this iPhone. Stays on the device.")
+            .font(DSFont.footnote)
+            .foregroundStyle(Palette.textSecondary)
+        }
+
+        if let report = CaptureBenchmarkReport(
+          model.researchSessions.compactMap { $0.ocularSummary?.telemetry })
+        {
+          benchmarkRow("Captures", "\(report.captures)")
+          benchmarkRow("Face found (median)", "\(Int((report.medianDetectionRate * 100).rounded()))% of frames")
+          benchmarkRow("Captures that lost tracking", "\(report.capturesWithTrackingLoss)")
+          benchmarkRow("Recovery after a loss (median)", milliseconds(report.medianRecoveryMilliseconds))
+          benchmarkRow("Processing delay (median)", milliseconds(report.medianLatencyMilliseconds))
+          benchmarkRow("Processing delay (worst p95)", milliseconds(report.worstP95LatencyMilliseconds))
+          benchmarkRow("Captures with another face", "\(report.capturesWithAnotherFace)")
+          benchmarkRow(
+            "Clear / marginal / unusable",
+            "\(report.verdicts[.valid, default: 0]) / \(report.verdicts[.degraded, default: 0]) / \(report.verdicts[.invalid, default: 0])")
+        } else {
+          Text("No eye-task capture has recorded telemetry yet.")
+            .font(DSFont.footnote)
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+  }
+
+  private func benchmarkRow(_ label: String, _ value: String) -> some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text(label)
+        .font(DSFont.footnote)
+        .foregroundStyle(Palette.textSecondary)
+      Spacer(minLength: 8)
+      Text(value)
+        .font(DSFont.footnote)
+        .monospacedDigit()
+    }
+    .accessibilityElement(children: .combine)
+  }
+
+  private func milliseconds(_ value: Double?) -> String {
+    value.map { "\(Int($0.rounded())) ms" } ?? "Not measured"
   }
 
   private var contextCard: some View {

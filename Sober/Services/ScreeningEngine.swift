@@ -127,8 +127,13 @@ struct ScreeningEngine: Sendable {
         && metrics.timingWasMeasured
         && metrics.trackingError?.isFinite == true
     } else {
+      // Reaction and timing are required here too, as on the camera-free
+      // path. Every current caller already clears completedAllTasks when one
+      // is missing; the engine should not depend on that.
       hasRequiredMeasurements =
         metrics.completedAllTasks
+        && metrics.reactionWasMeasured
+        && metrics.timingWasMeasured
         && metrics.qualityScore >= Self.minimumQuality
         && metrics.trackingError != nil
         && metrics.gazeSmoothness != nil

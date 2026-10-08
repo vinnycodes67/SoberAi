@@ -77,6 +77,19 @@ final class ResultAgreementTests: XCTestCase {
     XCTAssertEqual(outcome.state, .noSignalsDetected)
   }
 
+  /// A camera check missing its reaction or timing measurement cannot be
+  /// quiet, the same rule the camera-free check already had.
+  func testACameraCheckMissingAMeasurementIsNeverQuiet() {
+    var noReaction = metrics()
+    noReaction.reactionWasMeasured = false
+    var noTiming = metrics()
+    noTiming.timingWasMeasured = false
+    for variant in [OcularProtocolVariant.full, .reducedMotion] {
+      XCTAssertEqual(engine.evaluate(selfReport: .no, metrics: noReaction, protocolVariant: variant).state, .inconclusive)
+      XCTAssertEqual(engine.evaluate(selfReport: .no, metrics: noTiming, protocolVariant: variant).state, .inconclusive)
+    }
+  }
+
   /// Errors flag the reaction row by themselves, so the value has to show
   /// them. An orange "294 ms" alone reads as a normal time marked wrong.
   func testReactionValueShowsTheErrorsThatFlagIt() {

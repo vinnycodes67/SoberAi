@@ -2,6 +2,7 @@
 import AVFoundation
 import Combine
 import Foundation
+import os
 import simd
 
 enum FaceTrackingStatus: Equatable {
@@ -36,13 +37,20 @@ struct CaptureQualityHistory: Sendable {
   private var distanceAcceptableCount = 0
   private var lightingAcceptableCount = 0
   private var headStableCount = 0
+  private var multipleFaceCount = 0
+
+  /// More than this fraction of frames with another face in view and the
+  /// capture does not count. A little slack absorbs a one-frame false
+  /// detection; anything sustained could mean tracking followed someone else.
+  static let maximumMultipleFaceFraction = 0.05
 
   mutating func record(
     facePresent: Bool,
     centered: Bool,
     distanceAcceptable: Bool,
     lightingAcceptable: Bool,
-    headStable: Bool
+    headStable: Bool,
+    otherFacesInView: Bool = false
   ) {
     observationCount += 1
     facePresentCount += facePresent ? 1 : 0
@@ -50,6 +58,7 @@ struct CaptureQualityHistory: Sendable {
     distanceAcceptableCount += distanceAcceptable ? 1 : 0
     lightingAcceptableCount += lightingAcceptable ? 1 : 0
     headStableCount += headStable ? 1 : 0
+    multipleFaceCount += otherFacesInView ? 1 : 0
   }
 
   func applying(to finalFrame: CaptureQualitySnapshot) -> CaptureQualitySnapshot {
@@ -69,6 +78,11 @@ struct CaptureQualityHistory: Sendable {
     if !result.distanceAcceptable { append(.distance, to: &result.issues) }
     if !result.lightingAcceptable { append(.lowLight, to: &result.issues) }
     if !result.headStable { append(.unstable, to: &result.issues) }
+    if Double(multipleFaceCount) / Double(observationCount) > Self.maximumMultipleFaceFraction {
+      result.otherFacesInView = true
+      result.issues.removeAll { $0 == .multipleFaces }
+      result.issues.insert(.multipleFaces, at: 0)
+    }
     return result
   }
 
@@ -95,6 +109,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// Smoothed, debounced head position for guidance. Never used to judge
   /// whether a capture is valid -- `quality` still does that.
   @Published private(set) var headPosition: HeadPosition = .faceNotDetected
+  /// VALID / DEGRADED / INVALID with one actionable sentence.
+  @Published private(set) var assessment = CaptureAssessment(verdict: .invalid, guidance: nil)
 
   private(set) var session = ARSession()
 
@@ -115,6 +131,14 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// capture. The samples on either side of the gap are not one continuous
   /// recording, so the capture is not scored, however good it looks after.
   private var captureWasInterrupted = false
+  private var telemetry = CaptureTelemetryRecorder()
+  private var latestImage: CaptureImageStats?
+  /// Face centre on the mirrored preview, for directional guidance.
+  private var screenOffset: CGPoint?
+  /// Image statistics are sampled on every Nth camera frame. Read from ARKit's
+  /// delegate queue, so it lives behind a lock rather than on the main actor.
+  private nonisolated let imageSampleCounter = OSAllocatedUnfairLock(initialState: 0)
+  private nonisolated static let imageSampleInterval = 6
 
   init(permissionStore: any PermissionStore = SystemPermissionStore()) {
     self.permissionStore = permissionStore
@@ -187,7 +211,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
     status = summary.quality.isUsable
       ? .tracking
       : .limited(summary.quality.primaryGuidance)
-    return summary
+    assessment = CaptureAssessment.assess(summary.quality, image: telemetry.averageImage)
+    return summary.with(telemetry: telemetry.summary(verdict: assessment.verdict))
   }
 
   /// Builds a summary for an ocular protocol that never produced measurements
@@ -233,6 +258,9 @@ final class FaceTrackingService: NSObject, ObservableObject {
     positionGuide.reset()
     headPosition = .faceNotDetected
     captureWasInterrupted = false
+    telemetry = CaptureTelemetryRecorder()
+    latestImage = nil
+    screenOffset = nil
     wantsSessionRunning = true
     if !preserveProtocolStart { protocolStartedAt = nil }
 
@@ -271,6 +299,10 @@ final class FaceTrackingService: NSObject, ObservableObject {
     guard wantsSessionRunning else { return }
     let configuration = ARFaceTrackingConfiguration()
     configuration.isLightEstimationEnabled = true
+    // One face is the default, and ARKit silently picks it. Tracking more is
+    // the only way to notice a second person in frame.
+    configuration.maximumNumberOfTrackedFaces =
+      min(ARFaceTrackingConfiguration.supportedNumberOfTrackedFaces, 3)
     session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     quality = CaptureQualitySnapshot(
       isSupported: true,
@@ -308,10 +340,17 @@ final class FaceTrackingService: NSObject, ObservableObject {
 
   private func ingest(
     face: ARFaceAnchor,
+    trackedFaceCount: Int,
+    screenOffset: CGPoint?,
     timestamp: TimeInterval,
     ambientIntensity: CGFloat?
   ) {
     guard wantsSessionRunning else { return }
+    let otherFacesInView = trackedFaceCount > 1
+    telemetry.recordFace(
+      tracked: face.isTracked, faceCount: trackedFaceCount,
+      timestamp: timestamp, now: ProcessInfo.processInfo.systemUptime)
+    self.screenOffset = screenOffset
     if captureStartedAt == nil { captureStartedAt = timestamp }
     lastFaceSeenAt = ProcessInfo.processInfo.systemUptime
 
@@ -376,10 +415,12 @@ final class FaceTrackingService: NSObject, ObservableObject {
       centered: centered,
       distanceAcceptable: distanceAcceptable,
       lightingAcceptable: lightingAcceptable,
-      headStable: headStable
+      headStable: headStable,
+      otherFacesInView: otherFacesInView
     )
 
     var issues: [CaptureQualityIssue] = []
+    if otherFacesInView { issues.append(.multipleFaces) }
     if !face.isTracked { issues.append(.noFace) }
     if !centered { issues.append(.offCenter) }
     if !distanceAcceptable { issues.append(.distance) }
@@ -399,9 +440,11 @@ final class FaceTrackingService: NSObject, ObservableObject {
       frameRate: frameRate,
       sampleCount: samples.count,
       dropoutRatio: dropoutRatio,
-      issues: issues
+      issues: issues,
+      otherFacesInView: otherFacesInView
     )
     invalidateLiveCaptureIfInterrupted()
+    assessment = CaptureAssessment.assess(quality, image: latestImage)
     status = quality.isUsable ? .tracking : .limited(liveGuidance)
   }
 
@@ -413,6 +456,14 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// problem -- light, stillness, frame rate -- is shown instead.
   private var liveGuidance: String {
     if quality.issues.first == .interrupted { return CaptureQualityIssue.interrupted.guidance }
+    if quality.otherFacesInView { return CaptureQualityIssue.multipleFaces.guidance }
+    if case .offCenter(let horizontal, let vertical) = headPosition,
+      DirectionalGuidance.isEnabled, let screenOffset,
+      let directional = DirectionalGuidance.text(
+        screenOffset: screenOffset, horizontal: horizontal != nil, vertical: vertical != nil)
+    {
+      return directional
+    }
     if headPosition != .centered { return headPosition.guidance }
     let positional: [CaptureQualityIssue] = [.noFace, .offCenter, .distance]
     return quality.issues.first { !positional.contains($0) }?.guidance
@@ -498,19 +549,62 @@ final class FaceTrackingService: NSObject, ObservableObject {
 
 extension FaceTrackingService: ARSessionDelegate {
   nonisolated func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    // Measured here, on ARKit's queue, so the frame itself is never retained
+    // or sent anywhere: only four numbers cross to the main actor.
+    let sampleNow = imageSampleCounter.withLock { count -> Bool in
+      count += 1
+      return count % Self.imageSampleInterval == 0
+    }
+    let image = sampleNow ? Self.imageStats(of: frame.capturedImage) : nil
     Task { @MainActor [weak self] in
       guard let self, self.wantsSessionRunning else { return }
       self.observedFrameCount += 1
+      self.telemetry.recordFrame()
+      if let image {
+        self.latestImage = image
+        self.telemetry.recordImage(image)
+      }
     }
   }
 
+  private nonisolated static func imageStats(of pixelBuffer: CVPixelBuffer) -> CaptureImageStats? {
+    guard CVPixelBufferGetPlaneCount(pixelBuffer) >= 1 else { return nil }
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+    guard let base = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else { return nil }
+    return CaptureImageStats.measure(
+      luma: base.assumingMemoryBound(to: UInt8.self),
+      width: CVPixelBufferGetWidthOfPlane(pixelBuffer, 0),
+      height: CVPixelBufferGetHeightOfPlane(pixelBuffer, 0),
+      bytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+    )
+  }
+
   nonisolated func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
-    guard let face = anchors.compactMap({ $0 as? ARFaceAnchor }).first else { return }
-    let timestamp = session.currentFrame?.timestamp ?? ProcessInfo.processInfo.systemUptime
-    let ambientIntensity = session.currentFrame?.lightEstimate?.ambientIntensity
+    guard anchors.contains(where: { $0 is ARFaceAnchor }) else { return }
+    let frame = session.currentFrame
+    // Every face in the frame, not just the ones in this update, so a second
+    // person is counted even on frames where only the first one moved.
+    let faces = (frame?.anchors ?? anchors).compactMap { $0 as? ARFaceAnchor }
+    let tracked = faces.filter(\.isTracked)
+    // Follow the nearest face: the person holding the phone.
+    guard let face = tracked.min(by: { abs($0.transform.columns.3.z) < abs($1.transform.columns.3.z) })
+      ?? faces.first
+    else { return }
+    let timestamp = frame?.timestamp ?? ProcessInfo.processInfo.systemUptime
+    let ambientIntensity = frame?.lightEstimate?.ambientIntensity
+    let screenOffset = frame.map { frame -> CGPoint in
+      let centre = face.transform.columns.3
+      let projected = frame.camera.projectPoint(
+        simd_float3(centre.x, centre.y, centre.z), orientation: .portrait,
+        viewportSize: CGSize(width: 1, height: 1))
+      return DirectionalGuidance.mirroredOffset(fromProjected: projected)
+    }
 
     Task { @MainActor [weak self] in
-      self?.ingest(face: face, timestamp: timestamp, ambientIntensity: ambientIntensity)
+      self?.ingest(
+        face: face, trackedFaceCount: tracked.count, screenOffset: screenOffset,
+        timestamp: timestamp, ambientIntensity: ambientIntensity)
     }
   }
 

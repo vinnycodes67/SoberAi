@@ -29,6 +29,7 @@ enum CaptureQualityIssue: String, Codable, Equatable, Sendable {
   case lowFrameRate
   case interrupted
   case insufficientSamples
+  case multipleFaces
 
   var guidance: String {
     switch self {
@@ -42,6 +43,7 @@ enum CaptureQualityIssue: String, Codable, Equatable, Sendable {
     case .lowFrameRate: "Capture is dropping frames. Hold still and retry."
     case .interrupted: "Face tracking was interrupted."
     case .insufficientSamples: "Not enough usable camera samples were recorded."
+    case .multipleFaces: "Only you should be in view. Make sure no one else is in the camera."
     }
   }
 }
@@ -58,6 +60,10 @@ struct CaptureQualitySnapshot: Codable, Equatable, Sendable {
   var sampleCount: Int
   var dropoutRatio: Double
   var issues: [CaptureQualityIssue]
+  /// Another face was tracked alongside the person's. The check follows the
+  /// nearest face, but with two in view it can switch to the wrong one, so
+  /// the capture does not count.
+  var otherFacesInView = false
 
   static let idle = CaptureQualitySnapshot(
     isSupported: true,
@@ -107,10 +113,39 @@ struct CaptureQualitySnapshot: Codable, Equatable, Sendable {
       && frameRate >= 20
       && dropoutRatio <= 0.3
       && sampleCount >= 20
+      && !otherFacesInView
   }
 
   var primaryGuidance: String {
     issues.first?.guidance ?? "Capture quality is ready."
+  }
+}
+
+extension CaptureQualitySnapshot {
+  private enum CodingKeys: String, CodingKey {
+    case isSupported, hasCameraPermission, facePresent, centered, distanceAcceptable
+    case lightingAcceptable, headStable, frameRate, sampleCount, dropoutRatio, issues
+    case otherFacesInView
+  }
+
+  /// Written out so sessions saved before `otherFacesInView` existed still
+  /// decode. Synthesized decoding ignores property defaults and would throw.
+  init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      isSupported: try values.decode(Bool.self, forKey: .isSupported),
+      hasCameraPermission: try values.decode(Bool.self, forKey: .hasCameraPermission),
+      facePresent: try values.decode(Bool.self, forKey: .facePresent),
+      centered: try values.decode(Bool.self, forKey: .centered),
+      distanceAcceptable: try values.decode(Bool.self, forKey: .distanceAcceptable),
+      lightingAcceptable: try values.decode(Bool.self, forKey: .lightingAcceptable),
+      headStable: try values.decode(Bool.self, forKey: .headStable),
+      frameRate: try values.decode(Double.self, forKey: .frameRate),
+      sampleCount: try values.decode(Int.self, forKey: .sampleCount),
+      dropoutRatio: try values.decode(Double.self, forKey: .dropoutRatio),
+      issues: try values.decode([CaptureQualityIssue].self, forKey: .issues),
+      otherFacesInView: try values.decodeIfPresent(Bool.self, forKey: .otherFacesInView) ?? false
+    )
   }
 }
 
@@ -199,6 +234,9 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
   let quality: CaptureQualitySnapshot
   let features: OcularSignalFeatures
   let protocolVariant: OcularProtocolVariant
+  /// Tracking benchmark for this capture. Nil for captures recorded before it
+  /// existed, and for any capture that never opened the camera.
+  let telemetry: CaptureTelemetry?
 
   init(
     smoothnessRisk: Double,
@@ -207,7 +245,8 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     capturedDurationMilliseconds: Double = 0,
     quality: CaptureQualitySnapshot = .unsupported,
     features: OcularSignalFeatures = .unavailable,
-    protocolVariant: OcularProtocolVariant = .full
+    protocolVariant: OcularProtocolVariant = .full,
+    telemetry: CaptureTelemetry? = nil
   ) {
     self.smoothnessRisk = smoothnessRisk
     self.qualityScore = qualityScore
@@ -216,6 +255,14 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     self.quality = quality
     self.features = features
     self.protocolVariant = protocolVariant
+    self.telemetry = telemetry
+  }
+
+  func with(telemetry: CaptureTelemetry?) -> GazeCaptureSummary {
+    GazeCaptureSummary(
+      smoothnessRisk: smoothnessRisk, qualityScore: qualityScore, sampleCount: sampleCount,
+      capturedDurationMilliseconds: capturedDurationMilliseconds, quality: quality,
+      features: features, protocolVariant: protocolVariant, telemetry: telemetry)
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -226,6 +273,7 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     case quality
     case features
     case protocolVariant
+    case telemetry
   }
 
   init(from decoder: Decoder) throws {
@@ -238,6 +286,7 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     quality = try values.decode(CaptureQualitySnapshot.self, forKey: .quality)
     features = try values.decode(OcularSignalFeatures.self, forKey: .features)
     protocolVariant = try values.decodeIfPresent(OcularProtocolVariant.self, forKey: .protocolVariant) ?? .full
+    telemetry = try values.decodeIfPresent(CaptureTelemetry.self, forKey: .telemetry)
   }
 }
 

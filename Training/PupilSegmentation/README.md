@@ -149,6 +149,67 @@ It is not a measurement of accuracy on Sober's actual iPhone-camera
 input; see "Known limitation" above for why that number doesn't exist
 yet.
 
+## Phone-domain training and the robustness benchmark (2026-10-08)
+
+The numbers above are all on clean infrared frames. The app sees something
+else: `PupilCaptureService` crops the eye out of a front-camera frame with a
+30% margin and stretches it to 640x400, so the model gets a small, upscaled,
+noisy crop, and in visible light a dark iris is nearly as dark as the pupil.
+
+**How the shipped model holds up** (27 OpenEDS `val` subjects never trained
+on, every 4th frame, measured before any retraining):
+
+| Condition | IoU iris | IoU pupil | Pupil missed | Pupil error, median |
+|---|---|---|---|---|
+| clean | 0.9445 | 0.9566 | 1.1% of frames | 0.04 mm |
+| eye 120 px wide in the camera frame | 0.8972 | 0.8815 | 4.3% | 0.11 mm |
+| dark iris | 0.9316 | 0.8847 | 5.1% | 0.14 mm |
+| low light | 0.6923 | 0.6832 | 28.8% | 0.19 mm |
+| phone-style crop (all of the above, plus JPEG) | 0.3178 | 0.2317 | 80.2% | 1.31 mm |
+
+"Pupil error" is what the app computes, the pupil-to-iris diameter ratio
+times an 11.7 mm reference iris, from area-equivalent diameters. A frame with
+no pupil found counts as 11.7 mm.
+
+**What was added:**
+
+- `phone_domain.py`: phone-camera degradations (re-crop and stretch,
+  downscale with sensor noise, blur, exposure, darkened iris, corneal
+  glints) for training, and 13 fixed benchmark conditions. JPEG and defocus
+  are never used in training, so the benchmark also covers conditions the
+  model was not taught. `test_phone_domain.py` checks labels follow every
+  geometric change and are never touched by photometric ones.
+- `stream_dataset.py` + `train_phone.py`: trains on all 65 OpenEDS2020 train
+  shards (21,917 frames, 149 people, against 1,192 frames and 8 people
+  before) while holding about three shards in memory. Resumable, logs JSON
+  lines, picks checkpoints on `val_select` only.
+- `make_val_splits.py`: `val_test` is val shards 0-3, the 10 subjects the
+  0.9490 / 0.9730 bar was measured on; `val_select` is the other 27 subjects.
+- `prepare_kaggle_eyes.py`: a second, independent test set from Kaggle's
+  "Pupil Eye and Iris Segmentation" (1,158 frames, 85 people, after cleaning
+  noisy labels). It is infrared iris-camera footage, not visible light, and
+  of unclear provenance, so it is used to test only. It matters because it is
+  a different camera and framing from OpenEDS.
+- `benchmark.py`: scores any number of `.pt` or `.mlpackage` models on any
+  prepared set under every condition.
+- `overnight/`: the supervisor script and the instructions for the watcher
+  session that ran the first long training run.
+
+No public dataset of visible-light phone eye images with pupil masks can be
+downloaded without a signed request (MOBIUS, I-SOCIAL-DB, MICHE-I). Until one
+is obtained, nothing here measures accuracy on real iPhone captures.
+
+```bash
+python3 prepare_data.py --split train --shards 0-64
+python3 prepare_data.py --split val --shards 0-16
+python3 make_val_splits.py --val /tmp/openeds_prepared/val
+python3 train_phone.py --out-dir /tmp/pupil_run --epochs 8
+python3 benchmark.py --model shipped=finetuned_pupil_segmentation.pt \
+    --model candidate=/tmp/pupil_run/epoch8.pt \
+    --data openeds_test=/tmp/openeds_prepared/val_test --data kaggle_cross=/tmp/kaggle_eyes \
+    --out benchmark.json
+```
+
 ## Reproducing
 
 ```bash

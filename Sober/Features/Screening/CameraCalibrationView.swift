@@ -78,6 +78,13 @@ struct CameraCalibrationView: View {
           .font(DSFont.footnoteStrong)
           .foregroundStyle(Palette.warning)
           .fixedSize(horizontal: false, vertical: true)
+      } else if service.assessment.verdict == .degraded, let guidance = service.assessment.guidance {
+        // Usable, so not a warning: quiet grey, the one thing that would
+        // make the capture clearer.
+        Label(guidance, systemImage: "info.circle")
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
       }
 
       Button(buttonTitle) {
