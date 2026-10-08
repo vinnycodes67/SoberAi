@@ -9,8 +9,18 @@ Written 2026-10-07 by Aadi for Vinay and Shrey. This lists only what is
 
 - `main` includes PRs #9, #10 and #11, plus the commit that adds this file.
   Build `1.0 (4)`.
-- **294 unit tests pass** (last run on PR #10). PR #11 changed only Python
-  and the model asset, and the public build does not include the model.
+- **Updated 2026-10-07 by Shrey** after reviewing #9–#12, on Xcode 27:
+  **308 unit tests and 40 UI tests pass** (1 UI test skips on the simulator
+  because camera calibration needs a TrueDepth camera). Metadata check,
+  `check-public-binary.sh`, the archive rehearsal and `release-ops` (18/18)
+  all pass. Fixed in review:
+  - A camera lost mid eye-task now shows in live quality, so the recovery
+    screen appears instead of the task running on with no way to end it.
+  - Head guidance no longer sticks on "Hold that position" when one axis is
+    clearly out and the other hovers on its limit.
+  - Home "Ready" counts only the baseline for the version of the check this
+    iPhone runs next.
+  - "No changes detected" can no longer sit above mostly orange rows.
 - **App Store status unchanged.** It is still rejected, for the same reason
   (section 4.1 below).
 
@@ -27,7 +37,7 @@ Use a Face ID iPhone, with the internal build for the model items.
 | # | Change | How to check it | If it fails |
 |---|---|---|---|
 | 1.1 | Mirror transform removed, `FaceCameraPreview.swift` | Move your head right. The picture should move right, like a mirror. | Restore `view.transform = CGAffineTransform(scaleX: -1, y: 1)` and record what you saw |
-| 1.2 | ARKit interruption and failure handlers, `FaceTrackingService.swift` | During the eye task, pull down Control Center, or take a FaceTime call and decline it. You should see "Camera interrupted…" and the result should not count. | Check `sessionWasInterrupted` actually fires; these are only unit-tested by calling the handlers directly |
+| 1.2 | ARKit interruption and failure handlers, `FaceTrackingService.swift` | During the eye task, pull down Control Center, or take a FaceTime call and decline it. You should see "Camera interrupted…", the recovery screen within about 3 s, and the result should not count. | Check `sessionWasInterrupted` actually fires; these are only unit-tested by calling the handlers directly |
 | 1.3 | Head guidance, `HeadPositionGuide.swift` | Hold the phone too close, then too far: the two messages should differ and be correct. Rest your head on the edge of the oval: the message should not flicker. | Tune `Thresholds`, `smoothing` and `framesToSwitch` |
 | 1.4 | Distance band 0.25–0.75 m | Note the real distance where "too close" and "too far" start | Adjust both `HeadPositionGuide.Thresholds` and the gate in `FaceTrackingService.ingest`, keeping them in step |
 | 1.5 | Float32 pupil model, `Sober/Resources/PupilSegmentation.mlpackage` | Time one inference in `PupilCaptureService`. Float32 may run on the GPU instead of the Neural Engine. | If it's too slow, re-export at `--precision float16`. That costs about 2 points of iris IoU (see the model README). |
@@ -96,12 +106,16 @@ Use a Face ID iPhone, with the internal build for the model items.
       --epochs 6 --skip-baseline --out new.pt
   # export and score in the torch 2.7 environment (README explains why)
   python3 export_coreml.py --weights new.pt --out New.mlpackage
-  python3 verify_coreml.py --package New.mlpackage --weights new.pt --eval-data /tmp/openeds_prepared/val
+  python3 verify_coreml.py --package New.mlpackage --weights new.pt \
+      --eval-data /tmp/openeds_prepared/val --every 4
   ```
   **Bar to beat**, from the shipped float32 package on the same 10 val
   subjects (scored on every 4th frame): **iris IoU 0.9490, pupil IoU
   0.9730.** Ship only if the new package beats both, and update the README
-  table if it does.
+  table if it does. Score it with `--every 4` as above, so both numbers come
+  from the same frames. The PyTorch row in the README (0.9478 / 0.9729) is on
+  all 1,349 frames, so it is not directly comparable with the Core ML rows.
+  That is why float32 Core ML appears to beat its own weights.
 - **The real gap is the domain.** OpenEDS is infrared headset footage. Sober
   sees visible-light iPhone selfie-camera crops. More OpenEDS data won't close
   that gap; collecting and hand-labelling iPhone eye images will. Until that
@@ -137,18 +151,20 @@ Use a Face ID iPhone, with the internal build for the model items.
 | Calibrating the score thresholds (`VINAY 2` / `SHREY 5`) | Real sessions from real people |
 | All of section 1 | A Face ID iPhone |
 
-## 6. Checks not re-run since PR #8
+## 6. Checks to re-run before the next submission
 
-Run these before the next submission:
+All passed on 2026-10-07 (see the state section). Re-run them on the commit
+you submit:
 
 ```bash
-xcodebuild ... test                      # UI suites last ran before PR #9
+xcodebuild ... test
 Scripts/check-public-binary.sh           # needs an archive
 Scripts/rehearse-app-store-package.sh
 node --test Scripts/tests/release-ops.test.mjs
 ```
 
-`Scripts/check-release-metadata.sh` passed on PR #11.
+`check-public-binary.sh` takes a derived-data path, e.g. the one the test
+run used.
 
 ## 7. Machine notes
 

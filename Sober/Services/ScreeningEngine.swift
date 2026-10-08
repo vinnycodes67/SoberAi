@@ -87,7 +87,11 @@ struct ScreeningEngine: Sendable {
     let details = BuildChannel.allowsInternalTools
       ? allDetails
       : allDetails.filter { $0.id != "pupil" }
-    let measuredCapture = protocolVariant != .noCamera
+    // A capture exists only if the eye task ran. That is never true without a
+    // TrueDepth camera, and not true on one either when the check ended at the
+    // self-report question. The gaze row reads "Not measured" on the same rule,
+    // so the capture-quality row can never contradict it.
+    let measuredCapture = protocolVariant != .noCamera && metrics.gazeSmoothness != nil
 
     // Self-report is a hard safety gate. A reported use can never produce
     // NO_SIGNALS_DETECTED, regardless of task performance.
@@ -140,8 +144,19 @@ struct ScreeningEngine: Sendable {
       )
     }
 
+    // The composite can stay under the threshold while half the rows below the
+    // headline are orange: one far-out measure and one near-normal one average
+    // out. "No changes detected" above that contradicts what the person reads.
+    // So either condition is enough to say changes were detected, and a quiet
+    // headline needs both a low composite and most measures in their usual range.
+    // This only ever moves a result towards caution.
+    let measured = details.filter(\.wasMeasured)
+    let movedCount = measured.filter(\.concern).count
+    let mostMeasuresMoved = !measured.isEmpty && movedCount * 2 >= measured.count
+
     return ScreeningOutcome(
-      state: riskScore >= signalThreshold ? .signalsDetected : .noSignalsDetected,
+      state: riskScore >= signalThreshold || mostMeasuresMoved
+        ? .signalsDetected : .noSignalsDetected,
       qualityScore: metrics.qualityScore,
       riskScore: riskScore,
       details: details,
@@ -270,9 +285,20 @@ struct ScreeningEngine: Sendable {
     return SignalDetail(
       id: "reaction",
       label: "Reaction",
-      value: "\(Int(metrics.reactionTimeMilliseconds.rounded())) ms",
+      value: reactionValue(metrics),
       concern: risk >= 0.55 || metrics.reactionMisses > 0
     )
+  }
+
+  /// Errors flag the row on their own, so they are part of the value: an orange
+  /// "294 ms" with nothing else looks like a normal time marked out of range.
+  private func reactionValue(_ metrics: ScreeningMetrics) -> String {
+    let time = "\(Int(metrics.reactionTimeMilliseconds.rounded())) ms"
+    switch metrics.reactionMisses {
+    case ...0: return time
+    case 1: return "\(time) · 1 error"
+    case let misses: return "\(time) · \(misses) errors"
+    }
   }
 
   private func timingDetail(risk: Double, metrics: ScreeningMetrics) -> SignalDetail {

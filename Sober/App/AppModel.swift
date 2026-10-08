@@ -48,6 +48,10 @@ final class AppModel: ObservableObject {
   }
   @Published private(set) var baselineProfile: BaselineProfileSummary?
   @Published private(set) var baselineVariantBreakdown: [OcularProtocolVariant: BaselineProfileSummary] = [:]
+  /// Mirrors the system Reduce Motion setting, which decides whether a camera
+  /// check runs the full or the reduced-motion eye task. `RootView` keeps it in
+  /// step through `setReduceMotion(_:)`.
+  @Published private(set) var reduceMotion = false
   @Published private(set) var researchDataError: String?
   @Published private(set) var lastExportURL: URL?
   @Published private(set) var guardianSession: GuardianSession?
@@ -85,6 +89,9 @@ final class AppModel: ObservableObject {
   /// Compile-time capability gate. Injectable so tests can exercise both the
   /// public and internal behaviours from a single (Debug) test run.
   let allowsInternalTools: Bool
+  /// Whether this iPhone has a TrueDepth camera. Injectable because every
+  /// simulator lacks one, and tests need to stand in for both kinds of device.
+  private let supportsFaceTracking: Bool
   private let defaults: UserDefaults
   private let baselineStore: any BaselineStore
   private let permissionStore: any PermissionStore
@@ -118,7 +125,8 @@ final class AppModel: ObservableObject {
     guardianCheckInScheduler: any GuardianCheckInScheduling = SystemGuardianCheckInScheduler(),
     guardianLiveLocation: (any GuardianLiveLocationProviding)? = nil,
     automaticallyStartsGuardianServices: Bool = BuildChannel.allowsInternalTools,
-    allowsInternalTools: Bool = BuildChannel.allowsInternalTools
+    allowsInternalTools: Bool = BuildChannel.allowsInternalTools,
+    supportsFaceTracking: Bool = FaceTrackingService.deviceSupportsFaceTracking
   ) {
     let resolvedBaselineStore = baselineStore ?? LocalBaselineStore(defaults: defaults)
     let resolvedPermissionStore = permissionStore ?? SystemPermissionStore()
@@ -126,6 +134,7 @@ final class AppModel: ObservableObject {
     let privacySnapshot = resolvedPrivacyStore.load()
 
     self.allowsInternalTools = allowsInternalTools
+    self.supportsFaceTracking = supportsFaceTracking
     self.defaults = defaults
     self.baselineStore = resolvedBaselineStore
     self.permissionStore = resolvedPermissionStore
@@ -217,10 +226,24 @@ final class AppModel: ObservableObject {
     return measuredEligibleSessions >= BaselineThresholds.requiredSessions
   }
 
-  /// The best eligible-session count across protocol variants. It stays zero
-  /// until the versioned archive has been loaded successfully.
+  /// Eligible sessions in the partition the next check will be scored
+  /// against. It stays zero until the versioned archive has been loaded
+  /// successfully.
   var measuredEligibleSessions: Int {
-    baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? baselineSessions
+    guard !baselineVariantBreakdown.isEmpty else { return baselineSessions }
+    return baselineVariantBreakdown[nextCheckVariant]?.eligibleSessionCount ?? 0
+  }
+
+  /// The variant the next check on this iPhone will run, and so the only
+  /// baseline partition that can make it a personal comparison.
+  var nextCheckVariant: OcularProtocolVariant {
+    .forNextCheck(supportsFaceTracking: supportsFaceTracking, reduceMotion: reduceMotion)
+  }
+
+  func setReduceMotion(_ enabled: Bool) {
+    guard reduceMotion != enabled else { return }
+    reduceMotion = enabled
+    applyNextCheckVariant()
   }
 
   func personalBaseline(for protocolVariant: OcularProtocolVariant) -> PersonalBaseline? {
@@ -1135,23 +1158,9 @@ final class AppModel: ObservableObject {
           )
         })
       baselineVariantBreakdown = breakdown
-      // Your Steady shows the partition that is actually driving readiness.
-      // This was hardwired to `.full`, so a Reduced Motion or no-camera user
-      // could reach "ready" while Your Steady showed an empty baseline.
-      var activeVariant = OcularProtocolVariant.full
-      for variant in OcularProtocolVariant.allCases
-      where (breakdown[variant]?.eligibleSessionCount ?? 0)
-        > (breakdown[activeVariant]?.eligibleSessionCount ?? 0)
-      {
-        activeVariant = variant
-      }
-      baselineProfile = breakdown[activeVariant]
       // Recompute unconditionally. Skipping this in the founder preview froze
       // the stored count, so real sessions recorded afterwards never counted.
-      baselineSessions = max(
-        baselineVariantBreakdown.values.map(\.eligibleSessionCount).max() ?? 0,
-        baselineProfile?.eligibleSessionCount ?? 0
-      )
+      applyNextCheckVariant()
       researchDataError = nil
       if localDataError == .sessions { localDataError = nil }
     } catch {
@@ -1271,6 +1280,17 @@ final class AppModel: ObservableObject {
     defaults.removeObject(forKey: Keys.pendingGuardianLocationDisable)
     Task { await guardianCheckInScheduler.cancel() }
     Task { await deleteAllResearchData() }
+  }
+
+  /// Home, History, and Your Steady all read the partition the next check will
+  /// be scored against. Taking the best of the variants instead let an iPhone
+  /// with no TrueDepth camera read "ready" on five camera sessions -- restored
+  /// from a Face ID iPhone, say -- and then score its camera-free check against
+  /// population ranges while the screen claimed a personal comparison.
+  private func applyNextCheckVariant() {
+    guard !baselineVariantBreakdown.isEmpty else { return }
+    baselineProfile = baselineVariantBreakdown[nextCheckVariant]
+    baselineSessions = baselineProfile?.eligibleSessionCount ?? 0
   }
 
   private func clearBaselineState() {

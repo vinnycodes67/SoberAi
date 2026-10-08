@@ -74,6 +74,11 @@ struct RootView: View {
     }
     .animation(reduceMotion ? nil : SoberMotion.screen, value: model.hasCompletedOnboarding)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.14), value: isShowingLaunch)
+    // Reduce Motion decides which eye task a check runs, and so which baseline
+    // readiness counts.
+    .onChange(of: reduceMotion, initial: true) { _, enabled in
+      model.setReduceMotion(enabled)
+    }
     .onChange(of: scenePhase) { _, phase in
       switch phase {
       case .active:

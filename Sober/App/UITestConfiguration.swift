@@ -175,6 +175,16 @@ enum UITestConfiguration {
       ambientLighting: .moderate
     )
 
+    // Seeded under the variant this device's check runs, or readiness, which
+    // counts only that partition, would stay at zero. Every simulator lacks a
+    // TrueDepth camera, so in practice this is the camera-free partition, whose
+    // real sessions carry no gaze figure and no capture quality.
+    let variant = OcularProtocolVariant.forNextCheck(
+      supportsFaceTracking: FaceTrackingService.deviceSupportsFaceTracking,
+      reduceMotion: false
+    )
+    let measuresGaze = variant != .noCamera
+
     let sessions = (0..<baselineSessions).map { index -> ResearchSessionEnvelope in
       let startedAt = now.addingTimeInterval(-Double(index + 1) * 86_400)
       // Small deterministic spread. Identical sessions would give every measure
@@ -191,11 +201,11 @@ enum UITestConfiguration {
           reactionMisses: 0,
           trackingError: 0.18 + Double(index) * 0.005,
           timeEstimateError: 0.12 + Double(index) * 0.004,
-          gazeSmoothness: 0.16 + Double(index) * 0.003,
-          qualityScore: 0.92,
+          gazeSmoothness: measuresGaze ? 0.16 + Double(index) * 0.003 : nil,
+          qualityScore: measuresGaze ? 0.92 : 0,
           completedAllTasks: true
         ),
-        protocolVariant: .full
+        protocolVariant: variant
       )
     }
 

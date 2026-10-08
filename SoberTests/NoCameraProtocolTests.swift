@@ -88,12 +88,43 @@ final class NoCameraProtocolTests: XCTestCase {
   func testACameraCheckStillReportsItsCapture() {
     let outcome = ScreeningEngine().evaluate(
       selfReport: .no,
-      metrics: noCameraMetrics(),
+      metrics: .demoClear,
       personalBaseline: nil,
       protocolVariant: .full
     )
 
     XCTAssertTrue(outcome.measuredCapture)
+  }
+
+  /// On a TrueDepth iPhone, answering "yes" or "not sure" ends the check before
+  /// any task runs. The result still lists measurements, and without this the
+  /// capture row printed "0%" about an eye task that was never started.
+  func testACheckThatEndsAtTheSelfReportReportsNoCapture() {
+    let unmeasured = ScreeningMetrics(
+      reactionTimeMilliseconds: 0,
+      reactionMisses: 0,
+      reactionWasMeasured: false,
+      trackingError: nil,
+      timeEstimateError: 0,
+      timingWasMeasured: false,
+      gazeSmoothness: nil,
+      qualityScore: 0,
+      completedAllTasks: false
+    )
+
+    for answer in [SelfReport.yes, .unsure] {
+      let outcome = screeningEngine.evaluate(
+        selfReport: answer,
+        metrics: unmeasured,
+        protocolVariant: .full
+      )
+
+      XCTAssertFalse(outcome.measuredCapture, "\(answer)")
+      // The capture row and the gaze row answer the same question and must
+      // agree on it.
+      let gaze = outcome.details.first { $0.id == "gaze" }
+      XCTAssertEqual(gaze?.wasMeasured, false, "\(answer)")
+    }
   }
 
   func testFullProtocolStillRequiresGaze() {

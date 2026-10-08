@@ -38,6 +38,51 @@ final class CaptureInterruptionTests: XCTestCase {
     XCTAssertFalse(summary.quality.isUsable)
   }
 
+  /// The live quality has to show the loss while the eye task is still
+  /// running, not only in the summary at the end. The task's recovery screen
+  /// watches live quality; without this, the person waited out a run that
+  /// could not count, with no way to end it, and the recovery screen's copy
+  /// named a framing problem instead of the camera.
+  func testLosingTheCameraMidTaskShowsInLiveQuality() {
+    let interrupted = FaceTrackingService()
+    interrupted.startOcularProtocol()
+    interrupted.handleSessionInterrupted()
+    XCTAssertEqual(interrupted.quality.issues.first, .interrupted)
+    XCTAssertFalse(interrupted.quality.facePresent)
+    XCTAssertEqual(interrupted.quality.primaryGuidance, CaptureQualityIssue.interrupted.guidance)
+
+    let failed = FaceTrackingService()
+    failed.startOcularProtocol()
+    failed.handleSessionFailure(ARError(.sensorFailed))
+    XCTAssertEqual(failed.quality.issues.first, .interrupted)
+    XCTAssertFalse(failed.quality.facePresent)
+  }
+
+  /// Calibration frames are never scored and the eye task starts a fresh
+  /// capture, so an interruption there must not condemn the live quality.
+  func testAnInterruptionDuringCalibrationLeavesLiveQualityAlone() {
+    let service = FaceTrackingService()
+    service.startCalibration()
+    let before = service.quality.issues.first
+
+    service.handleSessionInterrupted()
+
+    XCTAssertEqual(service.quality.issues.first, before)
+  }
+
+  /// A failure reported after the capture ended must not rewrite what is
+  /// behind the result screen.
+  func testAFailureAfterTheCaptureEndedIsIgnored() {
+    let service = FaceTrackingService()
+    service.startOcularProtocol()
+    _ = service.stopOcularProtocol()
+    let status = service.status
+
+    service.handleSessionFailure(ARError(.sensorFailed))
+
+    XCTAssertEqual(service.status, status)
+  }
+
   func testAnUninterruptedCaptureIsNotFlaggedAsInterrupted() {
     let service = FaceTrackingService()
     service.startOcularProtocol()

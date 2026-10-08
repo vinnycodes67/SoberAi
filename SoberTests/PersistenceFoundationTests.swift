@@ -199,7 +199,9 @@ final class PersistenceFoundationTests: XCTestCase {
     let model = AppModel(
       defaults: harness.defaults,
       baselineStore: baselineStore,
-      automaticallyStartsGuardianServices: false
+      automaticallyStartsGuardianServices: false,
+      // A camera iPhone: these sessions are the full protocol.
+      supportsFaceTracking: true
     )
     await model.reloadResearchData()
     XCTAssertTrue(model.baselineReady)

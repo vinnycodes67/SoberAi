@@ -113,6 +113,12 @@ what the app runs, rather than the PyTorch weights it came from.
 | Core ML, float16 (shipped until now) | 0.9251 | 0.9688 | 0.29% |
 | **Core ML, float32 (ships now)** | **0.9490** | **0.9730** | 0.00002% |
 
+The PyTorch row covers all 1,349 frames; the Core ML rows cover every 4th
+frame. Float32 Core ML differs from PyTorch on 0.00002% of pixels, so its
+slightly higher IoU comes from the smaller frame set, not from the model being
+better than its own weights. Compare a candidate package with the Core ML rows
+using `verify_coreml.py --every 4`.
+
 The mlprogram default of float16 cost about 2 points of iris IoU. The model
 has ~249K parameters, so float32 only grows the package from 592 KB to
 1.0 MB. Float32 may run on the GPU rather than the Neural Engine; latency on
@@ -162,7 +168,7 @@ python3 evaluate.py --weights finetuned_pupil_segmentation.pt --eval-data /tmp/o
 
 # score the exported package the app actually runs (export environment, see above)
 python3 verify_coreml.py --package PupilSegmentation.mlpackage \
-    --weights finetuned_pupil_segmentation.pt --eval-data /tmp/openeds_prepared/val
+    --weights finetuned_pupil_segmentation.pt --eval-data /tmp/openeds_prepared/val --every 4
 
 # export to the .mlpackage Xcode compiles into PupilSegmentation.mlmodelc
 python3 export_coreml.py --weights finetuned_pupil_segmentation.pt --out PupilSegmentation.mlpackage

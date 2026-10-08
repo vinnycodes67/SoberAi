@@ -126,7 +126,11 @@ final class FaceTrackingService: NSObject, ObservableObject {
     }
   }
 
-  var isSupported: Bool { ARFaceTrackingConfiguration.isSupported }
+  var isSupported: Bool { Self.deviceSupportsFaceTracking }
+
+  /// Hardware capability only: true on any iPhone with a TrueDepth camera,
+  /// whether or not camera access has been granted.
+  static var deviceSupportsFaceTracking: Bool { ARFaceTrackingConfiguration.isSupported }
 
   func attach(to newSession: ARSession) {
     guard session !== newSession else { return }
@@ -397,6 +401,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
       dropoutRatio: dropoutRatio,
       issues: issues
     )
+    invalidateLiveCaptureIfInterrupted()
     status = quality.isUsable ? .tracking : .limited(liveGuidance)
   }
 
@@ -407,6 +412,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// is satisfied, raw position issues are ignored for copy and the next real
   /// problem -- light, stillness, frame rate -- is shown instead.
   private var liveGuidance: String {
+    if quality.issues.first == .interrupted { return CaptureQualityIssue.interrupted.guidance }
     if headPosition != .centered { return headPosition.guidance }
     let positional: [CaptureQualityIssue] = [.noFace, .offCenter, .distance]
     return quality.issues.first { !positional.contains($0) }?.guidance
@@ -422,6 +428,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
   func handleSessionInterrupted() {
     guard wantsSessionRunning else { return }
     captureWasInterrupted = true
+    invalidateLiveCaptureIfInterrupted()
     status = .limited("Camera interrupted. Hold on while it reconnects.")
   }
 
@@ -442,6 +449,9 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// existing Settings path applies; anything else is a camera failure the
   /// person cannot fix by moving, so the capture ends rather than waiting.
   func handleSessionFailure(_ error: any Error) {
+    // A failure reported after the capture ended must not rewrite the status
+    // behind the result screen.
+    guard wantsSessionRunning else { return }
     captureWasInterrupted = true
     if let arError = error as? ARError, arError.code == .cameraUnauthorized {
       markPermissionDenied()
@@ -450,7 +460,21 @@ final class FaceTrackingService: NSObject, ObservableObject {
     wantsSessionRunning = false
     session.pause()
     quality.issues = mergeIssues(quality.issues, [.interrupted])
+    invalidateLiveCaptureIfInterrupted()
     status = .limited("The camera stopped. End the task and try again.")
+  }
+
+  /// An interrupted eye-task capture is rejected at the end however it looks
+  /// after the gap, so the live quality has to say so as well. Left usable,
+  /// the task carried on, the recovery screen never appeared, and the person
+  /// waited out a run that could not count with no way to end it.
+  ///
+  /// Calibration is exempt: its frames are never scored, and the eye task
+  /// starts a fresh capture.
+  private func invalidateLiveCaptureIfInterrupted() {
+    guard captureWasInterrupted, protocolStartedAt != nil else { return }
+    quality.facePresent = false
+    quality.issues = [.interrupted] + quality.issues.filter { $0 != .interrupted }
   }
 
   private func recentHeadMovement() -> Double {

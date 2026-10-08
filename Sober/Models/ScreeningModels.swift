@@ -153,7 +153,8 @@ struct ScreeningOutcome: Equatable, Sendable {
   let details: [SignalDetail]
   let reason: ScreeningOutcomeReason
 
-  /// False when the check ran on hardware with no TrueDepth camera. Nothing was
+  /// False when the eye task never ran: the check ran on hardware with no
+  /// TrueDepth camera, or it ended at the self-report question. Nothing was
   /// captured, so `qualityScore` grades nothing and must not be shown as a
   /// percentage: 0% reads as a ruined capture and 100% as a perfect one, and
   /// the honest answer is that the question does not apply.

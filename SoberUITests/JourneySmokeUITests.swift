@@ -66,6 +66,13 @@ final class JourneySmokeUITests: XCTestCase {
     XCTAssertTrue(no.waitForExistence(timeout: 10))
     no.tap()
 
+    let disclosure = app.staticTexts.matching(
+      NSPredicate(format: "label BEGINSWITH %@", "This iPhone has no TrueDepth camera")
+    ).firstMatch
+    XCTAssertTrue(
+      disclosure.waitForExistence(timeout: 5),
+      "a camera-free check says what it leaves out before it starts")
+
     let continueToSetup = app.buttons["Continue to setup"]
     XCTAssertTrue(continueToSetup.waitForExistence(timeout: 10))
     continueToSetup.tap()

@@ -23,6 +23,14 @@ enum HeadPosition: Equatable, Sendable {
     case positive
   }
 
+  /// Same case, ignoring which side an off-center head is on.
+  func isSameKind(as other: HeadPosition) -> Bool {
+    switch (self, other) {
+    case (.offCenter, .offCenter): true
+    default: self == other
+    }
+  }
+
   var guidance: String {
     switch self {
     case .faceNotDetected: "Keep your full face inside the guide."
@@ -141,13 +149,19 @@ struct HeadPositionGuide: Sendable {
     return .offCenter(horizontal: horizontal, vertical: vertical)
   }
 
+  /// Debounces by kind of state, not by its direction. Off-center by x, then
+  /// by x and y, is the same instruction; counting those as different reset
+  /// the counter on every alternation, and a head wobbling near one limit kept
+  /// "Hold that position" on screen while the capture gate said off-center.
   private mutating func propose(_ candidate: HeadPosition) -> HeadPosition {
-    guard candidate != current else {
+    guard !candidate.isSameKind(as: current) else {
+      current = candidate
       pending = nil
       pendingCount = 0
       return current
     }
-    if candidate == pending {
+    if let pending, candidate.isSameKind(as: pending) {
+      self.pending = candidate
       pendingCount += 1
     } else {
       pending = candidate

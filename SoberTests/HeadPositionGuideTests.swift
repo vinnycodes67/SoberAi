@@ -146,6 +146,25 @@ final class HeadPositionGuideTests: XCTestCase {
     XCTAssertLessThanOrEqual(framesUntilOff, 15)
   }
 
+  /// Clearly off to one side while the other axis hovers on its limit. The
+  /// direction flips every frame, but the instruction does not, so the guide
+  /// must still leave "centered". Debouncing on the direction reset the count
+  /// each frame and held "Hold that position" while the gate said off-center.
+  func testOffCenterIsReportedWhileTheOtherAxisHoversOnItsLimit() {
+    var guide = HeadPositionGuide()
+    XCTAssertEqual(settle(&guide, x: centered.x, y: centered.y, z: centered.z), .centered)
+
+    // Raw y alternating 0 and 0.4 smooths to roughly 0.16 and 0.24, either
+    // side of the 0.18 vertical limit, so the candidate flips every frame.
+    var state = guide.current
+    for frame in 0..<40 {
+      state = guide.update(x: 0.35, y: frame.isMultiple(of: 2) ? 0 : 0.4, z: centered.z)
+    }
+    XCTAssertTrue(
+      state.isSameKind(as: .offCenter(horizontal: .positive, vertical: nil)),
+      "expected off-center, got \(state)")
+  }
+
   func testResetForgetsEverything() {
     var guide = HeadPositionGuide()
     _ = settle(&guide, x: 0, y: 0, z: -0.40)

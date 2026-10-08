@@ -12,7 +12,6 @@ import SwiftUI
 /// chart, and it never implies a partial baseline is usable.
 struct YourSteadyView: View {
   @EnvironmentObject private var model: AppModel
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     ScrollView {
@@ -95,7 +94,7 @@ struct YourSteadyView: View {
         DSValueRow(label: "Not added", value: "\(excludedCount)")
         DSSeparator()
         DSValueRow(label: "Minimum required", value: "\(minimumRequired)")
-        if let profileVariant, profileVariant != .full {
+        if profileVariant != .full {
           DSSeparator()
           DSValueRow(label: "Recorded with", value: profileVariant.displayName)
         }
@@ -126,6 +125,18 @@ struct YourSteadyView: View {
           if excludedCount > 0 {
             Text(
               "\(excludedCount) session\(excludedCount == 1 ? " wasn’t" : "s weren’t") added — the camera couldn’t get a clear enough read, or not every task finished. History shows which."
+            )
+            .font(DSFont.footnote)
+            .foregroundStyle(DSPalette.textMuted)
+            .dsReadingLine()
+            .padding(.top, DSSpace.xxs)
+          }
+
+          // Without this, someone whose count dropped to zero after changing
+          // iPhones would think their sessions had been lost.
+          if otherVariantCount > 0 {
+            Text(
+              "\(otherVariantCount) earlier session\(otherVariantCount == 1 ? " was" : "s were") recorded with a different version of the check, with or without the eye task or with Reduce Motion set differently. \(otherVariantCount == 1 ? "It is" : "They are") kept, but only sessions from the version this iPhone runs can be compared with its checks."
             )
             .font(DSFont.footnote)
             .foregroundStyle(DSPalette.textMuted)
@@ -164,23 +175,21 @@ struct YourSteadyView: View {
   // Read from the measured profile, falling back to the stored count before
   // research data has loaded. Never from the founder preview.
 
-  /// The protocol readiness is counting. Readiness takes the best of the
-  /// variants, so someone who records with Reduce Motion is ready on their
-  /// reduced-motion sessions; reading the full-protocol profile here showed
-  /// "0 eligible" beside a ready steady. A tie goes to the variant this
-  /// iPhone's next check would run.
-  private var profileVariant: OcularProtocolVariant? {
-    let current: OcularProtocolVariant = reduceMotion ? .reducedMotion : .full
-    return model.baselineVariantBreakdown
-      .max { lhs, rhs in
-        (lhs.value.eligibleSessionCount, lhs.key == current ? 1 : 0)
-          < (rhs.value.eligibleSessionCount, rhs.key == current ? 1 : 0)
-      }?
-      .key
-  }
+  /// The protocol readiness is counting: the one the next check on this
+  /// iPhone runs, since that is the only partition it can be compared with.
+  private var profileVariant: OcularProtocolVariant { model.nextCheckVariant }
 
-  private var profile: BaselineProfileSummary? {
-    profileVariant.flatMap { model.baselineVariantBreakdown[$0] } ?? model.baselineProfile
+  private var profile: BaselineProfileSummary? { model.baselineProfile }
+
+  /// Eligible sessions filed under a variant this iPhone's check does not run,
+  /// typically from before a move to or from an iPhone without Face ID, or
+  /// recorded with Reduce Motion set the other way.
+  private var otherVariantCount: Int {
+    model.baselineVariantBreakdown
+      .filter { $0.key != profileVariant }
+      .values
+      .map(\.eligibleSessionCount)
+      .reduce(0, +)
   }
 
   private var eligibleCount: Int {

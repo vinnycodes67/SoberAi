@@ -316,7 +316,9 @@ final class ReviewRegressionTests: XCTestCase {
         defaults: defaults,
         archive: ResearchSessionStore(directoryURL: directory)
       ),
-      automaticallyStartsGuardianServices: false
+      automaticallyStartsGuardianServices: false,
+      // A camera iPhone: these sessions are the full protocol.
+      supportsFaceTracking: true
     )
     let skipped = FaceTrackingService().unusableSummary(issue: .interrupted)
 

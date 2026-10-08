@@ -135,7 +135,7 @@ struct ScreeningFlowView: View {
             if configuration.mode == .baseline {
               BaselineAttestationView { step = firstCaptureStep }
             } else {
-              SelfReportView { answer in
+              SelfReportView(runsWithoutEyeTask: usesNoCameraProtocol) { answer in
                 handleSelfReport(answer)
               } onAccessibilityRoute: { answer in
                 handleAccessibilityUnavailableRoute(answer)
@@ -379,7 +379,8 @@ struct ScreeningFlowView: View {
   /// True on hardware with no TrueDepth camera -- every iPhone without Face ID,
   /// and every simulator. Never true for a *denied* camera: someone who can grant
   /// access gets the full check, so a denial is not a way to skip the eye task.
-  private var usesNoCameraProtocol: Bool { !faceTracking.isSupported }
+  /// Asked of the model so the check and baseline readiness cannot disagree.
+  private var usesNoCameraProtocol: Bool { model.nextCheckVariant == .noCamera }
 
   private var firstCaptureStep: ScreeningStep {
     usesNoCameraProtocol ? .reaction : .environment
@@ -569,6 +570,8 @@ private struct BaselineAttestationView: View {
 }
 
 private struct SelfReportView: View {
+  /// No TrueDepth camera, so the check will run without the eye task.
+  let runsWithoutEyeTask: Bool
   let onContinue: (SelfReport) -> Void
   let onAccessibilityRoute: (SelfReport) -> Void
   @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
@@ -601,6 +604,18 @@ private struct SelfReportView: View {
             .fixedSize(horizontal: false, vertical: true)
           }
         }
+      }
+
+      // Said before the tasks rather than after, while the person is still
+      // deciding how much weight to give the result. A camera-free check has
+      // one fewer signal, and "No changes detected" from it covers less.
+      if runsWithoutEyeTask, selection == .no {
+        Text(
+          "This iPhone has no TrueDepth camera, so the check leaves out the eye task. It measures three things instead of four and can miss a change the eye task would catch."
+        )
+        .font(DSFont.subheadline)
+        .foregroundStyle(Palette.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
       }
 
       if isVoiceOverEnabled {

@@ -133,6 +133,15 @@ enum OcularProtocolVariant: String, Codable, CaseIterable, Sendable {
     case .noCamera: "Without eye task"
     }
   }
+
+  /// The variant the next check on this iPhone will run. Baseline readiness and
+  /// the check itself both ask this, because each variant has its own baseline:
+  /// "ready" has to mean the next check compares against this person's
+  /// sessions, not that some other variant happens to have five.
+  static func forNextCheck(supportsFaceTracking: Bool, reduceMotion: Bool) -> Self {
+    guard supportsFaceTracking else { return .noCamera }
+    return reduceMotion ? .reducedMotion : .full
+  }
 }
 
 struct OcularTarget: Equatable, Sendable {

@@ -315,9 +315,10 @@ struct DSIntegratedResultScreen: View {
   private var measurements: some View {
     DSSection("Measurements") {
       DSRows {
-        // Without a TrueDepth camera nothing was captured, so there is no
-        // percentage to print. 0% reads as a ruined capture and 100% as a
-        // perfect one; both describe a recording that never happened.
+        // No eye task ran (no TrueDepth camera, or the check ended at the
+        // self-report question), so there is no percentage to print. 0% reads
+        // as a ruined capture and 100% as a perfect one; both describe a
+        // recording that never happened.
         DSValueRow(
           label: "Capture quality",
           value: outcome.measuredCapture
@@ -330,6 +331,17 @@ struct DSIntegratedResultScreen: View {
           DSSeparator()
           measurementRow(detail)
         }
+      }
+
+      // A quiet headline can sit above an orange row: the engine allows fewer
+      // than half the measures to move before it says changes were detected.
+      // Say so here, beside the rows, rather than leave the two to disagree.
+      if outcome.state == .noSignalsDetected, quietMovedCount > 0 {
+        Text(quietMovedNote)
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, DSSpace.sm)
       }
 
       Text("These measurements explain what contributed. They are not clinical readings.")
@@ -392,6 +404,17 @@ struct DSIntegratedResultScreen: View {
       return "Available in \(secondsRemaining) second\(secondsRemaining == 1 ? "" : "s")"
     }
     return acknowledged ? "Available" : "Waiting for safety acknowledgement"
+  }
+
+  private var quietMovedCount: Int { measuredDetails.filter(\.concern).count }
+
+  private var quietMovedNote: String {
+    let moved = quietMovedCount
+    let total = measuredDetails.count
+    let verb = moved == 1 ? "was" : "were"
+    return "\(moved) of \(total) measures \(verb) outside the usual range. On its own "
+      + "that is not enough change to say changes were detected, and it is not a "
+      + "sign that you are fine."
   }
 
   private var measuredDetails: [SignalDetail] {

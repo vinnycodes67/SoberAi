@@ -4,9 +4,10 @@ import XCTest
 /// video. Not part of CI — run manually alongside `simctl io recordVideo`.
 ///
 /// Every step uses the same public UI a person taps. No mocked gestures, no
-/// synthetic results: on a TrueDepth-less simulator the ocular task correctly
-/// falls back to "Continue with inconclusive capture", which is the same
-/// honest degradation a reviewer's own device would show.
+/// synthetic results. The simulator has no TrueDepth camera, so it runs the
+/// camera-free check an iPhone without Face ID runs: reaction, tracking, and
+/// timing, with no camera setup and no eye task. The eye task itself can only
+/// be recorded on a TrueDepth device.
 @MainActor
 final class DemoRecordingUITests: XCTestCase {
 
@@ -51,18 +52,14 @@ final class DemoRecordingUITests: XCTestCase {
     pause(0.5)
   }
 
-  private func passUnsupportedCamera(_ app: XCUIApplication) {
-    let button = app.buttons["Continue with limited capture"]
-    XCTAssertTrue(button.waitForExistence(timeout: 20))
-    pause(1.0)
-    button.tap()
-  }
-
-  private func finishOcularTaskInconclusively(_ app: XCUIApplication) {
-    let button = app.buttons["Continue with inconclusive capture"]
-    XCTAssertTrue(button.waitForExistence(timeout: 10))
-    pause(1.0)
-    button.tap()
+  /// The recording is only honest about what it shows if it really is the
+  /// camera-free path. Run on a TrueDepth device, the camera setup appears
+  /// instead and this stops the recording rather than filming a skipped step.
+  private func expectCameraFreeCheck(_ app: XCUIApplication) {
+    XCTAssertTrue(app.buttons["Begin reaction task"].waitForExistence(timeout: 20))
+    XCTAssertFalse(
+      app.buttons["Continue with limited capture"].exists,
+      "this script records the camera-free check; run it on a simulator")
   }
 
   // MARK: - Segment 1: baseline session
@@ -84,11 +81,10 @@ final class DemoRecordingUITests: XCTestCase {
     pause(0.5)
     app.buttons["Begin baseline session"].tap()
 
-    passUnsupportedCamera(app)
+    expectCameraFreeCheck(app)
     runReactionTask(app)
     runMotorTrackingTask(app)
     runTimeEstimateTask(app)
-    finishOcularTaskInconclusively(app)
 
     XCTAssertTrue(app.buttons["Return home"].waitForExistence(timeout: 15))
     pause(2.0)
@@ -113,17 +109,22 @@ final class DemoRecordingUITests: XCTestCase {
     XCTAssertTrue(app.buttons["No"].waitForExistence(timeout: 10))
     pause(0.8)
     app.buttons["No"].tap()
-    pause(0.5)
+    // Hold on the note that this check leaves out the eye task, so the video
+    // shows the limit being disclosed rather than skipping past it.
+    pause(3.0)
     app.buttons["Continue to setup"].tap()
 
-    passUnsupportedCamera(app)
+    expectCameraFreeCheck(app)
     runReactionTask(app)
     runMotorTrackingTask(app)
     runTimeEstimateTask(app)
-    finishOcularTaskInconclusively(app)
 
     pause(2.0)
     XCTAssertTrue(app.buttons["Return home"].waitForExistence(timeout: 15))
+    pause(3.0)
+    // Down to the measurements, where the gaze row and capture quality both
+    // read "Not measured".
+    app.swipeUp()
     pause(3.0)
   }
 
