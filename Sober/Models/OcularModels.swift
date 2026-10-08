@@ -237,6 +237,9 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
   /// Tracking benchmark for this capture. Nil for captures recorded before it
   /// existed, and for any capture that never opened the camera.
   let telemetry: CaptureTelemetry?
+  /// Richer eye measures, recorded but not scored. Nil for captures recorded
+  /// before they existed and for any capture that never opened the camera.
+  let detailed: OcularDetailedMetrics?
 
   init(
     smoothnessRisk: Double,
@@ -246,7 +249,8 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     quality: CaptureQualitySnapshot = .unsupported,
     features: OcularSignalFeatures = .unavailable,
     protocolVariant: OcularProtocolVariant = .full,
-    telemetry: CaptureTelemetry? = nil
+    telemetry: CaptureTelemetry? = nil,
+    detailed: OcularDetailedMetrics? = nil
   ) {
     self.smoothnessRisk = smoothnessRisk
     self.qualityScore = qualityScore
@@ -256,13 +260,15 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     self.features = features
     self.protocolVariant = protocolVariant
     self.telemetry = telemetry
+    self.detailed = detailed
   }
 
   func with(telemetry: CaptureTelemetry?) -> GazeCaptureSummary {
     GazeCaptureSummary(
       smoothnessRisk: smoothnessRisk, qualityScore: qualityScore, sampleCount: sampleCount,
       capturedDurationMilliseconds: capturedDurationMilliseconds, quality: quality,
-      features: features, protocolVariant: protocolVariant, telemetry: telemetry)
+      features: features, protocolVariant: protocolVariant, telemetry: telemetry,
+      detailed: detailed)
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -274,6 +280,7 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     case features
     case protocolVariant
     case telemetry
+    case detailed
   }
 
   init(from decoder: Decoder) throws {
@@ -287,6 +294,7 @@ struct GazeCaptureSummary: Codable, Equatable, Sendable {
     features = try values.decode(OcularSignalFeatures.self, forKey: .features)
     protocolVariant = try values.decodeIfPresent(OcularProtocolVariant.self, forKey: .protocolVariant) ?? .full
     telemetry = try values.decodeIfPresent(CaptureTelemetry.self, forKey: .telemetry)
+    detailed = try values.decodeIfPresent(OcularDetailedMetrics.self, forKey: .detailed)
   }
 }
 

@@ -68,9 +68,36 @@ Use a Face ID iPhone, with the internal build for the model items.
   baseline instead (`ReviewRegressionTests` guards against that). The error
   types (`reactionIncorrectChoices` / `Anticipations` / `MissedResponses`) are
   recorded but not used in scoring yet.
-- **2.5 Eye metrics.** No fixation duration, gaze transitions or per-eye
-  consistency, and no valid / low-confidence / covered-eye labelling of
-  samples. `OcularSignalAnalyzer` scores all-or-nothing.
+- **2.5 Eye metrics.** *Recorded, not scored (built 2026-10-08).* Every eye
+  task now stores `GazeCaptureSummary.detailed` (`OcularDetailedMetrics`,
+  `OcularDetailedAnalyzer`), also in the research export and on the internal
+  Research screen ("Eye measures (latest capture)"):
+  - each sample labelled valid / lowConfidence / eyesClosed / headMoved /
+    missing, with the fraction of each and per-phase coverage (valid time over
+    scheduled time). Missing blink telemetry is never "closed";
+  - fixation: RMS dispersion, 68% BCEA, longest steady fixation, intrusive
+    saccades;
+  - pursuit: gain (desaccaded eye velocity over target velocity), lag
+    (cross-correlation), catch-up saccades;
+  - saccades: per jump latency, first-saccade gain, landing error, corrective
+    saccades; medians and the share of jumps with a response;
+  - gaze transitions, left/right agreement, blinks (same rule as before).
+
+  Measures come from valid samples only, per phase, even when the capture as
+  a whole is unusable; a phase under 25% coverage is nil, never zero.
+  `smoothnessRisk`, `isUsable`, `ScreeningEngine` and baselines are
+  unchanged, and old sessions decode with `detailed` nil. Thresholds (I-VT
+  30 deg/s on median-of-3 gaze, 0.5 deg minimum saccade, lids 0.5 closed,
+  head 20 deg/s, 10 deg eye disagreement) are engineering choices in
+  `OcularDetailedAnalyzer`, tested only on synthetic gaze. **Needs a Face ID
+  iPhone:** (a) ARKit gaze noise at rest: if it exceeds ~0.3 deg per frame,
+  fixation will show false intrusive saccades and the I-VT threshold or
+  filter needs raising; (b) whether reading eye-vector x/y as radians gives
+  sensible degrees; (c) whether the saccade phase supplies a usable
+  gaze-to-screen scale (pursuit gain is nil without it); (d) corrective
+  saccades under about 1 deg are below what 60 Hz can resolve. Bump
+  `OcularDetailedMetrics.currentVersion` when any threshold changes. Don't
+  score any of it until real sessions show which measures are stable.
 - **2.6 Eye calibration.** `CameraCalibrationView` only checks framing and
   light. There's no follow-the-target calibration, no per-person profile, and
   no calibration quality bar.

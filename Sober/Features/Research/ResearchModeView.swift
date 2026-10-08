@@ -22,6 +22,7 @@ struct ResearchModeView: View {
           consentCard
           baselineCard
           captureBenchmarkCard
+          eyeMeasuresCard
           contextCard
           dataCard
 
@@ -166,6 +167,81 @@ struct ResearchModeView: View {
         }
       }
     }
+  }
+
+  /// Detailed eye measures from the most recent capture that recorded them
+  /// (HANDOFF 2.5). Recorded, not scored. Each phase shows its coverage
+  /// beside its values, and anything not measured says so.
+  private var eyeMeasuresCard: some View {
+    SoberCard {
+      VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Eye measures (latest capture)")
+            .font(DSFont.headline)
+          Text("Engineering measures from ARKit eye angles. Recorded for research, not used in the result.")
+            .font(DSFont.footnote)
+            .foregroundStyle(Palette.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+
+        if let metrics = latestEyeMeasures {
+          benchmarkRow("Valid samples", percent(metrics.validity.valid))
+          benchmarkRow(
+            "Closed / head moved / low confidence",
+            "\(percent(metrics.validity.eyesClosed)) / \(percent(metrics.validity.headMoved)) / \(percent(metrics.validity.lowConfidence))")
+          benchmarkRow("Fixation coverage", percent(metrics.coverage.fixation))
+          benchmarkRow("Fixation spread (RMS)", degrees(metrics.fixation?.dispersionRMSDegrees))
+          benchmarkRow("Longest steady fixation", milliseconds(metrics.fixation?.longestStableMilliseconds))
+          benchmarkRow("Saccades during fixation", count(metrics.fixation?.intrusiveSaccadeCount))
+          if metrics.coverage.horizontalPursuit != nil {
+            pursuitRows("Side to side", metrics.coverage.horizontalPursuit, metrics.horizontalPursuit)
+            pursuitRows("Up and down", metrics.coverage.verticalPursuit, metrics.verticalPursuit)
+          }
+          benchmarkRow("Jump coverage", percent(metrics.coverage.saccades))
+          benchmarkRow("Jumps with a response", percent(metrics.saccades?.respondedFraction))
+          benchmarkRow("Jump latency (median)", milliseconds(metrics.saccades?.medianLatencyMilliseconds))
+          benchmarkRow("First-saccade gain (median)", ratio(metrics.saccades?.medianPrimaryGain))
+          benchmarkRow("Corrective saccades", count(metrics.saccades?.correctiveSaccadeCount))
+          benchmarkRow("Left/right agreement", ratio(metrics.binocular?.leftRightCorrelation))
+          benchmarkRow("Blinks", count(metrics.blinkCount))
+        } else {
+          Text("No eye-task capture has recorded these yet.")
+            .font(DSFont.footnote)
+            .foregroundStyle(Palette.textSecondary)
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func pursuitRows(_ name: String, _ coverage: Double?, _ pursuit: OcularPursuitMetrics?) -> some View {
+    benchmarkRow("\(name) coverage", percent(coverage))
+    benchmarkRow("\(name) gain", ratio(pursuit?.gain))
+    benchmarkRow("\(name) lag", milliseconds(pursuit?.lagMilliseconds))
+    benchmarkRow("\(name) catch-up saccades", count(pursuit?.catchUpSaccadeCount))
+  }
+
+  private var latestEyeMeasures: OcularDetailedMetrics? {
+    model.researchSessions
+      .filter { $0.ocularSummary?.detailed != nil }
+      .max { $0.startedAt < $1.startedAt }?
+      .ocularSummary?.detailed
+  }
+
+  private func percent(_ value: Double?) -> String {
+    value.map { "\(Int(($0 * 100).rounded()))%" } ?? "Not measured"
+  }
+
+  private func degrees(_ value: Double?) -> String {
+    value.map { String(format: "%.2f°", $0) } ?? "Not measured"
+  }
+
+  private func ratio(_ value: Double?) -> String {
+    value.map { String(format: "%.2f", $0) } ?? "Not measured"
+  }
+
+  private func count(_ value: Int?) -> String {
+    value.map(String.init) ?? "Not measured"
   }
 
   private func benchmarkRow(_ label: String, _ value: String) -> some View {

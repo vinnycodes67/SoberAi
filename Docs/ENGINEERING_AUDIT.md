@@ -101,7 +101,7 @@ coding task. **Not started. Flagged rather than half-built.**
 | Camera quality | **PARTIAL** | `FaceTrackingStatus` covers tracking state, lighting and motion via ARKit. No explicit VALID/DEGRADED/INVALID aggregate; no blur, exposure or frame-rate measure |
 | Camera interruption *(updated)* | **WORKS, NEEDS DEVICE** | Backgrounding and calls were already handled through `scenePhase` — the original row overstated the gap. The ARKit callbacks are now implemented: an interrupted or failed capture is invalidated and the person is told |
 | Inverted camera *(updated)* | **BUILT, NEEDS DEVICE** | Extra mirror transform removed from `FaceCameraPreview` |
-| Eye tracking | **PARTIAL** | `OcularSignalAnalyzer` is all-or-nothing: a score only when capture is fully usable, else zero. No fixation duration, gaze transitions, blink state, or per-eye consistency |
+| Eye tracking *(updated)* | **PARTIAL** | The score is still all-or-nothing. Per-sample validity, fixation, pursuit, saccade, binocular and blink measures are now recorded per phase with coverage (`OcularDetailedAnalyzer`, HANDOFF 2.5), not scored, and unvalidated on a device |
 | Eye calibration | **MISSING** | `CameraCalibrationView` checks framing and lighting. There is no target-following calibration, no per-user profile, no calibration quality gate |
 | Reaction / tracking / timing tasks | **WORKS** | Three tasks run and record |
 | Test complexity | **PARTIAL** | Choice reaction, motor tracing, time estimation, guided gaze. No visual search, working memory, sustained or selective attention, distraction resistance |

@@ -7,6 +7,10 @@ struct OcularSignalAnalyzer: Sendable {
     liveQuality: CaptureQualitySnapshot,
     variant: OcularProtocolVariant = .full
   ) -> GazeCaptureSummary {
+    // Recorded on every capture, usable or not, and never scored. Each phase
+    // inside carries its own coverage (HANDOFF 2.5).
+    let detailed = detailedMetrics(samples: samples, variant: variant)
+
     guard samples.count >= 20,
       let first = samples.first,
       let last = samples.last,
@@ -15,7 +19,8 @@ struct OcularSignalAnalyzer: Sendable {
       var quality = liveQuality
       quality.sampleCount = samples.count
       quality.issues = deduplicated(quality.issues + [.insufficientSamples])
-      return unusableSummary(quality: quality, sampleCount: samples.count, variant: variant)
+      return unusableSummary(
+        quality: quality, sampleCount: samples.count, variant: variant, detailed: detailed)
     }
 
     let duration = last.timestamp - first.timestamp
@@ -58,7 +63,7 @@ struct OcularSignalAnalyzer: Sendable {
     let headCompensation = meanHeadStepDistance(samples)
     // Blink rate is archived as an exploratory research feature. It does not
     // contribute to the prototype safety score.
-    let blinks = countBlinkEvents(samples)
+    let blinks = Self.countBlinkEvents(samples)
     let blinkRate = blinks.map { (Double($0) / duration) * 60 }
 
     let features = OcularSignalFeatures(
@@ -93,7 +98,8 @@ struct OcularSignalAnalyzer: Sendable {
         sampleCount: samples.count,
         capturedDurationMilliseconds: duration * 1_000,
         features: features,
-        variant: variant
+        variant: variant,
+        detailed: detailed
       )
     }
 
@@ -130,7 +136,19 @@ struct OcularSignalAnalyzer: Sendable {
       capturedDurationMilliseconds: duration * 1_000,
       quality: quality,
       features: features,
-      protocolVariant: variant
+      protocolVariant: variant,
+      detailed: detailed
+    )
+  }
+
+  private func detailedMetrics(samples: [OcularSample], variant: OcularProtocolVariant) -> OcularDetailedMetrics? {
+    let blinks = Self.countBlinkEvents(samples)
+    let duration = (samples.last?.timestamp ?? 0) - (samples.first?.timestamp ?? 0)
+    return OcularDetailedAnalyzer().analyze(
+      samples: samples,
+      variant: variant,
+      blinkCount: blinks,
+      blinkRatePerMinute: duration > 0 ? blinks.map { (Double($0) / duration) * 60 } : nil
     )
   }
 
@@ -139,7 +157,8 @@ struct OcularSignalAnalyzer: Sendable {
     sampleCount: Int,
     capturedDurationMilliseconds: Double = 0,
     features: OcularSignalFeatures = .unavailable,
-    variant: OcularProtocolVariant = .full
+    variant: OcularProtocolVariant = .full,
+    detailed: OcularDetailedMetrics? = nil
   ) -> GazeCaptureSummary {
     GazeCaptureSummary(
       smoothnessRisk: 1,
@@ -148,7 +167,8 @@ struct OcularSignalAnalyzer: Sendable {
       capturedDurationMilliseconds: capturedDurationMilliseconds,
       quality: quality,
       features: features,
-      protocolVariant: variant
+      protocolVariant: variant,
+      detailed: detailed
     )
   }
 
@@ -205,7 +225,8 @@ struct OcularSignalAnalyzer: Sendable {
     return mean(distances)
   }
 
-  private func countBlinkEvents(_ samples: [OcularSample]) -> Int? {
+  /// Shared with the detailed metrics so both report the same blinks.
+  static func countBlinkEvents(_ samples: [OcularSample]) -> Int? {
     var count = 0
     var wasClosed = false
     var observedBlinkTelemetry = false
