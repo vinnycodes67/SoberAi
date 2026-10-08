@@ -323,8 +323,8 @@ struct DSIntegratedHomeScreen: View {
           "Safety Circle",
           detail: safetyPlanSummary,
           trailing: {
-            if model.safetyPlan.hasContact {
-              DSBadge(text: model.safetyPlan.contactName, tint: DSPalette.textSecondary)
+            if let lead = model.safetyPlan.leadContact {
+              DSBadge(text: contactBadge(lead), tint: DSPalette.textSecondary)
             }
           },
           action: onOpenPlan
@@ -488,6 +488,11 @@ struct DSIntegratedHomeScreen: View {
     }
     if model.guardianInviteCode != nil { return "Invite ready to share" }
     return "Pair a parent or trusted person"
+  }
+
+  private func contactBadge(_ lead: GuardianContact) -> String {
+    let others = model.safetyPlan.otherReachableContacts.count
+    return others == 0 ? lead.displayName : "\(lead.displayName) +\(others)"
   }
 
   private var safetyPlanSummary: String {

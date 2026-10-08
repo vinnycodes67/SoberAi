@@ -108,23 +108,18 @@ struct OnboardingValidator: Sendable {
     safetyPlan: SafetyPlan
   ) -> [OnboardingRiskFlag] {
     var flags: [OnboardingRiskFlag] = []
-    let guardianDigits = safetyPlan.normalizedContactPhone
+    // Each contact is checked by the same rules the Safety Plan editor applies,
+    // so onboarding and the editor cannot disagree about a number. A missing
+    // number is not a flag here: contacts are optional at this step.
+    let issues = Set(safetyPlan.contacts.flatMap { safetyPlan.issues(for: $0) })
 
-    if !guardianDigits.isEmpty {
-      if guardianDigits.count < 10 || guardianDigits.count > 15 {
-        flags.append(.guardianPhoneMalformed)
-      }
-      // Same rule as G0-7 in the guardian contract: a guardian who is you is
-      // not a guardian.
-      if let selfDigits = safetyPlan.selfPhoneDigits,
-        !selfDigits.isEmpty,
-        selfDigits == guardianDigits
-      {
-        flags.append(.guardianPhoneMatchesUser)
-      }
+    if issues.contains(.phoneMalformed) {
+      flags.append(.guardianPhoneMalformed)
     }
-
-    if safetyPlan.hasDuplicateContactPhones {
+    if issues.contains(.phoneMatchesUser) {
+      flags.append(.guardianPhoneMatchesUser)
+    }
+    if issues.contains(.duplicatePhone) {
       flags.append(.duplicateGuardianPhones)
     }
 

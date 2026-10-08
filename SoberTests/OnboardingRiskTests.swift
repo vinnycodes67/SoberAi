@@ -18,10 +18,9 @@ final class OnboardingRiskTests: XCTestCase {
     SafetyPlan(
       isActive: true,
       userName: "Vinay",
-      contactName: "Parent",
-      contactPhone: contactPhone,
+      contacts: [GuardianContact(name: "Parent", phone: contactPhone)]
+        + additional.map { GuardianContact(phone: $0) },
       selfPhone: selfPhone,
-      additionalContactPhones: additional,
       automaticParentAlerts: automatic,
       parentAlertConsent: consent
     )
@@ -333,7 +332,7 @@ final class OnboardingRiskTests: XCTestCase {
       """
     let plan = try JSONDecoder().decode(SafetyPlan.self, from: Data(legacy.utf8))
     XCTAssertEqual(plan.selfPhone, "")
-    XCTAssertEqual(plan.additionalContactPhones, [])
+    XCTAssertEqual(plan.contacts.map(\.name), ["Parent"])
     XCTAssertEqual(plan.homeLabel, "")
     XCTAssertEqual(plan.homeAddress, "")
     XCTAssertTrue(plan.canAutomaticallyAlertParent)

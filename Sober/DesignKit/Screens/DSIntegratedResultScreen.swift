@@ -19,6 +19,7 @@ struct DSIntegratedResultScreen: View {
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var acknowledged = false
   @State private var secondsRemaining = 4
+  @State private var showsMoreContacts = false
 
   var body: some View {
     ScrollView {
@@ -272,13 +273,16 @@ struct DSIntegratedResultScreen: View {
         Button("Open \(safetyPlan.preferredRide)", action: openRide)
           .buttonStyle(DSPrimaryButtonStyle())
 
-        if safetyPlan.hasContact {
+        if let lead = safetyPlan.leadContact {
           Group {
             if dynamicTypeSize.isAccessibilitySize {
-              VStack(spacing: DSSpace.sm) { contactActions }
+              VStack(spacing: DSSpace.sm) { contactActions(for: lead) }
             } else {
-              HStack(spacing: DSSpace.sm) { contactActions }
+              HStack(spacing: DSSpace.sm) { contactActions(for: lead) }
             }
+          }
+          if !safetyPlan.otherReachableContacts.isEmpty {
+            moreContacts
           }
         } else {
           Text("Add a trusted contact in your Safety Plan to call or message from here.")
@@ -295,12 +299,83 @@ struct DSIntegratedResultScreen: View {
     }
   }
 
+  /// The lead contact's actions, sized as today. Only the actions the user
+  /// allowed for this person appear.
   @ViewBuilder
-  private var contactActions: some View {
-    Button("Call \(safetyPlan.contactName)", action: callContact)
-      .buttonStyle(DSSecondaryButtonStyle())
-    Button("Message", action: messageContact)
-      .buttonStyle(DSSecondaryButtonStyle())
+  private func contactActions(for contact: GuardianContact) -> some View {
+    if contact.canCall {
+      Button("Call \(contact.displayName)") { call(contact) }
+        .buttonStyle(DSSecondaryButtonStyle())
+    }
+    if contact.canText {
+      Button("Message") { message(contact) }
+        .buttonStyle(DSSecondaryButtonStyle())
+        .accessibilityLabel("Message \(contact.displayName)")
+    }
+  }
+
+  /// Everyone after the lead, collapsed by default.
+  ///
+  /// Open, five people's buttons would sit level with the ride action and the
+  /// screen would stop having one obvious next step. Collapsed, it is one quiet
+  /// line under the lead contact.
+  private var moreContacts: some View {
+    let others = safetyPlan.otherReachableContacts
+    return VStack(alignment: .leading, spacing: 0) {
+      Button {
+        withAnimation(reduceMotion ? nil : DSMotion.standard) { showsMoreContacts.toggle() }
+      } label: {
+        HStack(spacing: DSSpace.xs) {
+          Text("More contacts (\(others.count))")
+          Image(systemName: showsMoreContacts ? "chevron.up" : "chevron.down")
+            .font(DSFont.footnoteStrong)
+            .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(DSTertiaryButtonStyle(tint: DSPalette.textSecondary))
+      .accessibilityLabel("More contacts, \(others.count)")
+      .accessibilityValue(showsMoreContacts ? "Expanded" : "Collapsed")
+
+      if showsMoreContacts {
+        DSRows {
+          ForEach(Array(others.enumerated()), id: \.element.id) { index, contact in
+            if index > 0 { DSSeparator() }
+            otherContactRow(contact)
+          }
+        }
+        .transition(.opacity)
+      }
+    }
+  }
+
+  /// White, not orange: the ride stays the only orange action on the card.
+  private func otherContactRow(_ contact: GuardianContact) -> some View {
+    let layout =
+      dynamicTypeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: DSSpace.xs))
+      : AnyLayout(HStackLayout(spacing: DSSpace.sm))
+    return layout {
+      Text(contact.displayName)
+        .font(DSFont.body)
+        .foregroundStyle(DSPalette.textPrimary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+      HStack(spacing: DSSpace.md) {
+        if contact.canCall {
+          Button("Call") { call(contact) }
+            .buttonStyle(DSTertiaryButtonStyle(tint: DSPalette.textPrimary))
+            .accessibilityLabel("Call \(contact.displayName)")
+        }
+        if contact.canText {
+          Button("Message") { message(contact) }
+            .buttonStyle(DSTertiaryButtonStyle(tint: DSPalette.textPrimary))
+            .accessibilityLabel("Message \(contact.displayName)")
+        }
+      }
+    }
+    .padding(.vertical, DSSpace.xs)
   }
 
   private var interventionDisclosure: String {
@@ -474,15 +549,12 @@ struct DSIntegratedResultScreen: View {
     if let url = safetyPlan.rideURL { openURL(url) }
   }
 
-  private func callContact() {
-    let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    if let url = URL(string: "tel:\(digits)") { openURL(url) }
+  private func call(_ contact: GuardianContact) {
+    if let url = contact.callURL { openURL(url) }
   }
 
-  private func messageContact() {
-    let digits = safetyPlan.contactPhone.filter(\.isNumber)
-    let message = SafeRideMessage.body(destinationName: safetyPlan.destinationDisplayName)
-    let body = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? message
-    if let url = URL(string: "sms:\(digits)?body=\(body)") { openURL(url) }
+  private func message(_ contact: GuardianContact) {
+    let body = SafeRideMessage.body(destinationName: safetyPlan.destinationDisplayName)
+    if let url = contact.messageURL(body: body) { openURL(url) }
   }
 }

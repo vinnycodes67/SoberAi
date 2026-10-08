@@ -13,8 +13,7 @@ final class SafetyPlanRidePromiseTests: XCTestCase {
   private func plan(ride: String, address: String) -> SafetyPlan {
     SafetyPlan(
       userName: "Alex",
-      contactName: "Jordan",
-      contactPhone: "3125550100",
+      contacts: [GuardianContact(name: "Jordan", phone: "3125550100")],
       homeLabel: "Home",
       homeAddress: address,
       preferredRide: ride

@@ -223,7 +223,10 @@ final class PersistenceFoundationTests: XCTestCase {
     defer { harness.cleanup() }
     let store = UserDefaultsPrivacyStore(defaults: harness.defaults)
     let preferences = ResearchPreferences(sleepHours: 4)
-    let plan = SafetyPlan(userName: "Alex", contactName: "Sam", contactPhone: "3125550100")
+    let plan = SafetyPlan(
+      userName: "Alex",
+      contacts: [GuardianContact(name: "Sam", phone: "3125550100")]
+    )
     let profile = UserProfile(displayName: "Alex", ageYears: 19)
 
     store.saveResearchConsent(true)

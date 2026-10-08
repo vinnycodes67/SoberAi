@@ -82,8 +82,11 @@ Use a Face ID iPhone, with the internal build for the model items.
   clinical one.
 
 ### P2: app completeness
-- **2.9 Several guardian contacts** (add / edit / remove, a primary contact,
-  per-contact preferences). `SafetyPlan` holds one contact.
+- **2.9 Several guardian contacts.** Built: up to five `GuardianContact`s on
+  `SafetyPlan` (first is primary, per-contact call/text), edited in the Safety
+  Plan; the result leads with the primary and folds the rest under "More
+  contacts". Old saved plans migrate on decode. Still no UI for `selfPhone`, so
+  the own-number rule only fires if something sets it.
 - **2.10 "Use current location as Home".** It's typed in today. This needs
   location permission and reverse geocoding (network), so it's tied to 4.2.
 - **2.11 Uber fallbacks.** Nothing handles "Uber isn't installed", and

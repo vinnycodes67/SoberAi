@@ -104,8 +104,7 @@ struct UITestLaunchConfiguration {
     privacyStore.saveSafetyPlan(
       SafetyPlan(
         userName: "Alex",
-        contactName: "Jordan",
-        contactPhone: "3125550100",
+        contacts: [GuardianContact(name: "Jordan", phone: "3125550100")],
         homeLabel: "Home",
         homeAddress: "123 Main Street, Chicago, IL",
         preferredRide: "Uber"

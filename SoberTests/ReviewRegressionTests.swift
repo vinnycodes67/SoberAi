@@ -71,8 +71,8 @@ final class ReviewRegressionTests: XCTestCase {
   func testDefaultSafetyPlanRequiresExplicitContactEntry() {
     let plan = SafetyPlan()
 
-    XCTAssertTrue(plan.contactName.isEmpty)
-    XCTAssertTrue(plan.contactPhone.isEmpty)
+    XCTAssertTrue(plan.contacts.isEmpty)
+    XCTAssertNil(plan.primaryContact)
     XCTAssertFalse(plan.hasContact, "there is no placeholder contact shipped by default")
   }
 
