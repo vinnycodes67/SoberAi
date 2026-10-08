@@ -49,7 +49,14 @@ struct SafetyPlanView: View {
               TextField("Your first name", text: $plan.userName)
                 .textContentType(.name)
                 .textFieldStyle(SoberTextFieldStyle())
-
+              TextField("Your phone number (optional)", text: $plan.selfPhone)
+                .textContentType(.telephoneNumber)
+                .keyboardType(.phonePad)
+                .textFieldStyle(SoberTextFieldStyle())
+              Text("Only used so your own number can't be saved as a contact. It stays on this iPhone.")
+                .font(DSFont.footnote)
+                .foregroundStyle(DSPalette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             }
           }
 
@@ -224,6 +231,7 @@ struct GuardianContactEditor: View {
   @State private var draft: GuardianContact
   @State private var confirmingDelete = false
   @State private var makesPrimary: Bool
+  @State private var pickingContact = false
 
   init(plan: Binding<SafetyPlan>, target: ContactEditTarget) {
     _plan = plan
@@ -259,6 +267,25 @@ struct GuardianContactEditor: View {
         VStack(alignment: .leading, spacing: DSSpace.md) {
           SoberCard {
             VStack(alignment: .leading, spacing: DSSpace.md) {
+              Button {
+                pickingContact = true
+              } label: {
+                Label("Choose from Contacts", systemImage: "person.crop.circle.badge.plus")
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .contentShape(Rectangle())
+              }
+              .buttonStyle(DSTertiaryButtonStyle())
+              .accessibilityHint("Opens your contacts. Only the person you choose is saved.")
+              .background(
+                ContactPickerPresenter(isPresented: $pickingContact) { picked in
+                  // A picked card without a name keeps whatever was typed.
+                  if !picked.name.isEmpty { draft.name = picked.name }
+                  draft.phone = picked.phone
+                }
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
+              )
+
               TextField("Name", text: $draft.name)
                 .textContentType(.name)
                 .textFieldStyle(SoberTextFieldStyle())

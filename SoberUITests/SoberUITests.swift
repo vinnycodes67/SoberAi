@@ -102,6 +102,26 @@ final class SoberUITests: XCTestCase {
     capture(app, named: "result-more-contacts")
   }
 
+  /// The Safety Plan asks for your own number (so it can't be saved as a
+  /// contact) and the contact editor offers the system contact picker.
+  func testSafetyPlanOffersYourNumberAndContactPicker() {
+    let app = launch(fixture: "home")
+
+    let circle = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Safety Circle")).firstMatch
+    for _ in 0..<6 where !circle.exists || !circle.isHittable { app.swipeUp() }
+    XCTAssertTrue(circle.waitForExistence(timeout: 30))
+    circle.tap()
+
+    XCTAssertTrue(app.textFields["Your phone number (optional)"].waitForExistence(timeout: 10))
+    capture(app, named: "safety-plan")
+
+    let jordan = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Jordan")).firstMatch
+    XCTAssertTrue(jordan.waitForExistence(timeout: 10))
+    jordan.tap()
+    XCTAssertTrue(app.buttons["Choose from Contacts"].waitForExistence(timeout: 10))
+    capture(app, named: "contact-editor")
+  }
+
   func testInconclusiveResultRefusesAFalseClearance() {
     let app = launch(fixture: "result-inconclusive")
 

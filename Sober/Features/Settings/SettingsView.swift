@@ -271,7 +271,7 @@ struct PrivacyCenterView: View {
                     + "automatically, and only the most recent \(CheckHistoryStore.maximumEntries) are kept."
                 )
                 item("Session summaries", "Numbers only — no imagery. Removed by deleting all local data.")
-                item("Safety Plan", "Your destination, ride app, and contact. Removed by deleting all local data.")
+                item("Safety Plan", "Your destination, ride app, trusted contacts, and your own number if you add it. Removed by deleting all local data.")
                 item("Your optional name and age", "Used only to address you and to check you are old enough.")
                 item(
                   "Device backups",
@@ -290,7 +290,9 @@ struct PrivacyCenterView: View {
               DSSeparator()
               DSValueRow(label: "Notifications", value: "Not used", tint: DSPalette.textMuted)
               DSSeparator()
-              DSValueRow(label: "Contacts", value: "Not used", tint: DSPalette.textMuted)
+              // The system picker hands back only the person chosen; Sober
+              // never reads the address book, so there is no permission.
+              DSValueRow(label: "Contacts", value: "Only people you choose", tint: DSPalette.textMuted)
             }
 
             if cameraPermissionNeedsSettings {
