@@ -126,6 +126,16 @@ Use a Face ID iPhone, with the internal build for the model items.
 
 ## 3. Pupil model: unfinished work (Shrey)
 
+- **2026-10-08 run: not shipped.** See
+  `Training/PupilSegmentation/results/2026-10-08-phone-domain-run.md`. Much
+  more robust on degraded OpenEDS frames, clean iris up, but clean pupil
+  0.9685 against a 0.9730 bar, and both it and the shipped model fail on a
+  second infrared camera (Kaggle set). The next run needs eye images from
+  other cameras, ideally MOBIUS (visible-light phone photos with pupil masks;
+  needs a hand-signed request to the University of Ljubljana). Start from
+  `results/candidate_phone_domain_epoch8.pt`.
+
+
 - **The retrain was stopped, and the shipped weights are unchanged.** The
   pipeline now trains on 24 subjects (3,405 frames), up from 8, but this
   Mac (8.6 GB RAM) only managed about 18 s per step on CPU, roughly 8 hours

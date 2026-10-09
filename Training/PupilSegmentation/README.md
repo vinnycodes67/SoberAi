@@ -195,6 +195,15 @@ no pupil found counts as 11.7 mm.
 - `overnight/`: the supervisor script and the instructions for the watcher
   session that ran the first long training run.
 
+**First long run (2026-10-08, `results/2026-10-08-phone-domain-run.md`): not
+shipped.** Eight epochs on all 65 shards made the model far more robust on
+OpenEDS (phone-style crop pupil IoU 0.152 -> 0.877, pupil missed in 93% -> 1.3%
+of frames, low light 0.684 -> 0.904) and improved clean iris (0.9478 ->
+0.9659), but clean pupil fell 0.0045 short of the 0.9730 bar, and neither model
+works on a different infrared camera (kaggle_cross pupil IoU about 0.15 for
+both). The weights are kept in `results/` as the starting point for a run with
+images from other cameras.
+
 No public dataset of visible-light phone eye images with pupil masks can be
 downloaded without a signed request (MOBIUS, I-SOCIAL-DB, MICHE-I). Until one
 is obtained, nothing here measures accuracy on real iPhone captures.

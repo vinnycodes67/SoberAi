@@ -1,0 +1,504 @@
+{
+  "conditions": [
+    "clean",
+    "lowres_200px",
+    "lowres_120px",
+    "gaussian_blur_2px",
+    "motion_blur_9px",
+    "sensor_noise",
+    "dark_iris",
+    "low_light",
+    "overexposed",
+    "glints",
+    "jpeg_q25",
+    "defocus_4px",
+    "phone_combo"
+  ],
+  "every": 1,
+  "results": {
+    "openeds_test": {
+      "frames_in_set": 1349,
+      "subjects": 10,
+      "shipped": {
+        "clean": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9478,
+          "iou_pupil": 0.9729,
+          "pupil_miss_rate": 0.0082,
+          "pupil_mm_error_median": 0.048,
+          "pupil_mm_error_p90": 0.135
+        },
+        "lowres_200px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9395,
+          "iou_pupil": 0.939,
+          "pupil_miss_rate": 0.0194,
+          "pupil_mm_error_median": 0.048,
+          "pupil_mm_error_p90": 0.236
+        },
+        "lowres_120px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9043,
+          "iou_pupil": 0.8904,
+          "pupil_miss_rate": 0.0313,
+          "pupil_mm_error_median": 0.103,
+          "pupil_mm_error_p90": 0.535
+        },
+        "gaussian_blur_2px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9398,
+          "iou_pupil": 0.9382,
+          "pupil_miss_rate": 0.0194,
+          "pupil_mm_error_median": 0.049,
+          "pupil_mm_error_p90": 0.247
+        },
+        "motion_blur_9px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9442,
+          "iou_pupil": 0.9481,
+          "pupil_miss_rate": 0.0164,
+          "pupil_mm_error_median": 0.048,
+          "pupil_mm_error_p90": 0.211
+        },
+        "sensor_noise": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9203,
+          "iou_pupil": 0.9014,
+          "pupil_miss_rate": 0.0157,
+          "pupil_mm_error_median": 0.093,
+          "pupil_mm_error_p90": 0.42
+        },
+        "dark_iris": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9207,
+          "iou_pupil": 0.9155,
+          "pupil_miss_rate": 0.0328,
+          "pupil_mm_error_median": 0.127,
+          "pupil_mm_error_p90": 0.526
+        },
+        "low_light": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.6292,
+          "iou_pupil": 0.6836,
+          "pupil_miss_rate": 0.3199,
+          "pupil_mm_error_median": 0.353,
+          "pupil_mm_error_p90": 11.7
+        },
+        "overexposed": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9502,
+          "iou_pupil": 0.9744,
+          "pupil_miss_rate": 0.0089,
+          "pupil_mm_error_median": 0.049,
+          "pupil_mm_error_p90": 0.138
+        },
+        "glints": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.8923,
+          "iou_pupil": 0.8356,
+          "pupil_miss_rate": 0.0813,
+          "pupil_mm_error_median": 0.115,
+          "pupil_mm_error_p90": 0.841
+        },
+        "jpeg_q25": {
+          "held_out_of_training": true,
+          "frames": 1341,
+          "iou_iris": 0.9206,
+          "iou_pupil": 0.9424,
+          "pupil_miss_rate": 0.0186,
+          "pupil_mm_error_median": 0.06,
+          "pupil_mm_error_p90": 0.321
+        },
+        "defocus_4px": {
+          "held_out_of_training": true,
+          "frames": 1341,
+          "iou_iris": 0.9367,
+          "iou_pupil": 0.9378,
+          "pupil_miss_rate": 0.0142,
+          "pupil_mm_error_median": 0.055,
+          "pupil_mm_error_p90": 0.248
+        },
+        "phone_combo": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.2409,
+          "iou_pupil": 0.152,
+          "pupil_miss_rate": 0.9299,
+          "pupil_mm_error_median": 1.623,
+          "pupil_mm_error_p90": 11.7
+        }
+      },
+      "candidate": {
+        "clean": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9659,
+          "iou_pupil": 0.9681,
+          "pupil_miss_rate": 0.0112,
+          "pupil_mm_error_median": 0.022,
+          "pupil_mm_error_p90": 0.067
+        },
+        "lowres_200px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9384,
+          "iou_pupil": 0.9447,
+          "pupil_miss_rate": 0.0224,
+          "pupil_mm_error_median": 0.037,
+          "pupil_mm_error_p90": 0.246
+        },
+        "lowres_120px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9398,
+          "iou_pupil": 0.9491,
+          "pupil_miss_rate": 0.0142,
+          "pupil_mm_error_median": 0.051,
+          "pupil_mm_error_p90": 0.299
+        },
+        "gaussian_blur_2px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9311,
+          "iou_pupil": 0.9416,
+          "pupil_miss_rate": 0.0268,
+          "pupil_mm_error_median": 0.039,
+          "pupil_mm_error_p90": 0.257
+        },
+        "motion_blur_9px": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9544,
+          "iou_pupil": 0.9603,
+          "pupil_miss_rate": 0.0134,
+          "pupil_mm_error_median": 0.031,
+          "pupil_mm_error_p90": 0.127
+        },
+        "sensor_noise": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9614,
+          "iou_pupil": 0.9624,
+          "pupil_miss_rate": 0.0112,
+          "pupil_mm_error_median": 0.023,
+          "pupil_mm_error_p90": 0.077
+        },
+        "dark_iris": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9766,
+          "iou_pupil": 0.9521,
+          "pupil_miss_rate": 0.0112,
+          "pupil_mm_error_median": 0.057,
+          "pupil_mm_error_p90": 0.139
+        },
+        "low_light": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9285,
+          "iou_pupil": 0.9037,
+          "pupil_miss_rate": 0.0164,
+          "pupil_mm_error_median": 0.107,
+          "pupil_mm_error_p90": 0.312
+        },
+        "overexposed": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.963,
+          "iou_pupil": 0.9706,
+          "pupil_miss_rate": 0.0119,
+          "pupil_mm_error_median": 0.024,
+          "pupil_mm_error_p90": 0.082
+        },
+        "glints": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9547,
+          "iou_pupil": 0.9353,
+          "pupil_miss_rate": 0.0172,
+          "pupil_mm_error_median": 0.044,
+          "pupil_mm_error_p90": 0.223
+        },
+        "jpeg_q25": {
+          "held_out_of_training": true,
+          "frames": 1341,
+          "iou_iris": 0.9579,
+          "iou_pupil": 0.9588,
+          "pupil_miss_rate": 0.0127,
+          "pupil_mm_error_median": 0.026,
+          "pupil_mm_error_p90": 0.09
+        },
+        "defocus_4px": {
+          "held_out_of_training": true,
+          "frames": 1341,
+          "iou_iris": 0.9333,
+          "iou_pupil": 0.9428,
+          "pupil_miss_rate": 0.0246,
+          "pupil_mm_error_median": 0.04,
+          "pupil_mm_error_p90": 0.256
+        },
+        "phone_combo": {
+          "held_out_of_training": false,
+          "frames": 1341,
+          "iou_iris": 0.9474,
+          "iou_pupil": 0.8765,
+          "pupil_miss_rate": 0.0134,
+          "pupil_mm_error_median": 0.107,
+          "pupil_mm_error_p90": 0.379
+        }
+      }
+    },
+    "kaggle_cross": {
+      "frames_in_set": 1158,
+      "subjects": 85,
+      "shipped": {
+        "clean": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.414,
+          "iou_pupil": 0.1487,
+          "pupil_miss_rate": 0.8592,
+          "pupil_mm_error_median": 4.262,
+          "pupil_mm_error_p90": 6.214
+        },
+        "lowres_200px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.3366,
+          "iou_pupil": 0.146,
+          "pupil_miss_rate": 0.8713,
+          "pupil_mm_error_median": 4.205,
+          "pupil_mm_error_p90": 6.198
+        },
+        "lowres_120px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.2509,
+          "iou_pupil": 0.1256,
+          "pupil_miss_rate": 0.8972,
+          "pupil_mm_error_median": 4.277,
+          "pupil_mm_error_p90": 6.355
+        },
+        "gaussian_blur_2px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.3308,
+          "iou_pupil": 0.1445,
+          "pupil_miss_rate": 0.8739,
+          "pupil_mm_error_median": 4.208,
+          "pupil_mm_error_p90": 6.248
+        },
+        "motion_blur_9px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.3347,
+          "iou_pupil": 0.1322,
+          "pupil_miss_rate": 0.88,
+          "pupil_mm_error_median": 4.416,
+          "pupil_mm_error_p90": 6.264
+        },
+        "sensor_noise": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.2973,
+          "iou_pupil": 0.2216,
+          "pupil_miss_rate": 0.7824,
+          "pupil_mm_error_median": 2.703,
+          "pupil_mm_error_p90": 6.129
+        },
+        "dark_iris": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.5118,
+          "iou_pupil": 0.1361,
+          "pupil_miss_rate": 0.8782,
+          "pupil_mm_error_median": 4.49,
+          "pupil_mm_error_p90": 6.447
+        },
+        "low_light": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.168,
+          "iou_pupil": 0.1087,
+          "pupil_miss_rate": 0.8877,
+          "pupil_mm_error_median": 4.231,
+          "pupil_mm_error_p90": 11.7
+        },
+        "overexposed": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.3312,
+          "iou_pupil": 0.1593,
+          "pupil_miss_rate": 0.8506,
+          "pupil_mm_error_median": 4.039,
+          "pupil_mm_error_p90": 6.226
+        },
+        "glints": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.405,
+          "iou_pupil": 0.1349,
+          "pupil_miss_rate": 0.8946,
+          "pupil_mm_error_median": 4.079,
+          "pupil_mm_error_p90": 5.995
+        },
+        "jpeg_q25": {
+          "held_out_of_training": true,
+          "frames": 1158,
+          "iou_iris": 0.2843,
+          "iou_pupil": 0.1001,
+          "pupil_miss_rate": 0.8912,
+          "pupil_mm_error_median": 4.739,
+          "pupil_mm_error_p90": 6.748
+        },
+        "defocus_4px": {
+          "held_out_of_training": true,
+          "frames": 1158,
+          "iou_iris": 0.3235,
+          "iou_pupil": 0.1422,
+          "pupil_miss_rate": 0.8739,
+          "pupil_mm_error_median": 4.227,
+          "pupil_mm_error_p90": 6.248
+        },
+        "phone_combo": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.3131,
+          "iou_pupil": 0.0356,
+          "pupil_miss_rate": 0.9896,
+          "pupil_mm_error_median": 4.721,
+          "pupil_mm_error_p90": 7.274
+        }
+      },
+      "candidate": {
+        "clean": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.2575,
+          "iou_pupil": 0.1452,
+          "pupil_miss_rate": 0.9033,
+          "pupil_mm_error_median": 4.075,
+          "pupil_mm_error_p90": 5.483
+        },
+        "lowres_200px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.311,
+          "iou_pupil": 0.1455,
+          "pupil_miss_rate": 0.9033,
+          "pupil_mm_error_median": 4.21,
+          "pupil_mm_error_p90": 5.525
+        },
+        "lowres_120px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.2847,
+          "iou_pupil": 0.1352,
+          "pupil_miss_rate": 0.9067,
+          "pupil_mm_error_median": 4.252,
+          "pupil_mm_error_p90": 5.592
+        },
+        "gaussian_blur_2px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.3139,
+          "iou_pupil": 0.1473,
+          "pupil_miss_rate": 0.9033,
+          "pupil_mm_error_median": 4.193,
+          "pupil_mm_error_p90": 5.518
+        },
+        "motion_blur_9px": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.2998,
+          "iou_pupil": 0.1474,
+          "pupil_miss_rate": 0.9093,
+          "pupil_mm_error_median": 4.094,
+          "pupil_mm_error_p90": 5.478
+        },
+        "sensor_noise": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.1755,
+          "iou_pupil": 0.0997,
+          "pupil_miss_rate": 0.9231,
+          "pupil_mm_error_median": 4.443,
+          "pupil_mm_error_p90": 5.923
+        },
+        "dark_iris": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.5073,
+          "iou_pupil": 0.1743,
+          "pupil_miss_rate": 0.8696,
+          "pupil_mm_error_median": 4.214,
+          "pupil_mm_error_p90": 5.499
+        },
+        "low_light": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.1368,
+          "iou_pupil": 0.0797,
+          "pupil_miss_rate": 0.9352,
+          "pupil_mm_error_median": 4.765,
+          "pupil_mm_error_p90": 6.058
+        },
+        "overexposed": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.196,
+          "iou_pupil": 0.1314,
+          "pupil_miss_rate": 0.9067,
+          "pupil_mm_error_median": 4.08,
+          "pupil_mm_error_p90": 5.56
+        },
+        "glints": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.2798,
+          "iou_pupil": 0.144,
+          "pupil_miss_rate": 0.9059,
+          "pupil_mm_error_median": 4.108,
+          "pupil_mm_error_p90": 5.518
+        },
+        "jpeg_q25": {
+          "held_out_of_training": true,
+          "frames": 1158,
+          "iou_iris": 0.2651,
+          "iou_pupil": 0.1299,
+          "pupil_miss_rate": 0.9085,
+          "pupil_mm_error_median": 4.256,
+          "pupil_mm_error_p90": 5.727
+        },
+        "defocus_4px": {
+          "held_out_of_training": true,
+          "frames": 1158,
+          "iou_iris": 0.3104,
+          "iou_pupil": 0.1453,
+          "pupil_miss_rate": 0.9033,
+          "pupil_mm_error_median": 4.217,
+          "pupil_mm_error_p90": 5.541
+        },
+        "phone_combo": {
+          "held_out_of_training": false,
+          "frames": 1158,
+          "iou_iris": 0.5553,
+          "iou_pupil": 0.2604,
+          "pupil_miss_rate": 0.6857,
+          "pupil_mm_error_median": 3.275,
+          "pupil_mm_error_p90": 6.11
+        }
+      }
+    }
+  }
+}
