@@ -1,15 +1,17 @@
 # Watcher instructions: run 4 (ResNet34 U-Net)
 
-Training runs in tmux session `pupil-train4` under
-`overnight/run_training_v3.sh`, output in `/tmp/pupil_run4`, code in
-`/tmp/pupil_code4`. Architecture: `--arch resnet34` (every model command below
+The pipeline runs in tmux session `pupil-pipeline` under
+`overnight/pipeline.sh` (downloads, data prep, a one-epoch judge, then run 4); its log is `~/SoberTraining/pipeline.log`, output in `~/SoberTraining/runs/run4`, code in
+`~/Downloads/soberai-fixes/Training/PupilSegmentation`. Architecture: `--arch resnet34` (every model command below
 needs `@resnet34` or `--arch resnet34` for this run's checkpoints).
 
 ## Hard limits
 
+- Everything is under `~/SoberTraining`, never `/tmp` (a restart wiped `/tmp` once already).
+
 - Never touch a git repository, never commit or push, never edit code.
 - Never replace the shipped model or anything under `~/Downloads`.
-- Never delete data or checkpoints. Write only inside `/tmp/pupil_run4`.
+- Never delete data or checkpoints. Write only inside `~/SoberTraining/runs/run4`.
 - Nothing on the GPU while training runs.
 - Report numbers exactly as measured. Never round in the model's favour.
 - Never pick a checkpoint by looking at a test set (`val_test`,
@@ -21,7 +23,7 @@ needs `@resnet34` or `--arch resnet34` for this run's checkpoints).
 Same as before: tail metrics.jsonl / supervisor.log / train.log, check the
 process, `df -h /`, stall rule (no `progress` event for 45 minutes while alive
 and the Mac was awake), and append a status block to
-`/tmp/pupil_run4/STATUS.md` with the newest `selection_eval` (`results` =
+`~/SoberTraining/runs/run4/STATUS.md` with the newest `selection_eval` (`results` =
 OpenEDS selection, `extra_results` = synthetic selection).
 
 ## When `metrics.jsonl` has `"event": "finished"`
@@ -34,30 +36,29 @@ OpenEDS selection, `extra_results` = synthetic selection).
      over all conditions (clean and degraded) in `extra_results`.
    - If none is eligible, choose the epoch with the highest OpenEDS clean
      pupil, and mark it FAILING ELIGIBILITY in the report.
-2. **Benchmark** shipped, run 3, and the chosen run-4 epoch:
+2. **Benchmark** shipped and the chosen run-4 epoch:
    ```bash
-   cd /tmp/pupil_code4
+   cd ~/Downloads/soberai-fixes/Training/PupilSegmentation
    python3 benchmark.py --model shipped=finetuned_pupil_segmentation.pt \
-     --model run3=/tmp/pupil_run3/epoch6.pt \
-     --model run4=/tmp/pupil_run4/epochN.pt@resnet34 \
-     --data openeds_test=/tmp/openeds_prepared/val_test \
-     --data synth_test=/tmp/synth_clean/test \
-     --data teyed_cross=/tmp/teyed_prepared \
-     --data kaggle_cross=/tmp/kaggle_eyes \
-     --out /tmp/pupil_run4/benchmark.json > /tmp/pupil_run4/benchmark.log 2>&1
+          --model run4=~/SoberTraining/runs/run4/epochN.pt@resnet34 \
+     --data openeds_test=~/SoberTraining/data/openeds/val_test \
+     --data synth_test=~/SoberTraining/data/synth/test \
+     --data teyed_cross=~/SoberTraining/data/teyed \
+     --data kaggle_cross=~/SoberTraining/data/kaggle \
+     --out ~/SoberTraining/runs/run4/benchmark.json > ~/SoberTraining/runs/run4/benchmark.log 2>&1
    ```
 3. **Export and verify** at float32 and float16 (size matters in an app):
    ```bash
-   python3 export_coreml.py --arch resnet34 --weights /tmp/pupil_run4/epochN.pt --out /tmp/pupil_run4/Run4.mlpackage
-   python3 verify_coreml.py --arch resnet34 --package /tmp/pupil_run4/Run4.mlpackage \
-     --weights /tmp/pupil_run4/epochN.pt --eval-data /tmp/openeds_prepared/val_test --every 4
-   python3 export_coreml.py --arch resnet34 --precision float16 --weights /tmp/pupil_run4/epochN.pt --out /tmp/pupil_run4/Run4-fp16.mlpackage
-   python3 verify_coreml.py --arch resnet34 --package /tmp/pupil_run4/Run4-fp16.mlpackage \
-     --weights /tmp/pupil_run4/epochN.pt --eval-data /tmp/openeds_prepared/val_test --every 4
+   python3 export_coreml.py --arch resnet34 --weights ~/SoberTraining/runs/run4/epochN.pt --out ~/SoberTraining/runs/run4/Run4.mlpackage
+   python3 verify_coreml.py --arch resnet34 --package ~/SoberTraining/runs/run4/Run4.mlpackage \
+     --weights ~/SoberTraining/runs/run4/epochN.pt --eval-data ~/SoberTraining/data/openeds/val_test --every 4
+   python3 export_coreml.py --arch resnet34 --precision float16 --weights ~/SoberTraining/runs/run4/epochN.pt --out ~/SoberTraining/runs/run4/Run4-fp16.mlpackage
+   python3 verify_coreml.py --arch resnet34 --package ~/SoberTraining/runs/run4/Run4-fp16.mlpackage \
+     --weights ~/SoberTraining/runs/run4/epochN.pt --eval-data ~/SoberTraining/data/openeds/val_test --every 4
    ```
    Record both packages' sizes (`du -sh`).
-4. Write `/tmp/pupil_run4/REPORT.md`: PASS/FAIL per criterion with numbers
-   for run 4 against shipped (and run 3 alongside for context):
+4. Write `~/SoberTraining/runs/run4/REPORT.md`: PASS/FAIL per criterion with numbers
+   for run 4 against shipped (run 3's checkpoints were lost in a restart; quote its numbers from its saved report if useful):
    1. Core ML clean on `val_test` (every 4th frame): iris >= 0.9490 and pupil >= 0.9730.
    2. `openeds_test`: beats shipped on the non-clean mean of (iris+pupil)/2.
    3. `teyed_cross`: beats shipped on clean pupil IoU and clean (iris+pupil)/2.
