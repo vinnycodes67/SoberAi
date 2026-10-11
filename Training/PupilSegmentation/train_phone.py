@@ -57,14 +57,35 @@ def atomic_save(obj, path: str) -> None:
 def soft_dice_loss(probs: torch.Tensor, labels3: torch.Tensor) -> torch.Tensor:
     """1 - Dice for iris and pupil, averaged. Cross-entropy is per pixel and
     barely notices a pupil edge drawn two pixels out; Dice is an overlap
-    measure, the same thing the IoU bar scores."""
+    measure, the same thing the IoU bar scores. Pixels labelled IGNORE count
+    for neither prediction nor truth."""
+    valid = (labels3 != IGNORE).float()
     losses = []
     for c in (1, 2):
-        p = probs[:, c]
+        p = probs[:, c] * valid
         t = (labels3 == c).float()
         inter = (p * t).sum()
         losses.append(1 - (2 * inter + 1) / (p.sum() + t.sum() + 1))
     return sum(losses) / len(losses)
+
+
+IGNORE = -100  # nll_loss's default ignore_index
+
+
+def ignore_pupil_edge(labels3: torch.Tensor, radius: int) -> torch.Tensor:
+    """Marks the ring within `radius` pixels of the pupil outline as IGNORE.
+
+    The synthetic renders draw the pupil outline larger than OpenEDS does:
+    run 4 learned it and over-drew OpenEDS pupils by about 7% of their area,
+    almost every wrong pixel within 2 px of the true edge. Ignoring the ring
+    on synthetic batches keeps what that data teaches (where the pupil is in
+    visible light) and leaves the edge itself to OpenEDS."""
+    pupil = (labels3 == 2).float()[:, None]
+    k = 2 * radius + 1
+    grown = nn.functional.max_pool2d(pupil, k, 1, radius)
+    shrunk = -nn.functional.max_pool2d(-pupil, k, 1, radius)
+    ring = (grown - shrunk)[:, 0] > 0
+    return labels3.masked_fill(ring, IGNORE)
 
 
 class WeightAverage:
@@ -89,12 +110,13 @@ class WeightAverage:
 
 
 def mixed_batches(primary, extra_set, batch_size, prob, generator, epoch):
-    """Batches from `primary`, each replaced with probability `prob` by one from
-    `extra_set`, which restarts whenever it runs out. An epoch stays defined
-    by the primary set's step count."""
+    """(batch, from_extra) pairs: batches from `primary`, each replaced with
+    probability `prob` by one from `extra_set`, which restarts whenever it
+    runs out. An epoch stays defined by the primary set's step count."""
     extra_iter, restarts = None, 0
     for batch in primary:
-        if extra_set is not None and float(torch.rand(1, generator=generator)) < prob:
+        from_extra = extra_set is not None and float(torch.rand(1, generator=generator)) < prob
+        if from_extra:
             try:
                 if extra_iter is None:
                     raise StopIteration
@@ -104,7 +126,7 @@ def mixed_batches(primary, extra_set, batch_size, prob, generator, epoch):
                 restarts += 1
                 extra_iter = iter(DataLoader(extra_set, batch_size=batch_size, num_workers=0))
                 batch = next(extra_iter)
-        yield batch
+        yield batch, from_extra
 
 
 def cosine_lr(step: int, total: int, base: float, warmup: int = 300) -> float:
@@ -139,6 +161,9 @@ def main() -> None:
     p.add_argument("--extra-prob", type=float, default=0.35)
     p.add_argument("--extra-select", default=None, help="selection set for the extra source")
     p.add_argument("--dice-weight", type=float, default=0.0)
+    p.add_argument("--extra-ignore-pupil-edge", type=int, default=0,
+                   help="ignore this many pixels either side of the pupil outline in extra-source "
+                        "batches, so the pupil edge is learned from the primary set only")
     p.add_argument("--ema-decay", type=float, default=0.0, help="0 disables weight averaging")
     p.add_argument("--cooldown-epochs", type=int, default=0,
                    help="final epochs trained with --cooldown-augment-prob")
@@ -242,7 +267,7 @@ def main() -> None:
         freeze_encoder_norms()
         running, count, t0 = 0.0, 0, time.time()
         optimizer.zero_grad()
-        for step, (images, labels) in enumerate(batches):
+        for step, ((images, labels), from_extra) in enumerate(batches):
             if step >= steps_per_epoch:
                 break
             images, labels = images.to(device), labels.to(device)
@@ -251,6 +276,8 @@ def main() -> None:
                 group["lr"] = cosine_lr(global_step, total_steps, args.lr) * group.get("scale", 1.0)
             probs = model(images)
             labels3 = merge_labels(labels)
+            if from_extra and args.extra_ignore_pupil_edge > 0:
+                labels3 = ignore_pupil_edge(labels3, args.extra_ignore_pupil_edge)
             loss = nn.functional.nll_loss(torch.log(probs.clamp(min=1e-7)), labels3, weight=weights)
             if args.dice_weight > 0:
                 loss = loss + args.dice_weight * soft_dice_loss(probs, labels3)
