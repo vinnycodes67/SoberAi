@@ -23,12 +23,13 @@ import argparse
 import coremltools as ct
 import torch
 
-from model import PupilSegmentationModel
+from model_v2 import build_model
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", default="finetuned_pupil_segmentation.pt")
+    parser.add_argument("--arch", default="ritnet", help="ritnet or a U-Net encoder name (model_v2)")
     parser.add_argument("--out", default="PupilSegmentation.mlpackage")
     # float32 by default. The mlprogram default is float16, and on held-out
     # subjects that cost the shipped model ~2 points of iris IoU against its
@@ -37,7 +38,7 @@ def main():
     parser.add_argument("--precision", choices=["float32", "float16"], default="float32")
     args = parser.parse_args()
 
-    model = PupilSegmentationModel()
+    model = build_model(args.arch)
     model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     model.eval()
 

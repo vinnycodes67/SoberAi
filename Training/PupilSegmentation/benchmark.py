@@ -124,11 +124,13 @@ def score(model, dataset, conditions, device, every: int = 1, batch_size: int = 
     return results
 
 
-def load_model(path: str, device):
+def load_model(spec: str, device):
+    """`path` for the original RITnet, `path@arch` for a U-Net (e.g. run.pt@resnet34)."""
+    path, _, arch = spec.partition("@")
     if path.endswith(".mlpackage"):
         return CoreMLRunner(path)
-    from model import PupilSegmentationModel
-    model = PupilSegmentationModel()
+    from model_v2 import build_model
+    model = build_model(arch or "ritnet")
     state = torch.load(path, map_location="cpu", weights_only=True)
     model.load_state_dict(state["model"] if isinstance(state, dict) and "model" in state else state)
     return model.to(device)

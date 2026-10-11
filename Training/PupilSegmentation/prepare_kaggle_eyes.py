@@ -19,8 +19,11 @@ The labels are noisy, so each frame is cleaned and some are dropped:
 - pupil: largest connected component, holes filled (the glint left a hole
   in many pupils), stray "pupil" speckles on eyelashes removed;
 - iris: largest component of iris-or-pupil, holes filled, minus the pupil;
-- dropped: no pupil, pupil not inside the iris, pupil under 150 px, or the
-  eye cut by the 640x400 crop.
+- dropped: no pupil, pupil not inside the iris, pupil under 150 px, the
+  eye cut by the 640x400 crop, a pupil label that is not disc-like (solidity
+  under 0.9, the off-centre crescents), or one that is not dark in the image
+  (its mean brightness not clearly below the iris's) -- a label that misses
+  the visible pupil scores every model as wrong.
 
     python3 prepare_kaggle_eyes.py --src "/tmp/datasets/kaggle-pei/x/IRIS + PUPIL + EYE" \\
         --out /tmp/kaggle_eyes
@@ -48,15 +51,31 @@ def largest_component(mask: np.ndarray) -> np.ndarray:
     return labelled == (int(np.argmax(sizes)) + 1)
 
 
-def clean(raw: np.ndarray) -> tuple[np.ndarray | None, str]:
+def solidity(mask: np.ndarray) -> float:
+    """Area over convex-hull area; a disc is near 1, a crescent well below."""
+    from scipy.spatial import ConvexHull
+    ys, xs = np.nonzero(mask)
+    if len(xs) < 10:
+        return 0.0
+    hull = ConvexHull(np.column_stack([xs, ys]))
+    return float(mask.sum() / max(hull.volume, 1.0))
+
+
+def clean(raw: np.ndarray, image: np.ndarray | None = None) -> tuple[np.ndarray | None, str]:
     pupil = largest_component(raw == 2)
     pupil = ndimage.binary_fill_holes(pupil)
     if pupil.sum() < 150:
         return None, "pupil_missing_or_tiny"
+    if solidity(pupil) < 0.9:
+        return None, "pupil_not_disc_like"
     eye_disc = ndimage.binary_fill_holes(largest_component((raw == 3) | pupil))
     if (pupil & ~eye_disc).sum() > 0.02 * pupil.sum():
         return None, "pupil_outside_iris"
     iris = eye_disc & ~pupil
+    if image is not None and iris.sum() > 0:
+        # Glints are bright inside a real pupil, so compare medians.
+        if np.median(image[pupil]) > 0.75 * np.median(image[iris]):
+            return None, "pupil_label_not_dark"
     out = np.zeros(raw.shape, np.uint8)
     out[(raw >= 1)] = 1
     out[iris] = 2
@@ -94,7 +113,7 @@ def main() -> None:
         if image.shape != raw.shape or image.shape[1] != OUT_W:
             reasons["unexpected_size"] = reasons.get("unexpected_size", 0) + 1
             continue
-        mask, why = clean(raw)
+        mask, why = clean(raw, image)
         if mask is None:
             reasons[why] = reasons.get(why, 0) + 1
             continue

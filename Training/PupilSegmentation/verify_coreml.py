@@ -23,7 +23,7 @@ import torch
 from PIL import Image
 
 from dataset import OpenEDSSegmentationDataset
-from model import PupilSegmentationModel
+from model_v2 import build_model
 
 CLASS_NAMES = ["background", "iris", "pupil"]
 
@@ -41,12 +41,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--package", required=True)
     parser.add_argument("--weights", required=True)
+    parser.add_argument("--arch", default="ritnet", help="ritnet or a U-Net encoder name (model_v2)")
     parser.add_argument("--eval-data", required=True)
     parser.add_argument("--every", type=int, default=1, help="score every Nth frame")
     args = parser.parse_args()
 
     mlmodel = ct.models.MLModel(args.package)
-    torch_model = PupilSegmentationModel()
+    torch_model = build_model(args.arch)
     torch_model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     torch_model.eval()
 
