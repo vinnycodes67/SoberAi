@@ -161,6 +161,15 @@ def main() -> None:
     p.add_argument("--extra-prob", type=float, default=0.35)
     p.add_argument("--extra-select", default=None, help="selection set for the extra source")
     p.add_argument("--dice-weight", type=float, default=0.0)
+    p.add_argument("--zoom", type=float, nargs=2, default=(0.75, 1.25), metavar=("LO", "HI"),
+                   help="re-crop scale range; below 1 zooms in")
+    p.add_argument("--soft-reframe", action="store_true",
+                   help="resample labels with the image's bilinear interpolation when re-cropping")
+    p.add_argument("--pupil-resize-prob", type=float, default=0.0,
+                   help="share of augmented frames whose pupil is dilated or constricted")
+    p.add_argument("--cross-select", default=None,
+                   help="a selection set from a different camera, scored on every frame "
+                        "(e.g. data/kaggle_select)")
     p.add_argument("--augment-skip", nargs="*", default=[], choices=AUGMENT_STEPS,
                    help="augmentation steps never applied")
     p.add_argument("--class-weights", type=float, nargs=3, default=CLASS_WEIGHTS,
@@ -189,6 +198,7 @@ def main() -> None:
         raise SystemExit(f"subjects {sorted(overlap)} are in both train and selection data")
     extra_set = ShardStream(args.extra_train, seed=args.seed + 1) if args.extra_train else None
     extra_select = OpenEDSSegmentationDataset(args.extra_select) if args.extra_select else None
+    cross_select = OpenEDSSegmentationDataset(args.cross_select) if args.cross_select else None
     if extra_set and extra_select and extra_set.subject_set & extra_select.subject_set:
         raise SystemExit("the extra source's train and selection sets share subjects")
 
@@ -227,6 +237,8 @@ def main() -> None:
         if extra_select is not None:
             event["extra_results"] = score(eval_model, extra_select, SELECTION_CONDITIONS, device,
                                            every=args.select_every)
+        if cross_select is not None:
+            event["cross_results"] = score(eval_model, cross_select, SELECTION_CONDITIONS, device)
         log_event(args.out_dir, event="selection_eval", epoch=epoch, **event)
 
     steps_per_epoch = len(train_set) // args.batch_size
@@ -275,7 +287,9 @@ def main() -> None:
             if step >= steps_per_epoch:
                 break
             images, labels = images.to(device), labels.to(device)
-            images, labels = augment_batch(images, labels, generator, p=augment_prob, skip=tuple(args.augment_skip))
+            images, labels = augment_batch(images, labels, generator, p=augment_prob, skip=tuple(args.augment_skip),
+                                           zoom=tuple(args.zoom), soft_reframe=args.soft_reframe,
+                                           pupil_resize_p=args.pupil_resize_prob)
             for group in optimizer.param_groups:
                 group["lr"] = cosine_lr(global_step, total_steps, args.lr) * group.get("scale", 1.0)
             probs = model(images)

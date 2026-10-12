@@ -178,7 +178,62 @@ def jpeg(img: torch.Tensor, quality: int) -> torch.Tensor:
     return torch.stack(out).unsqueeze(1).to(img.device)
 
 
-def reframe(img: torch.Tensor, labels: torch.Tensor, scale, aspect, shift, rotation_deg, flip):
+def resize_pupil(img: torch.Tensor, labels: torch.Tensor,
+                 factors: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """Dilates or constricts each pupil by `factors` (1-D, one per frame),
+    moving image and labels together.
+
+    OpenEDS pupils are indoor-sized. A model trained only on them draws a
+    small pupil inside a dilated one and calls the rest iris, which is the
+    case Sober most needs to get right. Within the iris, a radial warp about
+    the pupil's centre maps the pupil out to its new size and squeezes the
+    iris ring to fit; nothing outside the iris moves. Radii are measured in
+    the pupil's own ellipse, so stretched and tilted crops warp correctly.
+    The new pupil stays between 15% and 80% of the iris radius. Frames
+    without a usable pupil and iris are left alone."""
+    b, _, h, w = img.shape
+    dev = img.device
+    yy, xx = torch.meshgrid(torch.arange(h, device=dev, dtype=torch.float32),
+                            torch.arange(w, device=dev, dtype=torch.float32), indexing="ij")
+    grids = []
+    for i in range(b):
+        gx, gy = xx.clone(), yy.clone()
+        pupil = (labels[i] == PUPIL).nonzero().float()
+        eye = (labels[i] == IRIS) | (labels[i] == PUPIL)
+        if len(pupil) >= 50:
+            cy, cx = pupil[:, 0].mean(), pupil[:, 1].mean()
+            a = 2 * pupil[:, 1].std().clamp(min=1)   # semi-axes: a uniform disc's std is R/2
+            bb = 2 * pupil[:, 0].std().clamp(min=1)
+            row = eye[int(cy.round())].nonzero()
+            iris_rho = (row.max() - row.min()).float() / 2 / a if len(row) else torch.tensor(0.0)
+            if iris_rho > 1.25:
+                k = (factors[i].to(dev) * 1.0).clamp(0.15 * iris_rho, 0.8 * iris_rho)
+                dx, dy = (xx - cx) / a, (yy - cy) / bb
+                rho = (dx * dx + dy * dy).sqrt().clamp(min=1e-6)
+                src = torch.where(rho < k, rho / k,
+                                  torch.where(rho < iris_rho, 1 + (rho - k) * (iris_rho - 1) / (iris_rho - k), rho))
+                gx, gy = cx + dx * a * src / rho, cy + dy * bb * src / rho
+        grids.append(torch.stack([(2 * gx + 1) / w - 1, (2 * gy + 1) / h - 1], dim=-1))
+    # Every source point lies inside the frame (the warp only pulls points
+    # towards the pupil's centre), so the padding mode never matters; MPS
+    # has no border mode.
+    grid = torch.stack(grids)
+    img = F.grid_sample(img, grid, mode="bilinear", padding_mode="zeros", align_corners=False)
+    lab = F.grid_sample(labels.unsqueeze(1).float(), grid, mode="nearest", padding_mode="zeros", align_corners=False)
+    return img, lab.squeeze(1).round().long()
+
+
+def _resample_labels_soft(labels: torch.Tensor, grid: torch.Tensor) -> torch.Tensor:
+    """Resamples a label map by bilinear interpolation of its one-hot classes
+    and an argmax, so the label edge lands where the interpolated image edge
+    does instead of on nearest-neighbour steps."""
+    onehot = F.one_hot(labels, 4).permute(0, 3, 1, 2).float()
+    soft = F.grid_sample(onehot, grid, mode="bilinear", padding_mode="reflection", align_corners=False)
+    return soft.argmax(dim=1)
+
+
+def reframe(img: torch.Tensor, labels: torch.Tensor, scale, aspect, shift, rotation_deg, flip,
+            soft_labels: bool = False):
     """Re-crops each frame the way a landmark-driven crop would: a wider or
     tighter box, a different aspect ratio stretched back to 640x400, a little
     rotation, and either eye. Per-sample parameters are 1-D tensors."""
@@ -197,6 +252,8 @@ def reframe(img: torch.Tensor, labels: torch.Tensor, scale, aspect, shift, rotat
     # Reflection rather than border padding: border smears the edge row into
     # long streaks the network could learn to key on.
     img = F.grid_sample(img, grid, mode="bilinear", padding_mode="reflection", align_corners=False)
+    if soft_labels:
+        return img, _resample_labels_soft(labels, grid)
     lab = F.grid_sample(labels.unsqueeze(1).float(), grid, mode="nearest",
                         padding_mode="reflection", align_corners=False)
     return img, lab.squeeze(1).round().long()
@@ -209,11 +266,16 @@ AUGMENT_STEPS = ("reframe", "darken_iris", "glints", "photometric", "blur", "low
 
 
 def augment_batch(img: torch.Tensor, labels: torch.Tensor, generator: torch.Generator,
-                  p: float = 0.7, skip: tuple = ()) -> tuple[torch.Tensor, torch.Tensor]:
+                  p: float = 0.7, skip: tuple = (), zoom: tuple = (0.75, 1.25),
+                  soft_reframe: bool = False, pupil_resize_p: float = 0.0,
+                  pupil_resize: tuple = (0.6, 2.2)) -> tuple[torch.Tensor, torch.Tensor]:
     """Each frame is left clean with probability 1 - p, so the network keeps
     its accuracy on clean input. Otherwise a random subset of degradations is
     applied in capture order: framing, optics, sensor, scene. Steps named in
-    `skip` (from AUGMENT_STEPS) are never applied."""
+    `skip` (from AUGMENT_STEPS) are never applied. `zoom` is the crop-scale
+    range (below 1 zooms in). With probability `pupil_resize_p` a frame's
+    pupil is first resized by a log-uniform factor in `pupil_resize`. With it
+    at 0, every random draw is the same as before it existed."""
     b = img.shape[0]
     rand = lambda *size: torch.rand(size, generator=generator)  # noqa: E731
     active = rand(b) < p
@@ -223,14 +285,22 @@ def augment_batch(img: torch.Tensor, labels: torch.Tensor, generator: torch.Gene
     x, y = img[idx], labels[idx]
     n = x.shape[0]
 
+    if pupil_resize_p > 0:
+        g2 = torch.Generator().manual_seed(int(torch.randint(2**31, (1,), generator=generator)))
+        lo, hi = math.log(pupil_resize[0]), math.log(pupil_resize[1])
+        f = torch.exp(lo + (hi - lo) * torch.rand(n, generator=g2))
+        f = torch.where(torch.rand(n, generator=g2) < pupil_resize_p, f, torch.ones(n))
+        if (f != 1).any():
+            x, y = resize_pupil(x, y, f)
     if float(rand(1)) < 0.8 and "reframe" not in skip:
         x, y = reframe(
             x, y,
-            scale=(0.75 + 0.5 * rand(n)).to(x.device),
+            scale=(zoom[0] + (zoom[1] - zoom[0]) * rand(n)).to(x.device),
             aspect=(0.7 + 0.8 * rand(n)).to(x.device),
             shift=((rand(n, 2) - 0.5) * 0.3).to(x.device),
             rotation_deg=((rand(n) - 0.5) * 20).to(x.device),
             flip=(rand(n) < 0.5).to(x.device),
+            soft_labels=soft_reframe,
         )
     if float(rand(1)) < 0.5 and "darken_iris" not in skip:
         x = darken_iris(x, y, float(0.2 + 0.65 * rand(1)))
