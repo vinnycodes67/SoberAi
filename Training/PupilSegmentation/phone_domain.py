@@ -228,7 +228,13 @@ def _resample_labels_soft(labels: torch.Tensor, grid: torch.Tensor) -> torch.Ten
     and an argmax, so the label edge lands where the interpolated image edge
     does instead of on nearest-neighbour steps."""
     onehot = F.one_hot(labels, 4).permute(0, 3, 1, 2).float()
-    soft = F.grid_sample(onehot, grid, mode="bilinear", padding_mode="reflection", align_corners=False)
+    # One class at a time: on MPS (torch 2.7), bilinear grid_sample over
+    # several channels at 640x400 returns wrong values (31% of label pixels
+    # changed class in a check against CPU); single-channel calls match CPU
+    # exactly. Every other grid_sample in this file is single-channel.
+    soft = torch.cat([F.grid_sample(onehot[:, c:c + 1].contiguous(), grid, mode="bilinear",
+                                    padding_mode="reflection", align_corners=False)
+                      for c in range(onehot.shape[1])], dim=1)
     return soft.argmax(dim=1)
 
 

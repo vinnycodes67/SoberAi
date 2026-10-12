@@ -78,3 +78,21 @@ if __name__ == "__main__":
         if name.startswith("test_"):
             fn()
             print("ok", name)
+
+
+def test_soft_reframe_labels_match_cpu_on_mps():
+    """Bilinear grid_sample over several channels is wrong on MPS at full
+    frame size; the soft-label path must still agree with CPU."""
+    if not torch.backends.mps.is_available():
+        return
+    torch.manual_seed(0)
+    labels = torch.zeros(2, 400, 640, dtype=torch.long)
+    labels[:, 120:280, 220:420] = 2
+    labels[:, 170:230, 290:350] = 3
+    labels[:, 100:300, 150:220] = 1
+    args = dict(scale=torch.tensor([0.5, 1.1]), aspect=torch.ones(2), shift=torch.zeros(2, 2),
+                rotation_deg=torch.tensor([5.0, -3.0]), flip=torch.tensor([False, True]))
+    img = torch.rand(2, 1, 400, 640)
+    _, cpu = reframe(img, labels, **args, soft_labels=True)
+    _, mps = reframe(img.to("mps"), labels.to("mps"), **{k: v.to("mps") for k, v in args.items()}, soft_labels=True)
+    assert (mps.cpu() == cpu).float().mean() > 0.999
