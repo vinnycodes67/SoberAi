@@ -205,11 +205,15 @@ def reframe(img: torch.Tensor, labels: torch.Tensor, scale, aspect, shift, rotat
 # MARK: - Training augmentation
 
 
+AUGMENT_STEPS = ("reframe", "darken_iris", "glints", "photometric", "blur", "lowres")
+
+
 def augment_batch(img: torch.Tensor, labels: torch.Tensor, generator: torch.Generator,
-                  p: float = 0.7) -> tuple[torch.Tensor, torch.Tensor]:
+                  p: float = 0.7, skip: tuple = ()) -> tuple[torch.Tensor, torch.Tensor]:
     """Each frame is left clean with probability 1 - p, so the network keeps
     its accuracy on clean input. Otherwise a random subset of degradations is
-    applied in capture order: framing, optics, sensor, scene."""
+    applied in capture order: framing, optics, sensor, scene. Steps named in
+    `skip` (from AUGMENT_STEPS) are never applied."""
     b = img.shape[0]
     rand = lambda *size: torch.rand(size, generator=generator)  # noqa: E731
     active = rand(b) < p
@@ -219,7 +223,7 @@ def augment_batch(img: torch.Tensor, labels: torch.Tensor, generator: torch.Gene
     x, y = img[idx], labels[idx]
     n = x.shape[0]
 
-    if float(rand(1)) < 0.8:
+    if float(rand(1)) < 0.8 and "reframe" not in skip:
         x, y = reframe(
             x, y,
             scale=(0.75 + 0.5 * rand(n)).to(x.device),
@@ -228,23 +232,23 @@ def augment_batch(img: torch.Tensor, labels: torch.Tensor, generator: torch.Gene
             rotation_deg=((rand(n) - 0.5) * 20).to(x.device),
             flip=(rand(n) < 0.5).to(x.device),
         )
-    if float(rand(1)) < 0.5:
+    if float(rand(1)) < 0.5 and "darken_iris" not in skip:
         x = darken_iris(x, y, float(0.2 + 0.65 * rand(1)))
-    if float(rand(1)) < 0.4:
+    if float(rand(1)) < 0.4 and "glints" not in skip:
         x = add_glints(x, y, int(1 + 2 * rand(1)), generator)
-    if float(rand(1)) < 0.8:
+    if float(rand(1)) < 0.8 and "photometric" not in skip:
         x = photometric(
             x,
             gamma=float(torch.exp((rand(1) - 0.5) * 1.4)),
             contrast=float(0.5 + 0.8 * rand(1)),
             brightness=float((rand(1) - 0.5) * 0.3),
         )
-    if float(rand(1)) < 0.45:
+    if float(rand(1)) < 0.45 and "blur" not in skip:
         if float(rand(1)) < 0.5:
             x = gaussian_blur(x, float(0.5 + 2.0 * rand(1)))
         else:
             x = motion_blur(x, int(3 + 10 * rand(1)), float(180 * rand(1)))
-    if float(rand(1)) < 0.75:
+    if float(rand(1)) < 0.75 and "lowres" not in skip:
         x = low_resolution(x, int(90 + 230 * rand(1)), noise=float(0.06 * rand(1)), generator=generator)
     elif float(rand(1)) < 0.5:
         x = add_noise(x, float(0.05 * rand(1)), generator)

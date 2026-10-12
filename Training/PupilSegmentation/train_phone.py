@@ -32,7 +32,7 @@ from torch.utils.data import DataLoader
 from benchmark import score
 from dataset import OpenEDSSegmentationDataset
 from model_v2 import build_model
-from phone_domain import augment_batch
+from phone_domain import AUGMENT_STEPS, augment_batch
 from stream_dataset import ShardStream
 from train import merge_labels, release_cached_memory, resolve_device
 
@@ -161,6 +161,10 @@ def main() -> None:
     p.add_argument("--extra-prob", type=float, default=0.35)
     p.add_argument("--extra-select", default=None, help="selection set for the extra source")
     p.add_argument("--dice-weight", type=float, default=0.0)
+    p.add_argument("--augment-skip", nargs="*", default=[], choices=AUGMENT_STEPS,
+                   help="augmentation steps never applied")
+    p.add_argument("--class-weights", type=float, nargs=3, default=CLASS_WEIGHTS,
+                   metavar=("BG", "IRIS", "PUPIL"), help="NLL weights for background, iris, pupil")
     p.add_argument("--extra-ignore-pupil-edge", type=int, default=0,
                    help="ignore this many pixels either side of the pupil outline in extra-source "
                         "batches, so the pupil edge is learned from the primary set only")
@@ -211,7 +215,7 @@ def main() -> None:
         for module in model.encoder.modules():
             if isinstance(module, nn.BatchNorm2d):
                 module.eval()
-    weights = torch.tensor(CLASS_WEIGHTS, device=device)
+    weights = torch.tensor(args.class_weights, device=device)
     average = WeightAverage(model, args.ema_decay) if args.ema_decay > 0 else None
     eval_model = build_model(args.arch).to(device)
 
@@ -271,7 +275,7 @@ def main() -> None:
             if step >= steps_per_epoch:
                 break
             images, labels = images.to(device), labels.to(device)
-            images, labels = augment_batch(images, labels, generator, p=augment_prob)
+            images, labels = augment_batch(images, labels, generator, p=augment_prob, skip=tuple(args.augment_skip))
             for group in optimizer.param_groups:
                 group["lr"] = cosine_lr(global_step, total_steps, args.lr) * group.get("scale", 1.0)
             probs = model(images)
