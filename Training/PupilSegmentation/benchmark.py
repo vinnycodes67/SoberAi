@@ -125,12 +125,14 @@ def score(model, dataset, conditions, device, every: int = 1, batch_size: int = 
 
 
 def load_model(spec: str, device):
-    """`path` for the original RITnet, `path@arch` for a U-Net (e.g. run.pt@resnet34)."""
+    """`path` for the original RITnet, `path@arch` for a U-Net (e.g. run.pt@resnet34),
+    `path@arch:offset` for a U-Net with a calibrated pupil offset (run.pt@resnet34:1.5)."""
     path, _, arch = spec.partition("@")
+    arch, _, offset = arch.partition(":")
     if path.endswith(".mlpackage"):
         return CoreMLRunner(path)
     from model_v2 import build_model
-    model = build_model(arch or "ritnet")
+    model = build_model(arch or "ritnet", float(offset or 0))
     state = torch.load(path, map_location="cpu", weights_only=True)
     model.load_state_dict(state["model"] if isinstance(state, dict) and "model" in state else state)
     return model.to(device)

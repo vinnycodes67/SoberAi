@@ -90,8 +90,14 @@ class _Up(nn.Module):
 
 
 class PupilSegmentationUNet(nn.Module):
-    def __init__(self, encoder: str = "mobilenet_v3_large", pretrained: bool = True, width: int = 1):
+    def __init__(self, encoder: str = "mobilenet_v3_large", pretrained: bool = True, width: int = 1,
+                 pupil_offset: float = 0.0):
         super().__init__()
+        # Subtracted from the pupil logit before the softmax: a decision
+        # threshold calibrated on selection data (calibrate.py), baked into
+        # the exported model. A plain float, not a buffer, so checkpoints do
+        # not change.
+        self.pupil_offset = float(pupil_offset)
         self.encoder_name = encoder
         self.encoder = _Encoder(encoder, pretrained)
         c = self.encoder.channels
@@ -118,13 +124,19 @@ class PupilSegmentationUNet(nn.Module):
         y = self.up2(y, f2)
         y = self.up1(y, f1)
         logits = F.interpolate(self.head(y), size=size, mode="bilinear", align_corners=False)
+        if self.pupil_offset:
+            shift = torch.tensor([0.0, 0.0, 0.0, self.pupil_offset], device=logits.device).view(1, 4, 1, 1)
+            logits = logits - shift
         probs = F.softmax(logits, dim=1)
         return torch.cat([probs[:, 0:1] + probs[:, 1:2], probs[:, 2:3], probs[:, 3:4]], dim=1)
 
 
-def build_model(arch: str) -> nn.Module:
-    """'ritnet' for the original model, or a U-Net encoder name."""
+def build_model(arch: str, pupil_offset: float = 0.0) -> nn.Module:
+    """'ritnet' for the original model, or a U-Net encoder name. `pupil_offset`
+    (U-Net only) is a calibrated pupil decision threshold; see calibrate.py."""
     if arch == "ritnet":
+        if pupil_offset:
+            raise ValueError("pupil_offset is only supported for U-Net models")
         from model import PupilSegmentationModel
         return PupilSegmentationModel()
-    return PupilSegmentationUNet(encoder=arch)
+    return PupilSegmentationUNet(encoder=arch, pupil_offset=pupil_offset)

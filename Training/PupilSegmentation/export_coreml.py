@@ -30,6 +30,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", default="finetuned_pupil_segmentation.pt")
     parser.add_argument("--arch", default="ritnet", help="ritnet or a U-Net encoder name (model_v2)")
+    parser.add_argument("--pupil-offset", type=float, default=0.0,
+                        help="calibrated pupil decision offset from calibrate.py (U-Net only)")
     parser.add_argument("--out", default="PupilSegmentation.mlpackage")
     # float32 by default. The mlprogram default is float16, and on held-out
     # subjects that cost the shipped model ~2 points of iris IoU against its
@@ -38,7 +40,7 @@ def main():
     parser.add_argument("--precision", choices=["float32", "float16"], default="float32")
     args = parser.parse_args()
 
-    model = build_model(args.arch)
+    model = build_model(args.arch, args.pupil_offset)
     model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     model.eval()
 

@@ -42,12 +42,14 @@ def main():
     parser.add_argument("--package", required=True)
     parser.add_argument("--weights", required=True)
     parser.add_argument("--arch", default="ritnet", help="ritnet or a U-Net encoder name (model_v2)")
+    parser.add_argument("--pupil-offset", type=float, default=0.0,
+                        help="calibrated pupil decision offset from calibrate.py (U-Net only)")
     parser.add_argument("--eval-data", required=True)
     parser.add_argument("--every", type=int, default=1, help="score every Nth frame")
     args = parser.parse_args()
 
     mlmodel = ct.models.MLModel(args.package)
-    torch_model = build_model(args.arch)
+    torch_model = build_model(args.arch, args.pupil_offset)
     torch_model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     torch_model.eval()
 
