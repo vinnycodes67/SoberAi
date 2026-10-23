@@ -3,7 +3,7 @@ import XCTest
 @testable import Sober
 
 /// Guidance that does not flicker, and does not tell anyone to move the wrong
-/// way. Positions are metres in ARKit world space.
+/// way. Positions are metres relative to the front camera (`FaceGeometry`).
 final class HeadPositionGuideTests: XCTestCase {
 
   /// A comfortable framing: on axis, about 40 cm away.

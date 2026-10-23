@@ -342,6 +342,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
     face: ARFaceAnchor,
     trackedFaceCount: Int,
     screenOffset: CGPoint?,
+    cameraTransform: simd_float4x4?,
     timestamp: TimeInterval,
     ambientIntensity: CGFloat?
   ) {
@@ -357,7 +358,10 @@ final class FaceTrackingService: NSObject, ObservableObject {
     let leftForward = face.leftEyeTransform.columns.2
     let rightForward = face.rightEyeTransform.columns.2
     let head = face.transform
-    let headPosition = SIMD3<Float>(head.columns.3.x, head.columns.3.y, head.columns.3.z)
+    // Camera-relative, not world: see `FaceGeometry`. Without a frame (never
+    // expected while tracking) there is no camera pose to measure against.
+    let headPosition = cameraTransform.map { FaceGeometry.portraitPosition(face: head, camera: $0) }
+      ?? SIMD3<Float>(head.columns.3.x, head.columns.3.y, head.columns.3.z)
     recentHeadPositions.append(headPosition)
     if recentHeadPositions.count > 30 {
       recentHeadPositions.removeFirst(recentHeadPositions.count - 30)
@@ -592,6 +596,7 @@ extension FaceTrackingService: ARSessionDelegate {
       ?? faces.first
     else { return }
     let timestamp = frame?.timestamp ?? ProcessInfo.processInfo.systemUptime
+    let cameraTransform = frame?.camera.transform
     let ambientIntensity = frame?.lightEstimate?.ambientIntensity
     let screenOffset = frame.map { frame -> CGPoint in
       let centre = face.transform.columns.3
@@ -604,7 +609,7 @@ extension FaceTrackingService: ARSessionDelegate {
     Task { @MainActor [weak self] in
       self?.ingest(
         face: face, trackedFaceCount: tracked.count, screenOffset: screenOffset,
-        timestamp: timestamp, ambientIntensity: ambientIntensity)
+        cameraTransform: cameraTransform, timestamp: timestamp, ambientIntensity: ambientIntensity)
     }
   }
 

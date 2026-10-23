@@ -57,7 +57,8 @@ enum HeadPosition: Equatable, Sendable {
 ///   before it replaces the published one.
 ///
 /// Pure value type with no ARKit dependency, so it is unit-tested directly.
-/// Inputs are metres in ARKit world space; only |z| is used for distance.
+/// Inputs are metres relative to the front camera in portrait axes
+/// (`FaceGeometry.portraitPosition`); only |z| is used for distance.
 struct HeadPositionGuide: Sendable {
   struct Thresholds: Sendable {
     /// Leaving the centered band. Identical to the quality gate in
