@@ -18,6 +18,9 @@ import SwiftUI
 /// pavement; "capture quality too low" is not.
 struct CaptureRecoveryOverlay: View {
   let guidance: String
+  /// What the camera measured when it stopped (`CaptureMeasurement`), so a
+  /// wrong limit can be told apart from a genuinely bad position.
+  var measured: [String] = []
   let onRetryCalibration: () -> Void
   let onEndCheck: () -> Void
 
@@ -40,12 +43,24 @@ struct CaptureRecoveryOverlay: View {
       }
 
       DSCard {
-        Text(
-          "The gaze step was stopped rather than finished on bad data. Nothing from it was saved."
-        )
-        .font(DSFont.footnote)
-        .foregroundStyle(DSPalette.textMuted)
-        .dsReadingLine()
+        VStack(alignment: .leading, spacing: DSSpace.xs) {
+          if !measured.isEmpty {
+            Text("What the camera measured")
+              .font(DSFont.footnoteStrong)
+              .foregroundStyle(DSPalette.textSecondary)
+            ForEach(measured, id: \.self) { line in
+              Text(line)
+                .font(DSFont.footnote)
+                .foregroundStyle(DSPalette.textSecondary)
+            }
+          }
+          Text(
+            "The gaze step was stopped rather than finished on bad data. Nothing from it was saved."
+          )
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textMuted)
+          .dsReadingLine()
+        }
       }
 
       Spacer(minLength: 0)

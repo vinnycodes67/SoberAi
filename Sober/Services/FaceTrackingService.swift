@@ -106,6 +106,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
   @Published private(set) var status: FaceTrackingStatus = .idle
   @Published private(set) var sampleCount = 0
   @Published private(set) var quality: CaptureQualitySnapshot = .idle
+  /// The newest frame's measured values, for the recovery screen.
+  @Published private(set) var measurement: CaptureMeasurement?
   /// Smoothed, debounced head position for guidance. Never used to judge
   /// whether a capture is valid -- `quality` still does that.
   @Published private(set) var headPosition: HeadPosition = .faceNotDetected
@@ -408,11 +410,19 @@ final class FaceTrackingService: NSObject, ObservableObject {
     let dropoutRatio = observedFrameCount > 0
       ? max(1 - (Double(samples.count) / Double(observedFrameCount)), 0)
       : 1
-    let centered = abs(Double(headPosition.x)) <= 0.13 && abs(Double(headPosition.y)) <= 0.18
+    let limits = CaptureMeasurement.self
+    let centered = abs(Double(headPosition.x)) <= limits.horizontalLimitMetres
+      && abs(Double(headPosition.y)) <= limits.verticalLimitMetres
     let distance = abs(Double(headPosition.z))
-    let distanceAcceptable = (0.25...0.75).contains(distance)
-    let lightingAcceptable = (ambientIntensity ?? 0) >= 180
-    let headStable = recentHeadMovement() <= 0.025
+    let distanceAcceptable = limits.distanceRangeMetres.contains(distance)
+    let lightingAcceptable = Double(ambientIntensity ?? 0) >= limits.minimumLight
+    let movement = recentHeadMovement()
+    let headStable = movement <= limits.maximumMovementMetresPerFrame
+    measurement = CaptureMeasurement(
+      facePresent: face.isTracked, otherFacesInView: otherFacesInView,
+      horizontalMetres: Double(headPosition.x), verticalMetres: Double(headPosition.y),
+      distanceMetres: distance, ambientLight: ambientIntensity.map(Double.init),
+      movementMetresPerFrame: movement, frameRate: frameRate, sampleCount: samples.count)
 
     qualityHistory.record(
       facePresent: face.isTracked,
@@ -430,7 +440,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
     if !distanceAcceptable { issues.append(.distance) }
     if !lightingAcceptable { issues.append(.lowLight) }
     if !headStable { issues.append(.unstable) }
-    if samples.count >= 20, frameRate < 20 { issues.append(.lowFrameRate) }
+    if samples.count >= 20, frameRate < limits.minimumFrameRate { issues.append(.lowFrameRate) }
     if samples.count < 20 { issues.append(.insufficientSamples) }
 
     quality = CaptureQualitySnapshot(

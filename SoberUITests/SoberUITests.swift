@@ -159,6 +159,8 @@ final class SoberUITests: XCTestCase {
       app.staticTexts["The camera lost a usable reading."].waitForExistence(timeout: 30)
     )
     XCTAssertTrue(app.staticTexts["Center your face and move somewhere brighter."].exists)
+    XCTAssertTrue(app.staticTexts["What the camera measured"].exists)
+    XCTAssertTrue(app.staticTexts["Face 21 cm off centre up or down (limit 18 cm)."].exists)
     XCTAssertTrue(app.buttons["Set the camera up again"].isHittable)
     capture(app, named: "capture-recovery")
   }

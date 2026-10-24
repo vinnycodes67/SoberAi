@@ -49,8 +49,10 @@
 		31463DBCB8555A12DF3AA4C6 /* PupilSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = FA1285417D984728C5CA0F62 /* PupilSegmentation.mlpackage */; };
 		325B0BF0F596A5E13070D562 /* CurfewNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB5A29F335D26E6E7743EBF /* CurfewNotifications.swift */; };
 		326415F7BDDD8ED1315DB456 /* SafetyPlanRidePromiseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A3DE405948BE9C5DB883CA /* SafetyPlanRidePromiseTests.swift */; };
+		336B185C3DF9004F2E0DA4F6 /* CaptureMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD874E9D2DE2AB76C54C26BD /* CaptureMeasurementTests.swift */; };
 		33891F10756188C7FE383924 /* CurfewShieldPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */; };
 		36032A7E300F9C9213981F51 /* CurfewSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD210ADE2BCFF17B6B3F7A1 /* CurfewSharedStore.swift */; };
+		3671080A6DAE95DB441A8A27 /* CaptureMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D41B5AB322AB954255CBF1 /* CaptureMeasurement.swift */; };
 		3708147E573D6A4C6814F9E7 /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		37542A4D2550BCD812E972FE /* DSGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00511FCD57D9B4FBC6B1A1A /* DSGallery.swift */; };
 		3884A8114D5B0E0DA27AB108 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3ABA407F78E17298DEA2FD /* Palette.swift */; };
@@ -196,6 +198,7 @@
 		ADE23E449F1674B1EB7A6823 /* CurfewPauseEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */; };
 		AE2A9CF1F86F71BCB23FA093 /* CurfewPauseEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25455B5C56014D7816819070 /* CurfewPauseEvaluator.swift */; };
 		AE3B1465AE2122A6E021CC4E /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B992B649C74F7395F2D97 /* DSComponents.swift */; };
+		AEE7F65032AF9534DC09A4E1 /* CaptureMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D41B5AB322AB954255CBF1 /* CaptureMeasurement.swift */; };
 		AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A596808C5944580D9A323B /* CameraCalibrationView.swift */; };
 		AF6D2D6ED5DB472BEE1E29FF /* CurfewCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7999B36252FF36F412C6AA7A /* CurfewCopy.swift */; };
 		B02AF5E71ED033A20B47DFA7 /* Satoshi-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F2BDE7B619A3CEB8133445B8 /* Satoshi-Regular.otf */; };
@@ -418,6 +421,7 @@
 		64D21C92E2C87F13E3587EA3 /* TaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModels.swift; sourceTree = "<group>"; };
 		6818BE10CEA441DD6AD13391 /* ScreeningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningEngineTests.swift; sourceTree = "<group>"; };
 		68C0EBE63087DAF33781E79A /* CurfewShieldPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewShieldPalette.swift; sourceTree = "<group>"; };
+		68D41B5AB322AB954255CBF1 /* CaptureMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureMeasurement.swift; sourceTree = "<group>"; };
 		69F84FFD58288F22C52D4F66 /* CurfewLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurfewLiveActivityController.swift; sourceTree = "<group>"; };
 		6A223D45142B4B63C7247613 /* NextCheckReadinessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckReadinessTests.swift; sourceTree = "<group>"; };
 		6F5D3100A283CC667C7A0EF8 /* TaskViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskViews.swift; sourceTree = "<group>"; };
@@ -506,6 +510,7 @@
 		FA3ABA407F78E17298DEA2FD /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		FBBCE118D97B8673EAF99397 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FC092ACD54BAE55BF8380675 /* PermissionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStore.swift; sourceTree = "<group>"; };
+		FD874E9D2DE2AB76C54C26BD /* CaptureMeasurementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureMeasurementTests.swift; sourceTree = "<group>"; };
 		FED29A6493ACD865B19246DA /* Satoshi-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Satoshi-Medium.otf"; sourceTree = "<group>"; };
 		FFD19F3128181709DE764F0B /* GuardianCheckInServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianCheckInServices.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -529,6 +534,7 @@
 				0724AA465C66F138ACD59616 /* BaselineThresholdTests.swift */,
 				11E7F42C433B3B4FFE41E1FD /* CaptureDiagnosticsTests.swift */,
 				86D101846D1F1037EDA70FA3 /* CaptureInterruptionTests.swift */,
+				FD874E9D2DE2AB76C54C26BD /* CaptureMeasurementTests.swift */,
 				4DC6C8AC127FF67AF764965C /* CheckHistoryTests.swift */,
 				DC945F25CA5E6F4D4CF021E6 /* ContactPickerTests.swift */,
 				8D20348E09CA314BDF125D8E /* CurfewContractTests.swift */,
@@ -949,6 +955,7 @@
 			children = (
 				3D601AA48A600955444F8D54 /* BaselineThresholds.swift */,
 				BF626406650B7AE35DBAA532 /* CaptureDiagnostics.swift */,
+				68D41B5AB322AB954255CBF1 /* CaptureMeasurement.swift */,
 				8150D19D8281A6719F7B3F6E /* CurfewContract.swift */,
 				2D51E5C81951D30F65BF20DB /* OcularDetailedMetrics.swift */,
 				C9001A9459892F746005CE25 /* OcularModels.swift */,
@@ -1236,6 +1243,7 @@
 				4F9264D1878E28A209723FC3 /* BuildChannel.swift in Sources */,
 				25E136262ECBDDB99500EFC8 /* CameraCalibrationView.swift in Sources */,
 				80C1C1D88A3E409BE522D343 /* CaptureDiagnostics.swift in Sources */,
+				3671080A6DAE95DB441A8A27 /* CaptureMeasurement.swift in Sources */,
 				4197758E513411230354073D /* CaptureRecoveryOverlay.swift in Sources */,
 				27800BEA0A33A57B9A000FF7 /* CheckHistoryStore.swift in Sources */,
 				0B54C4F2DB0A6FA7AFD8E75A /* CircleMapView.swift in Sources */,
@@ -1406,6 +1414,7 @@
 				C0A9178F272AFDFD2B42D30B /* BaselineThresholdTests.swift in Sources */,
 				AB7B8A71377C2905969A0AFF /* CaptureDiagnosticsTests.swift in Sources */,
 				67240BADA78CE3E0B391CEAE /* CaptureInterruptionTests.swift in Sources */,
+				336B185C3DF9004F2E0DA4F6 /* CaptureMeasurementTests.swift in Sources */,
 				40C71064DB2B9FAB175D9BB8 /* CheckHistoryTests.swift in Sources */,
 				E60F61DA9804467E53AC524D /* ContactPickerTests.swift in Sources */,
 				39185688945D36C4BA39DCE5 /* CurfewContractTests.swift in Sources */,
@@ -1449,6 +1458,7 @@
 				4F62F042E27D34C126E97BA6 /* BuildChannel.swift in Sources */,
 				AF3F7A483DD4CDD0E9C6C323 /* CameraCalibrationView.swift in Sources */,
 				2937FD8BAE6B3647334A539B /* CaptureDiagnostics.swift in Sources */,
+				AEE7F65032AF9534DC09A4E1 /* CaptureMeasurement.swift in Sources */,
 				8F72CC9DA26B2AEDED32591D /* CaptureRecoveryOverlay.swift in Sources */,
 				F47F42240CD0D3CF947DCA4A /* CheckHistoryStore.swift in Sources */,
 				3A9A132BD01BD7CE651159AB /* CircleMapView.swift in Sources */,
@@ -1578,7 +1588,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/LiveActivity/CurfewLiveActivity.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/LiveActivity/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1615,7 +1625,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldAction/CurfewShieldAction.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/ShieldAction/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1635,7 +1645,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldConfig/CurfewShieldConfig.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/ShieldConfig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1655,7 +1665,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldConfig/CurfewShieldConfig.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/ShieldConfig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1677,7 +1687,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sober/SoberInternal.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = "Sober/Info-Internal.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1731,7 +1741,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/Monitor/CurfewMonitor.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/Monitor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1751,7 +1761,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/Monitor/CurfewMonitor.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/Monitor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1772,7 +1782,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1793,7 +1803,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sober/SoberInternal.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = "Sober/Info-Internal.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1813,7 +1823,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldAction/CurfewShieldAction.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/ShieldAction/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1957,7 +1967,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1976,7 +1986,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/LiveActivity/CurfewLiveActivity.entitlements;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 2026102401;
 				INFOPLIST_FILE = CurfewExtensions/LiveActivity/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

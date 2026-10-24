@@ -13,6 +13,9 @@ struct OcularTaskView: View {
   @State private var recoveryTask: Task<Void, Never>?
   @State private var finished = false
   @State private var needsRecovery = false
+  /// Frozen when recovery starts, so the screen shows the failing frame
+  /// rather than whatever the paused tracker last saw.
+  @State private var recoveryMeasurement: [String] = []
 
   var body: some View {
     ZStack {
@@ -20,6 +23,7 @@ struct OcularTaskView: View {
       if needsRecovery {
         CaptureRecoveryOverlay(
           guidance: service.quality.primaryGuidance,
+          measured: recoveryMeasurement,
           onRetryCalibration: { onRetryCalibration?() },
           onEndCheck: { onEndCheck?() }
         )
@@ -257,6 +261,7 @@ struct OcularTaskView: View {
         return
       }
       protocolTask?.cancel()
+      recoveryMeasurement = service.measurement?.failingChecks ?? []
       service.pause()
       needsRecovery = true
       recoveryTask = nil
