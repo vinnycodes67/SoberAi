@@ -211,7 +211,7 @@ struct DSIntegratedHomeScreen: View {
       return "A check takes about two minutes. A concerning result can send your Guardian a minimal help request, never camera data or scores."
     }
     #endif
-    return "A private check takes about two minutes and works without a Guardian, network, location, or notifications."
+    return "A private check takes about two minutes and works without an account, network, location, or notifications."
   }
 
   private var primaryAction: some View {
@@ -320,7 +320,7 @@ struct DSIntegratedHomeScreen: View {
     DSSection("Get home") {
       DSRows {
         DSRow(
-          "Safety Circle",
+          "Safety Plan",
           detail: safetyPlanSummary,
           trailing: {
             if let lead = model.safetyPlan.leadContact {

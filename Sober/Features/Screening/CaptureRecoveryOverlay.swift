@@ -25,56 +25,66 @@ struct CaptureRecoveryOverlay: View {
   let onEndCheck: () -> Void
 
   var body: some View {
-    VStack(alignment: .leading, spacing: DSSpace.lg) {
-      Spacer(minLength: 0)
+    // Scrolls so the copy can grow at accessibility text sizes; the buttons are
+    // pinned below it, because this screen covers the flow's close button and
+    // they are the only way out.
+    ScrollView {
+      VStack(alignment: .leading, spacing: DSSpace.lg) {
+        VStack(alignment: .leading, spacing: DSSpace.sm) {
+          DSEyebrow("Capture stopped")
+          Text("The camera lost a usable reading.")
+            .font(DSFont.hero)
+            .dsHeroTracking()
+            .foregroundStyle(DSPalette.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+          Text(guidance)
+            .font(DSFont.callout)
+            .foregroundStyle(DSPalette.textSecondary)
+            .dsReadingLine()
+        }
 
-      VStack(alignment: .leading, spacing: DSSpace.sm) {
-        DSEyebrow("Capture stopped")
-        Text("The camera lost a usable reading.")
-          .font(DSFont.hero)
-          .dsHeroTracking()
-          .foregroundStyle(DSPalette.textPrimary)
-          .fixedSize(horizontal: false, vertical: true)
-          .accessibilityAddTraits(.isHeader)
-        Text(guidance)
-          .font(DSFont.callout)
-          .foregroundStyle(DSPalette.textSecondary)
-          .dsReadingLine()
-      }
-
-      DSCard {
-        VStack(alignment: .leading, spacing: DSSpace.xs) {
-          if !measured.isEmpty {
-            Text("What the camera measured")
-              .font(DSFont.footnoteStrong)
-              .foregroundStyle(DSPalette.textSecondary)
-            ForEach(measured, id: \.self) { line in
-              Text(line)
-                .font(DSFont.footnote)
+        DSCard {
+          VStack(alignment: .leading, spacing: DSSpace.xs) {
+            if !measured.isEmpty {
+              Text("What the camera measured")
+                .font(DSFont.footnoteStrong)
                 .foregroundStyle(DSPalette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+              ForEach(measured, id: \.self) { line in
+                Text(line)
+                  .font(DSFont.footnote)
+                  .foregroundStyle(DSPalette.textSecondary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
             }
+            Text(
+              "The gaze step was stopped rather than finished on bad data. Nothing from it was saved."
+            )
+            .font(DSFont.footnote)
+            .foregroundStyle(DSPalette.textMuted)
+            .dsReadingLine()
           }
-          Text(
-            "The gaze step was stopped rather than finished on bad data. Nothing from it was saved."
-          )
-          .font(DSFont.footnote)
-          .foregroundStyle(DSPalette.textMuted)
-          .dsReadingLine()
         }
       }
-
-      Spacer(minLength: 0)
-
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.top, DSSpace.xl)
+      .padding(.bottom, DSSpace.lg)
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .scrollBounceBehavior(.basedOnSize)
+    .safeAreaInset(edge: .bottom) {
       VStack(spacing: DSSpace.sm) {
         Button("Set the camera up again", action: onRetryCalibration)
           .buttonStyle(DSPrimaryButtonStyle())
         Button("End check", action: onEndCheck)
           .buttonStyle(DSSecondaryButtonStyle())
       }
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.top, DSSpace.sm)
+      .padding(.bottom, DSSpace.md)
+      .background(DSPalette.background)
     }
-    .padding(.horizontal, DSSpace.margin)
-    .padding(.vertical, DSSpace.xl)
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .background(DSPalette.background.ignoresSafeArea())
   }
 }

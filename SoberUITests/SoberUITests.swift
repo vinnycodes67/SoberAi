@@ -107,7 +107,7 @@ final class SoberUITests: XCTestCase {
   func testSafetyPlanOffersYourNumberAndContactPicker() {
     let app = launch(fixture: "home")
 
-    let circle = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Safety Circle")).firstMatch
+    let circle = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Safety Plan")).firstMatch
     for _ in 0..<6 where !circle.exists || !circle.isHittable { app.swipeUp() }
     XCTAssertTrue(circle.waitForExistence(timeout: 30))
     circle.tap()
@@ -160,7 +160,7 @@ final class SoberUITests: XCTestCase {
     )
     XCTAssertTrue(app.staticTexts["Center your face and move somewhere brighter."].exists)
     XCTAssertTrue(app.staticTexts["What the camera measured"].exists)
-    XCTAssertTrue(app.staticTexts["Face 21 cm off centre up or down (limit 18 cm)."].exists)
+    XCTAssertTrue(app.staticTexts["Face 21 cm off center up or down (limit 18 cm)."].exists)
     XCTAssertTrue(app.buttons["Set the camera up again"].isHittable)
     capture(app, named: "capture-recovery")
   }

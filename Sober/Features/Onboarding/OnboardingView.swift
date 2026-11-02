@@ -29,6 +29,7 @@ struct OnboardingView: View {
       }
       .padding(.horizontal, DSSpace.margin)
       .padding(.top, DSSpace.sm)
+      .soberReveal(delay: 0.1, rise: 0, blur: 0, duration: 0.6)
 
       TabView(selection: pageBinding) {
         introduction.tag(0)
@@ -38,6 +39,11 @@ struct OnboardingView: View {
       }
       .tabViewStyle(.page(indexDisplayMode: .never))
       .animation(reduceMotion ? nil : SoberMotion.screen, value: page)
+      // The reveal is on the pager, not on the first page's views: a page
+      // TabView hosts its pages separately and did not draw their animated
+      // state until something else forced a layout, so the halo and headline
+      // popped in whole after the launch mark had gone.
+      .soberReveal(delay: 0.14, rise: 16, blur: 8, scale: 0.97, duration: 0.9)
 
       VStack(spacing: DSSpace.sm) {
         StepProgress(current: page, total: Self.pageCount)
@@ -46,7 +52,6 @@ struct OnboardingView: View {
           Button("Continue") { pageBinding.wrappedValue = page + 1 }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(page == 2 && profileValidation.isBlocked)
-          .opacity(page == 2 && profileValidation.isBlocked ? 0.42 : 1)
 
           // The page-style TabView already supports a swipe-back gesture,
           // but nothing on screen says so — this is the only visible way
@@ -71,7 +76,6 @@ struct OnboardingView: View {
           }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(!canConsent)
-          .opacity(canConsent ? 1 : 0.42)
 
           #if INTERNAL_BUILD
           Button("Explore founder demo") {
@@ -85,6 +89,9 @@ struct OnboardingView: View {
       }
       .padding(.horizontal, DSSpace.margin)
       .padding(.bottom, DSSpace.md)
+      // Last in the opening sequence: the action arrives once there is
+      // something to act on.
+      .soberReveal(delay: 0.32, rise: 18, blur: 0, duration: 0.75)
     }
     .soberBackground()
     .sheet(isPresented: $showingRetentionPolicy) {
@@ -373,7 +380,7 @@ struct OnboardingView: View {
     #if INTERNAL_BUILD
     "You can invite one trusted Guardian to receive a minimal help request. No employer or law-enforcement mode."
     #else
-    "The public app has no Sober server connection, family tracking, or remote result feed."
+    "Sober has no server connection, family tracking, or remote result feed."
     #endif
   }
 
@@ -446,7 +453,7 @@ struct RetentionPolicyView: View {
           )
           policySection(
             "After a check",
-            "Raw frames and face landmarks are discarded. The app may retain task summaries such as reaction time, quality score, and your own baseline."
+            "Raw frames and per-frame face data are discarded. The app keeps only summary numbers on this iPhone, such as reaction time, eye-movement measures, quality score, and your own baseline. They are never uploaded."
           )
           policySection(
             "Sharing",
@@ -481,7 +488,7 @@ struct RetentionPolicyView: View {
     #if INTERNAL_BUILD
     "The internal build contains no advertising or biometric export. If you explicitly enable Safety Circle, a concerning-result message is sent to the Guardian you provide."
     #else
-    "The public app contains no advertising, analytics, biometric export, employer portal, family tracking, or remote result feed."
+    "Sober contains no advertising, analytics, biometric export, employer portal, family tracking, or remote result feed."
     #endif
   }
 

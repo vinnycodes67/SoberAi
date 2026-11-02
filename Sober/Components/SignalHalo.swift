@@ -10,7 +10,9 @@ struct SignalHalo: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: reduceMotion || !isActive)) {
+    // Full display rate. At the old 24 fps cap the orbiting dot visibly
+    // stepped on 60 and 120 Hz screens, the first motion anyone sees.
+    TimelineView(.animation(paused: reduceMotion || !isActive)) {
       timeline in
       let phase = reduceMotion ? 0.22 : timeline.date.timeIntervalSinceReferenceDate
 
@@ -123,7 +125,20 @@ struct SignalHalo: View {
       }
     }
     .frame(width: size, height: size)
-    .shadow(color: tone.opacity(0.16), radius: 24)
+    // The soft outer glow, drawn once per frame inside the same offscreen pass.
+    // A `.shadow` on a Canvas that redraws every frame re-renders the whole
+    // drawing a second time to blur it, which is what dropped frames here.
+    .padding(32)
+    .background {
+      RadialGradient(
+        colors: [tone.opacity(0.10), Color.clear],
+        center: .center,
+        startRadius: size * 0.3,
+        endRadius: size * 0.62
+      )
+    }
+    .drawingGroup()
+    .padding(-32)
     .accessibilityHidden(true)
   }
 }

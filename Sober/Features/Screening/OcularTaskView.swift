@@ -131,7 +131,6 @@ struct OcularTaskView: View {
         }
         .buttonStyle(PrimaryActionButtonStyle())
         .disabled(startedAt != nil || !canCapture)
-        .opacity(startedAt == nil && canCapture ? 1 : 0.55)
 
         if !canCapture {
           Button("Continue with inconclusive capture") {
@@ -143,6 +142,9 @@ struct OcularTaskView: View {
         }
 
         Button("Skip eye task") {
+          // Skipping mid-task marks the view finished, so onDisappear will not
+          // pause the camera; stop it here or it runs on behind the result.
+          if startedAt != nil { service.pause() }
           finish(with: service.unusableSummary(issue: .interrupted))
         }
         .buttonStyle(SecondaryActionButtonStyle(tint: Palette.warning))
@@ -152,7 +154,6 @@ struct OcularTaskView: View {
         }
         .buttonStyle(PrimaryActionButtonStyle())
         .disabled(startedAt != nil || !canCapture)
-        .opacity(startedAt == nil && canCapture ? 1 : 0.55)
 
         // Without a usable camera the 25-second protocol can only produce an
         // empty capture, so offer the inconclusive exit instead of the wait.

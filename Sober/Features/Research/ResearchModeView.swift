@@ -339,7 +339,6 @@ struct ResearchModeView: View {
           }
           .buttonStyle(PrimaryActionButtonStyle())
           .disabled(!model.researchConsent || model.researchSessions.isEmpty || preparingExport)
-          .opacity(model.researchConsent && !model.researchSessions.isEmpty ? 1 : 0.42)
         }
 
         Button("Delete local research data", role: .destructive) {

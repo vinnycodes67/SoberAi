@@ -69,6 +69,9 @@ struct ScreeningFlowView: View {
   @State private var ocularSummary: GazeCaptureSummary?
   @State private var outcome: ScreeningOutcome?
   @State private var showingExitAlert = false
+  /// Set when analysis finishes while "Leave this check?" is up. The alert
+  /// promises nothing is saved, so scoring waits for the person's answer.
+  @State private var scoringDeferredByExitAlert = false
   @State private var sessionStartedAt = Date()
   @State private var baselineAccepted = false
   @State private var baselineCompletionState = BaselineCompletionState(reason: .ready)
@@ -194,7 +197,11 @@ struct ScreeningFlowView: View {
             )
           case .analyzing:
             AnalyzingView {
-              finishScoring()
+              if showingExitAlert {
+                scoringDeferredByExitAlert = true
+              } else {
+                finishScoring()
+              }
             }
           case .result:
             if let outcome {
@@ -290,15 +297,24 @@ struct ScreeningFlowView: View {
     }
     .interactiveDismissDisabled()
     .alert("Leave this check?", isPresented: $showingExitAlert) {
-      Button("Keep going", role: .cancel) {}
-      Button("Leave check", role: .destructive) { dismiss() }
+      Button("Keep going", role: .cancel) {
+        if scoringDeferredByExitAlert {
+          scoringDeferredByExitAlert = false
+          finishScoring()
+        }
+      }
+      Button("Leave check", role: .destructive) {
+        scoringDeferredByExitAlert = false
+        dismiss()
+      }
     } message: {
       Text("Progress from this check won’t be saved.")
     }
   }
 
   private var canExit: Bool {
-    step != .result && step != .baselineComplete && configuration.scenario == .live
+    step != .result && step != .baselineComplete && step != .analyzing
+      && configuration.scenario == .live
       && interruptedStep == nil
   }
 
@@ -559,7 +575,6 @@ private struct BaselineAttestationView: View {
       Button("Begin baseline session", action: onContinue)
         .buttonStyle(PrimaryActionButtonStyle())
         .disabled(!attested)
-        .opacity(attested ? 1 : 0.42)
 
       Text("Don’t use a baseline session to decide whether to drive.")
         .font(DSFont.footnote)
@@ -581,7 +596,7 @@ private struct SelfReportView: View {
     FlowContainer(progress: nil) {
       ScreenHeader(
         eyebrow: "Before the check",
-        title: "Have you had anything to drink or use in the last 4 hours?",
+        title: "Have you had anything to drink or taken anything in the last 4 hours?",
         detail:
           "Be honest with yourself. Your answer is stored in the app, is not uploaded to Sober, and overrides the task result."
       )
@@ -629,7 +644,7 @@ private struct SelfReportView: View {
           }
         }
 
-        Button("Skip the visual battery") {
+        Button("Skip the visual tasks") {
           onAccessibilityRoute(selection ?? .no)
         }
         .buttonStyle(SecondaryActionButtonStyle(tint: Palette.warning))
@@ -703,6 +718,9 @@ private struct AnalyzingView: View {
     .soberBackground()
     .task {
       try? await Task.sleep(for: .milliseconds(900))
+      // A dismissed check cancels this task; `try?` swallows that, and
+      // completing anyway recorded a session the person had abandoned.
+      guard !Task.isCancelled else { return }
       onComplete()
     }
   }

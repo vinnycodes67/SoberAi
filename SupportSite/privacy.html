@@ -10,14 +10,41 @@
   <body>
     <main>
       <header>
-        <p class="eyebrow">Effective August 13, 2026</p>
+        <p class="eyebrow">Effective November 1, 2026</p>
         <h1>Privacy Policy</h1>
         <p class="lede">This policy covers the public Sober iPhone app. The public app has no account, advertising, analytics, tracking, or configured Sober server connection.</p>
       </header>
 
-      <section>
-        <h2>Camera processing</h2>
-        <p>When you start a check, Sober asks for camera access and processes face and eye landmarks on your iPhone. Camera frames, video, and audio are not saved or uploaded. You may deny access or turn it off later in iPhone Settings. Sober then uses its explicit no-camera path instead of inventing a reading.</p>
+      <section id="face-data">
+        <h2>Face data (TrueDepth camera)</h2>
+        <p>Sober uses Apple’s ARKit face tracking with the iPhone TrueDepth camera only while you run a check or a baseline session and the camera preview is on screen. This section describes everything Sober does with that face data.</p>
+
+        <h3 id="face-data-collected">What face data Sober collects</h3>
+        <p>During the 11- to 25-second eye task, Sober reads the following from ARKit on each camera frame:</p>
+        <ul>
+          <li>the position and direction of each eye (left and right gaze);</li>
+          <li>how closed each eye is (ARKit’s eye-blink values);</li>
+          <li>the position and steadiness of your head relative to the camera, and whether more than one face is in view;</li>
+          <li>simple image brightness statistics and ARKit’s light estimate, used only to check lighting.</li>
+        </ul>
+        <p>Sober does not use the face mesh to identify you, does not create a face print or other biometric identifier, and does not save camera images, video, depth maps, or audio.</p>
+
+        <h3 id="face-data-use">How face data is used</h3>
+        <p>Face data is used only to (1) check that the capture is usable — your face is centred, at a good distance, steady, and well lit — and to guide you if it is not, and (2) calculate eye-movement measures such as fixation steadiness, how closely your eyes follow a moving dot, saccade accuracy, left–right differences, and blink rate. These measures produce the on-screen result for that check and, for baseline sessions, your personal baseline. Face data is not used for advertising, marketing, tracking, identification, authentication, or training machine-learning models, and it is never sold.</p>
+
+        <h3 id="face-data-storage">Where face data is stored and how long it is kept</h3>
+        <p>The per-frame face data above stays in the iPhone’s memory, in a buffer capped at about 1,800 samples, and is discarded when the eye task ends or you leave it. It is never written to storage.</p>
+        <p>Sober saves only derived numeric summaries, never images or per-frame landmarks, and only on your iPhone in the app’s private container with iOS file protection:</p>
+        <ul>
+          <li><strong>Baseline sessions:</strong> the eye-movement measures and capture-quality numbers from each baseline session, so later checks can be compared against your own baseline. They are kept until you choose Delete all local data or delete the app.</li>
+          <li><strong>Check History:</strong> the date, the result state, and a capture-quality score for each check. History is limited to the newest 100 entries, and entries are removed after 90 days.</li>
+        </ul>
+
+        <h3 id="face-data-sharing">Sharing and third parties</h3>
+        <p>Face data and the summaries derived from it are not transmitted off your iPhone. Sober has no server for the public app and does not share face data with Sober’s developers or any third party, including analytics, advertising, or data-broker services. The only copy that can leave the device is an iCloud or computer backup of the whole iPhone that you control through Apple settings; Sober does not receive or have access to those backups.</p>
+
+        <h3 id="face-data-deletion">Deleting face data</h3>
+        <p>Use Settings → Delete all local data in Sober to permanently remove all baseline summaries and History from this iPhone, or delete the app. Per-frame face data is already deleted automatically at the end of every task. You can also turn off camera access in iPhone Settings at any time; Sober then uses its no-camera path and collects no face data.</p>
       </section>
 
       <section>
@@ -53,7 +80,7 @@
         <p><a href="index.html">Return to Sober Support</a>.</p>
       </section>
 
-      <footer>© 2026 Ravi Pulavarthy. Policy effective August 13, 2026.</footer>
+      <footer>© 2026 Ravi Pulavarthy. Policy effective November 1, 2026.</footer>
     </main>
   </body>
 </html>

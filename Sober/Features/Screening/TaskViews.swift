@@ -44,7 +44,7 @@ struct ReactionTaskView: View {
           } else {
             VStack(spacing: DSSpace.sm) {
               if phase == .intro {
-                Text("6 choices")
+                Text("6 rounds")
                   .font(DSFont.title)
                 Text("Color + shape + timing")
                   .font(DSFont.subheadline)

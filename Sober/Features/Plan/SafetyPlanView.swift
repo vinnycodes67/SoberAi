@@ -9,12 +9,20 @@ struct SafetyPlanView: View {
   @Environment(\.dismiss) private var dismiss
   @State private var editing: ContactEditTarget?
 
+  private var safetyPlanFootnote: String {
+    #if INTERNAL_BUILD
+    "Guardian Mode is configured separately and uses a two-device invite. Ride booking and direct contact always require your tap."
+    #else
+    "Ride booking and direct contact always require your tap."
+    #endif
+  }
+
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: DSSpace.md) {
           ScreenHeader(
-            eyebrow: "Safety Circle",
+            eyebrow: "Safety Plan",
             title: "Plan your way home.",
             detail:
               "Set the exact ride destination and the people you can call or message while clear-headed."
@@ -153,9 +161,7 @@ struct SafetyPlanView: View {
             }
           }
 
-          Text(
-            "Guardian Mode is configured separately and uses a two-device invite. Ride booking and direct contact always require your tap."
-          )
+          Text(safetyPlanFootnote)
           .font(DSFont.footnote)
           .foregroundStyle(Palette.textSecondary)
           .padding(.horizontal, DSSpace.xxs)
@@ -164,7 +170,7 @@ struct SafetyPlanView: View {
         .padding(DSSpace.margin)
       }
       .soberBackground()
-      .navigationTitle("Safety Circle")
+      .navigationTitle("Safety Plan")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {

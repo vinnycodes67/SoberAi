@@ -123,6 +123,10 @@ struct DSTabBar: View {
       .background { selectionPill(selected) }
       .contentShape(Capsule())
     }
+    // The label is dropped at accessibility sizes; long-press shows it large.
+    .accessibilityShowsLargeContentViewer {
+      Label(tab.title, systemImage: tab.icon)
+    }
     .buttonStyle(.plain)
     .accessibilityLabel(tab.title)
     .accessibilityAddTraits(selected ? [.isSelected, .isButton] : .isButton)

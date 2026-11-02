@@ -156,7 +156,7 @@ final class JourneySmokeUITests: XCTestCase {
 
     XCTAssertTrue(app.navigationBars["Privacy policy"].waitForExistence(timeout: 10))
     // DesignKit eyebrow labels expose their rendered uppercase value.
-    XCTAssertTrue(app.staticTexts["CAMERA PROCESSING"].exists)
+    XCTAssertTrue(app.staticTexts["FACE DATA (TRUEDEPTH CAMERA)"].exists)
     XCTAssertTrue(app.staticTexts["DATA COLLECTION AND SHARING"].exists)
     XCTAssertTrue(
       app.descendants(matching: .any)["privacy-policy-web-link"].exists

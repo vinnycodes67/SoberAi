@@ -156,7 +156,7 @@ struct SettingsView: View {
         DSSeparator()
         DSRow(
           "Privacy policy",
-          detail: "How the public app handles camera processing and local data",
+          detail: "How Sober handles face data, camera processing, and local data",
           action: { showingPrivacyPolicy = true }
         )
         .accessibilityIdentifier("privacy-policy-row")
@@ -254,6 +254,11 @@ struct PrivacyCenterView: View {
                   "Camera frames",
                   "Used for face and eye landmarks while a task runs, then gone. Never written "
                     + "to disk, never uploaded."
+                )
+                item(
+                  "Per-frame face data",
+                  "Eye direction, blink, and head position are held in memory during the eye task "
+                    + "and discarded when it ends. Only summary numbers are kept."
                 )
                 item("Video or audio", "Sober records neither.")
               }
@@ -444,14 +449,14 @@ struct PrivacyPolicyView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: DSSpace.xl) {
           VStack(alignment: .leading, spacing: DSSpace.sm) {
-            DSEyebrow("Effective August 13, 2026")
+            DSEyebrow("Effective November 1, 2026")
             Text("Privacy policy")
               .font(DSFont.hero)
               .dsHeroTracking()
               .foregroundStyle(DSPalette.textPrimary)
               .accessibilityAddTraits(.isHeader)
             Text(
-              "This policy covers the public Sober app. Sober has no account, advertising, "
+              "This policy covers the Sober iPhone app. Sober has no account, advertising, "
                 + "analytics, or configured server connection."
             )
             .font(DSFont.callout)
@@ -460,11 +465,34 @@ struct PrivacyPolicyView: View {
           }
 
           policySection(
-            "Camera processing",
-            "When you start a check, Sober asks for camera access and processes face and eye "
-              + "landmarks on this iPhone. Camera frames, video, and audio are not saved or uploaded. "
-              + "You can deny access or turn it off later in iPhone Settings; the app then uses its "
-              + "explicit no-camera path rather than inventing a reading."
+            "Face data (TrueDepth camera)",
+            "Sober uses Apple’s ARKit face tracking with the TrueDepth camera only while you run a "
+              + "check or a baseline session and the camera preview is on screen. During the eye "
+              + "task it reads the position and direction of each eye, how closed each eye is "
+              + "(blink), your head position and steadiness relative to the camera, whether more "
+              + "than one face is in view, and simple image brightness for a lighting check. It does "
+              + "not create a face print or other identifier and does not save camera images, video, "
+              + "depth maps, or audio."
+          )
+          policySection(
+            "How face data is used",
+            "Face data is used only to check that the capture is usable and guide you if it is "
+              + "not, and to calculate eye-movement measures such as fixation steadiness, how "
+              + "closely your eyes follow the moving dot, saccade accuracy, left–right differences, "
+              + "and blink rate. These produce that check’s result and, for baseline sessions, your "
+              + "personal baseline. Face data is never used for advertising, tracking, "
+              + "identification, authentication, or model training, and is never sold."
+          )
+          policySection(
+            "Face data storage, sharing, and deletion",
+            "Per-frame face data stays in memory and is discarded when the eye task ends. Sober "
+              + "saves only derived numbers on this iPhone: the eye-movement and capture-quality "
+              + "measures from baseline sessions, kept until you delete all local data, and each "
+              + "check’s date, result, and quality score in History. Face data and these numbers are "
+              + "never sent off this iPhone or shared with Sober’s developers or any third party. "
+              + "Delete all local data in Settings, or deleting the app, removes them. You can turn "
+              + "off camera access in iPhone Settings; Sober then uses its no-camera path and "
+              + "collects no face data."
           )
           policySection(
             "Data kept on this iPhone",
@@ -477,7 +505,7 @@ struct PrivacyPolicyView: View {
           )
           policySection(
             "Data collection and sharing",
-            "The public app does not upload personal data or measurements to Sober or a remote "
+            "Sober does not upload personal data or measurements to a server or a remote "
               + "result feed. It does not track you, sell data, show ads, or share results with a "
               + "parent, employer, insurer, school, law-enforcement agency, or other third party. "
               + "Ride, call, and message actions happen only after you tap them and open the relevant "
@@ -524,7 +552,7 @@ struct PrivacyPolicyView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("privacy-policy-web-link")
-            .accessibilityHint("Opens the public Sober privacy policy in your browser")
+            .accessibilityHint("Opens the Sober privacy policy in your browser")
           }
         }
         .padding(DSSpace.margin)

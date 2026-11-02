@@ -1207,18 +1207,25 @@ final class AppModel: ObservableObject {
     defaults.removeObject(forKey: Keys.founderPreview)
     discardPreparedExport()
 
+    // History and the baseline are separate archives, but "all local data"
+    // remains one truthful operation: each is attempted on its own so a
+    // failure in one cannot leave the other on disk. The baseline deletion
+    // barrier is already active, so a failure cannot make baseline reappear.
+    var failure: Error?
     do {
-      // History is a separate local archive, but "all local data" remains one
-      // truthful operation. The baseline deletion barrier is already active,
-      // so a failure here cannot make baseline state reappear.
       _ = try await checkHistoryStore.deleteAll()
+    } catch {
+      failure = error
+    }
+    do {
       let receipt = try await baselineStore.deleteAllAndRotateIdentity()
       participantID = receipt.participantID
-      await reloadCheckHistory()
-      await reloadResearchData()
     } catch {
-      researchDataError = error.localizedDescription
+      failure = failure ?? error
     }
+    await reloadCheckHistory()
+    await reloadResearchData()
+    if let failure { researchDataError = failure.localizedDescription }
   }
 
   func discardPreparedExport() {

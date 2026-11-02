@@ -1588,7 +1588,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/LiveActivity/CurfewLiveActivity.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/LiveActivity/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1625,7 +1625,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldAction/CurfewShieldAction.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/ShieldAction/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1645,7 +1645,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldConfig/CurfewShieldConfig.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/ShieldConfig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1665,7 +1665,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldConfig/CurfewShieldConfig.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/ShieldConfig/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1687,7 +1687,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sober/SoberInternal.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = "Sober/Info-Internal.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1741,7 +1741,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/Monitor/CurfewMonitor.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/Monitor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1761,7 +1761,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/Monitor/CurfewMonitor.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/Monitor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1782,7 +1782,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1803,7 +1803,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sober/SoberInternal.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = "Sober/Info-Internal.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1823,7 +1823,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/ShieldAction/CurfewShieldAction.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/ShieldAction/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1967,7 +1967,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = Sober/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1986,7 +1986,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CurfewExtensions/LiveActivity/CurfewLiveActivity.entitlements;
-				CURRENT_PROJECT_VERSION = 2026102401;
+				CURRENT_PROJECT_VERSION = 2026110101;
 				INFOPLIST_FILE = CurfewExtensions/LiveActivity/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -21,44 +21,52 @@ struct InterruptedTaskView: View {
   let onEndCheck: () -> Void
 
   var body: some View {
-    VStack(alignment: .leading, spacing: DSSpace.lg) {
-      Spacer(minLength: 0)
-
-      VStack(alignment: .leading, spacing: DSSpace.sm) {
-        DSEyebrow("Interrupted")
-        Text("That task was interrupted.")
-          .font(DSFont.hero)
-          .dsHeroTracking()
-          .foregroundStyle(DSPalette.textPrimary)
-          .fixedSize(horizontal: false, vertical: true)
-          .accessibilityAddTraits(.isHeader)
-        Text(
-          "Sober left the screen partway through \(taskName), so that reading was thrown away. Timing measured across an interruption would look like a change in you rather than a pause in the app."
-        )
-        .font(DSFont.callout)
-        .foregroundStyle(DSPalette.textSecondary)
-        .dsReadingLine()
-      }
-
-      DSCard {
-        Text("Nothing from that task was saved, and it will not count toward a result.")
-          .font(DSFont.footnote)
-          .foregroundStyle(DSPalette.textMuted)
+    // Scrolls so the copy can grow at accessibility text sizes; the buttons are
+    // pinned below it, because this screen covers the flow's close button and
+    // they are the only way out.
+    ScrollView {
+      VStack(alignment: .leading, spacing: DSSpace.lg) {
+        VStack(alignment: .leading, spacing: DSSpace.sm) {
+          DSEyebrow("Interrupted")
+          Text("That task was interrupted.")
+            .font(DSFont.hero)
+            .dsHeroTracking()
+            .foregroundStyle(DSPalette.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+          Text(
+            "Sober left the screen partway through \(taskName), so that reading was thrown away. Timing measured across an interruption would look like a change in you rather than a pause in the app."
+          )
+          .font(DSFont.callout)
+          .foregroundStyle(DSPalette.textSecondary)
           .dsReadingLine()
+        }
+
+        DSCard {
+          Text("Nothing from that task was saved, and it will not count toward a result.")
+            .font(DSFont.footnote)
+            .foregroundStyle(DSPalette.textMuted)
+            .dsReadingLine()
+        }
       }
-
-      Spacer(minLength: 0)
-
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.top, DSSpace.xl)
+      .padding(.bottom, DSSpace.lg)
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .scrollBounceBehavior(.basedOnSize)
+    .safeAreaInset(edge: .bottom) {
       VStack(spacing: DSSpace.sm) {
         Button("Redo this task", action: onRestartTask)
           .buttonStyle(DSPrimaryButtonStyle())
         Button("End check", action: onEndCheck)
           .buttonStyle(DSSecondaryButtonStyle())
       }
+      .padding(.horizontal, DSSpace.margin)
+      .padding(.top, DSSpace.sm)
+      .padding(.bottom, DSSpace.md)
+      .background(DSPalette.background)
     }
-    .padding(.horizontal, DSSpace.margin)
-    .padding(.vertical, DSSpace.xl)
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .background(DSPalette.background.ignoresSafeArea())
   }
 }

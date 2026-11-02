@@ -41,7 +41,10 @@ targets:
         NSFaceIDUsageDescription: Sober uses Face ID only when you choose Privacy Lock to protect History, Your Steady, and Settings on this iPhone.
         LSApplicationCategoryType: public.app-category.healthcare-fitness
         UIApplicationSupportsIndirectInputEvents: true
-        UILaunchScreen: {}
+        # DSPalette.background, so the system launch screen hands over to the
+        # app's first frame without a black-to-near-black step.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
         # Bundled typefaces for DesignKit. Satoshi ships under the Fontshare
         # Free Font Licence, which permits commercial use in apps; the EULA is
@@ -56,7 +59,7 @@ targets:
         PRODUCT_NAME: Sober
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "2026102401"
+        CURRENT_PROJECT_VERSION: "2026110101"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
@@ -99,7 +102,10 @@ targets:
               - sober-internal
         LSApplicationCategoryType: public.app-category.healthcare-fitness
         UIApplicationSupportsIndirectInputEvents: true
-        UILaunchScreen: {}
+        # DSPalette.background, so the system launch screen hands over to the
+        # app's first frame without a black-to-near-black step.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
         UIAppFonts:
           - Satoshi-Regular.otf
@@ -122,7 +128,7 @@ targets:
         PRODUCT_NAME: SoberInternal
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "2026102401"
+        CURRENT_PROJECT_VERSION: "2026110101"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       configs:
         Debug:
@@ -166,7 +172,7 @@ targets:
         PRODUCT_NAME: CurfewMonitor
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "2026102401"
+        CURRENT_PROJECT_VERSION: "2026110101"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
   CurfewShieldConfig:
     type: app-extension
@@ -196,7 +202,7 @@ targets:
         PRODUCT_NAME: CurfewShieldConfig
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "2026102401"
+        CURRENT_PROJECT_VERSION: "2026110101"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
   CurfewShieldAction:
     type: app-extension
@@ -226,7 +232,7 @@ targets:
         PRODUCT_NAME: CurfewShieldAction
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "2026102401"
+        CURRENT_PROJECT_VERSION: "2026110101"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
   CurfewLiveActivity:
     type: app-extension
@@ -255,7 +261,7 @@ targets:
         PRODUCT_NAME: CurfewLiveActivity
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "2026102401"
+        CURRENT_PROJECT_VERSION: "2026110101"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) INTERNAL_BUILD CURFEW_EXTENSION"
   SoberUITests:
     type: bundle.ui-testing

@@ -24,6 +24,64 @@ enum SoberMotion {
   static func entrance(order: Int) -> Animation {
     DSMotion.entrance(order)
   }
+
+  /// The opening sequence's curve: a long, decelerating ease-out, so an
+  /// element arrives quickly and then settles rather than stopping dead.
+  /// Still an ease, as DesignKit requires; it only spends more time landing.
+  static func reveal(duration: Double = 0.7, delay: Double = 0) -> Animation {
+    Animation.timingCurve(0.16, 1, 0.3, 1, duration: duration).delay(delay)
+  }
+}
+
+/// One element of the opening sequence coming into focus: opacity, a short
+/// rise, and a blur that clears. Plays once, on first appearance. With Reduce
+/// Motion it is a plain fade with no movement or blur.
+private struct SoberRevealModifier: ViewModifier {
+  let delay: Double
+  let rise: CGFloat
+  let blur: CGFloat
+  let scale: CGFloat
+  let duration: Double
+
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.soberLaunchFinished) private var launchFinished
+  @State private var visible = false
+
+  func body(content: Content) -> some View {
+    content
+      .opacity(visible ? 1 : 0)
+      .scaleEffect(visible || reduceMotion ? 1 : scale)
+      .offset(y: visible || reduceMotion ? 0 : rise)
+      .blur(radius: visible || reduceMotion ? 0 : blur)
+      // Starts when the launch mark lifts. The first screen is built under
+      // the mark from launch, so this flip is a state change of its own, not
+      // part of the insertion transaction that the page TabView dropped.
+      // Synchronous, not a sleeping task: a task restarted by the environment
+      // change ran up to half a second late inside the TabView's pages.
+      .onChange(of: launchFinished, initial: true) { _, finished in
+        guard finished, !visible else { return }
+        withAnimation(
+          reduceMotion
+            ? .easeOut(duration: 0.2).delay(min(delay, 0.1))
+            : SoberMotion.reveal(duration: duration, delay: delay)
+        ) {
+          visible = true
+        }
+      }
+  }
+}
+
+private struct SoberLaunchFinishedKey: EnvironmentKey {
+  static let defaultValue = true
+}
+
+extension EnvironmentValues {
+  /// False while the launch mark still covers the first screen, so that
+  /// screen's opening sequence plays when it can be seen, not behind the mark.
+  var soberLaunchFinished: Bool {
+    get { self[SoberLaunchFinishedKey.self] }
+    set { self[SoberLaunchFinishedKey.self] = newValue }
+  }
 }
 
 /// The app's name in a screen's top bar.
@@ -149,6 +207,20 @@ extension View {
   func soberBackground() -> some View { dsPageBackground() }
 
   func soberEntrance(order: Int = 0) -> some View { dsAppear(order) }
+
+  /// See `SoberRevealModifier`. For the first screen after launch only; every
+  /// other screen uses the shorter `soberEntrance`.
+  func soberReveal(
+    delay: Double = 0,
+    rise: CGFloat = 14,
+    blur: CGFloat = 6,
+    scale: CGFloat = 1,
+    duration: Double = 0.7
+  ) -> some View {
+    modifier(SoberRevealModifier(
+      delay: delay, rise: rise, blur: blur, scale: scale, duration: duration
+    ))
+  }
 
   func soberGlassCircle(tint: Color? = nil) -> some View {
     modifier(SoberSurfaceShapeModifier(shape: Circle(), tint: tint))

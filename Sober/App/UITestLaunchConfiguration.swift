@@ -231,7 +231,7 @@ struct UITestFixtureView: View {
     case .captureRecovery:
       CaptureRecoveryOverlay(
         guidance: "Center your face and move somewhere brighter.",
-        measured: ["Face 21 cm off centre up or down (limit 18 cm).", "Light 120 (needs 180)."],
+        measured: ["Face 21 cm off center up or down (limit 18 cm).", "Light 120 (needs 180)."],
         onRetryCalibration: {},
         onEndCheck: {}
       )

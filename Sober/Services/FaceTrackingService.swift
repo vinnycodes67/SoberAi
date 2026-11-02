@@ -182,7 +182,16 @@ final class FaceTrackingService: NSObject, ObservableObject {
   func pause() {
     wantsSessionRunning = false
     session.pause()
+    discardSamples()
     if status == .tracking { status = .idle }
+  }
+
+  /// Per-frame face data lives only for the task that captured it. The privacy
+  /// policy says it is gone when the task ends, so it is
+  /// dropped on stop and pause rather than lingering until the next capture.
+  private func discardSamples() {
+    samples.removeAll()
+    recentHeadPositions.removeAll()
   }
 
   func stopOcularProtocol() -> GazeCaptureSummary {
@@ -209,6 +218,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
       liveQuality: finalQuality,
       variant: activeProtocolVariant
     )
+    discardSamples()
     quality = summary.quality
     status = summary.quality.isUsable
       ? .tracking
@@ -401,7 +411,13 @@ final class FaceTrackingService: NSObject, ObservableObject {
       blinkRight: blinkRight
     ))
     if samples.count > maximumSamples {
-      samples.removeFirst(samples.count - maximumSamples)
+      // Calibration has no time limit. Trimming samples without trimming the
+      // frame count and start time made dropout climb past 30% and frame rate
+      // decay after ~40 s, so a calibration left open could never pass again.
+      let trimmed = samples.count - maximumSamples
+      samples.removeFirst(trimmed)
+      observedFrameCount = max(observedFrameCount - trimmed, samples.count)
+      captureStartedAt = samples.first?.timestamp
     }
     sampleCount = samples.count
 

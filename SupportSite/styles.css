@@ -57,6 +57,12 @@ h2 {
   font-size: 1.35rem;
 }
 
+h3 {
+  margin: 22px 0 8px;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
 p,
 li {
   color: var(--secondary);

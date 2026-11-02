@@ -21,10 +21,10 @@ final class CaptureMeasurementTests: XCTestCase {
   func testEachFailingCheckNamesTheValueAndTheLimit() {
     XCTAssertEqual(
       measurement(vertical: -0.214).failingChecks,
-      ["Face 21 cm off centre up or down (limit 18 cm)."])
+      ["Face 21 cm off center up or down (limit 18 cm)."])
     XCTAssertEqual(
       measurement(horizontal: 0.15).failingChecks,
-      ["Face 15 cm off centre side to side (limit 13 cm)."])
+      ["Face 15 cm off center side to side (limit 13 cm)."])
     XCTAssertEqual(
       measurement(distance: 0.82).failingChecks, ["Face 82 cm from the phone (needs 25–75 cm)."])
     XCTAssertEqual(measurement(light: 120).failingChecks, ["Light 120 (needs 180)."])

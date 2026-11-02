@@ -19,6 +19,9 @@ struct DSPrimaryButtonStyle: ButtonStyle {
     var body: some View {
       configuration.label
         .font(DSFont.headline)
+        // A label that wraps at accessibility sizes stays centered like one line.
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, DSSpace.sm)
         .frame(maxWidth: .infinity)
         .frame(minHeight: DSHit.primary)
         .foregroundStyle(DSPalette.onAccent)

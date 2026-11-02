@@ -34,10 +34,10 @@ struct CaptureMeasurement: Equatable, Sendable {
       lines.append("Face \(cm(distanceMetres)) cm from the phone (needs 25–75 cm).")
     }
     if abs(horizontalMetres) > Self.horizontalLimitMetres {
-      lines.append("Face \(cm(abs(horizontalMetres))) cm off centre side to side (limit 13 cm).")
+      lines.append("Face \(cm(abs(horizontalMetres))) cm off center side to side (limit 13 cm).")
     }
     if abs(verticalMetres) > Self.verticalLimitMetres {
-      lines.append("Face \(cm(abs(verticalMetres))) cm off centre up or down (limit 18 cm).")
+      lines.append("Face \(cm(abs(verticalMetres))) cm off center up or down (limit 18 cm).")
     }
     if (ambientLight ?? 0) < Self.minimumLight {
       let measured = ambientLight.map { String(Int($0.rounded())) } ?? "unknown"

@@ -263,7 +263,14 @@ final class GuardianContactTests: XCTestCase {
     let textOnly = contact("B", "312-555-0111", call: false, text: true)
     XCTAssertNil(textOnly.callURL)
     let sms = try XCTUnwrap(textOnly.messageURL(body: "Can you pick me up?"))
-    XCTAssertTrue(sms.absoluteString.hasPrefix("sms:3125550111?body=Can%20you%20pick%20me%20up?"))
+    XCTAssertEqual(sms.absoluteString, "sms:3125550111?body=Can%20you%20pick%20me%20up%3F")
+
+    let ampersand = try XCTUnwrap(textOnly.messageURL(body: "Get me to Mom & Dad's"))
+    XCTAssertEqual(
+      URLComponents(url: ampersand, resolvingAgainstBaseURL: false)?
+        .queryItems?.first { $0.name == "body" }?.value,
+      "Get me to Mom & Dad's"
+    )
   }
 
   func testAutomaticAlertsStillRequireANamedPrimaryWithAValidNumber() {

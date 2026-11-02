@@ -346,7 +346,11 @@ struct GuardianContact: Codable, Equatable, Identifiable, Sendable {
 
   func messageURL(body: String) -> URL? {
     guard canText, !phoneDigits.isEmpty else { return nil }
-    let encoded = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? body
+    // `.urlQueryAllowed` leaves `&`, `+`, `=`, and `?` bare, which cut a body
+    // like "get to Mom & Dad's" off at the ampersand.
+    var allowed = CharacterSet.urlQueryAllowed
+    allowed.remove(charactersIn: "&+=?#")
+    let encoded = body.addingPercentEncoding(withAllowedCharacters: allowed) ?? body
     return URL(string: "sms:\(phoneDigits)?body=\(encoded)")
   }
 
