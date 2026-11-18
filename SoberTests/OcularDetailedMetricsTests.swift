@@ -319,6 +319,156 @@ final class OcularDetailedMetricsTests: XCTestCase {
     let samples = EyeModel().samples()
     let summary = OcularSignalAnalyzer().summarize(
       samples: samples, observedFrameCount: samples.count, liveQuality: usableQuality(count: samples.count))
+    XCTAssertEqual(try researchExportRoundTrip(summary)?.detailed, summary.detailed)
+  }
+
+  // MARK: - Screen gaze (recorded only)
+
+  /// A 353 x 330 pt stimulus field at (20, 120) on an iPhone 15 Pro display.
+  private static let field = (x: 20.0, y: 120.0, width: 353.0, height: 330.0)
+  private static let display = DisplayGeometry(nativePixelWidth: 1179, nativePixelHeight: 2556, nativeScale: 3)
+
+  func testScreenGazeIsRecordedWithoutChangingAnyExistingMeasure() throws {
+    let model = EyeModel()
+    let plain = model.samples()
+    let before = summarize(plain)
+    let after = summarize(try screenGaze(on: plain, model: model))
+
+    XCTAssertNil(before.detailed?.screenGaze, "no sample carried screen gaze")
+    let screen = try XCTUnwrap(after.detailed?.screenGaze)
+    XCTAssertEqual(screen.sampleCount, plain.count)
+    XCTAssertEqual(screen.onScreenFraction, 1)
+    XCTAssertEqual(screen.offScreenFraction + screen.noIntersectionFraction, 0)
+    XCTAssertEqual(try XCTUnwrap(screen.medianViewingDistanceMetres), 0.4, accuracy: 1e-12)
+    XCTAssertGreaterThan(try XCTUnwrap(screen.horizontalScreenCorrelation), 0.99)
+    XCTAssertGreaterThan(try XCTUnwrap(screen.verticalScreenCorrelation), 0.99)
+
+    // Everything else, scored or recorded, is exactly what it was.
+    XCTAssertEqual(after.smoothnessRisk, before.smoothnessRisk)
+    XCTAssertEqual(after.qualityScore, before.qualityScore)
+    XCTAssertEqual(after.features, before.features)
+    XCTAssertEqual(after.quality, before.quality)
+    var unchanged = try XCTUnwrap(after.detailed)
+    unchanged.screenGaze = nil
+    XCTAssertEqual(unchanged, before.detailed)
+  }
+
+  func testHeadFreeGazeStillFollowsWhenTheHeadHelps() throws {
+    // Side to side, the head follows 60% of the dot half a second late and
+    // the eyes make up the rest, so on the screen gaze stays on the dot.
+    let scale = 0.25
+    let display = try XCTUnwrap(Self.display)
+    var samples: [OcularSample] = []
+    var t = 0.0
+    while t < OcularProtocolSchedule.totalDuration {
+      let target = OcularProtocolSchedule.target(at: t)
+      let headShare = target.phase == .horizontalPursuit
+        ? 0.6 * (OcularProtocolSchedule.target(at: t - 0.5).x - 0.5) : 0
+      let gx = -scale * (target.x - 0.5 - headShare)
+      let gy = scale * (target.y - 0.5)
+      let yaw = headShare * scale
+      var sample = OcularSample(
+        timestamp: t, phase: target.phase, targetX: target.x, targetY: target.y,
+        leftGazeX: gx + 0.01, leftGazeY: gy, rightGazeX: gx - 0.01, rightGazeY: gy,
+        headX: sin(yaw), headY: 0, headZ: cos(yaw), blinkLeft: 0.05, blinkRight: 0.05)
+      sample.setScreenGaze(gaze(atFieldX: target.x, fieldY: target.y, display: display))
+      samples.append(sample)
+      t += 1.0 / 60
+    }
+
+    let summary = summarize(samples)
+    let screen = try XCTUnwrap(summary.detailed?.screenGaze)
+    XCTAssertGreaterThan(try XCTUnwrap(screen.horizontalScreenCorrelation), 0.99)
+    XCTAssertLessThan(try XCTUnwrap(screen.horizontalEyeInHeadCorrelation), 0.9)
+    // Up and down the head held still, and the two agree.
+    XCTAssertEqual(try XCTUnwrap(screen.verticalEyeInHeadCorrelation), 1, accuracy: 0.01)
+    XCTAssertGreaterThan(try XCTUnwrap(screen.verticalScreenCorrelation), 0.99)
+    // The scored path reads the head's share as following error.
+    XCTAssertGreaterThan(summary.features.horizontalPursuitError, 0.1)
+  }
+
+  func testScreenGazeFractionsLeaveOutClosedEyes() throws {
+    var model = EyeModel()
+    model.blinks = [5, 12, 20]
+    let tagged = try screenGaze(on: model.samples(), model: model).enumerated().map { index, sample in
+      var sample = sample
+      switch index % 10 {
+      case 0:
+        sample.setScreenGaze(.unavailable)
+      case 1, 2:
+        let above = ScreenGazePoint(x: 200, y: -300, validity: .offScreen, distanceMetres: 0.4)
+        sample.setScreenGaze(ScreenGaze(left: above, right: above, combined: above))
+      default:
+        break
+      }
+      return sample
+    }
+    let closed = OcularDetailedAnalyzer.labels(for: tagged).filter { $0 == .eyesClosed }.count
+    XCTAssertGreaterThan(closed, 0)
+
+    let screen = try XCTUnwrap(analyze(tagged)?.screenGaze)
+    XCTAssertEqual(screen.sampleCount, tagged.count - closed)
+    XCTAssertEqual(screen.noIntersectionFraction, 0.1, accuracy: 0.02)
+    XCTAssertEqual(screen.offScreenFraction, 0.2, accuracy: 0.02)
+    XCTAssertEqual(screen.onScreenFraction, 0.7, accuracy: 0.02)
+    XCTAssertEqual(screen.onScreenFraction + screen.offScreenFraction + screen.noIntersectionFraction, 1, accuracy: 1e-12)
+
+    // Reduced Motion has no pursuit to follow.
+    var reduced = EyeModel()
+    reduced.variant = .reducedMotion
+    let still = try XCTUnwrap(analyze(try screenGaze(on: reduced.samples(), model: reduced), variant: .reducedMotion)?.screenGaze)
+    XCTAssertNil(still.horizontalScreenCorrelation)
+    XCTAssertNil(still.verticalEyeInHeadCorrelation)
+    XCTAssertEqual(still.onScreenFraction, 1)
+  }
+
+  func testScreenGazePersistsAndOlderRecordsDecodeWithout() throws {
+    let model = EyeModel()
+    let summary = summarize(try screenGaze(on: model.samples(), model: model))
+    let detailed = try XCTUnwrap(summary.detailed)
+    XCTAssertNotNil(detailed.screenGaze)
+    let data = try JSONEncoder().encode(detailed)
+    XCTAssertEqual(try JSONDecoder().decode(OcularDetailedMetrics.self, from: data), detailed)
+
+    var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    legacy.removeValue(forKey: "screenGaze")
+    let old = try JSONDecoder().decode(
+      OcularDetailedMetrics.self, from: JSONSerialization.data(withJSONObject: legacy))
+    var expected = detailed
+    expected.screenGaze = nil
+    XCTAssertEqual(old, expected)
+
+    XCTAssertEqual(try researchExportRoundTrip(summary)?.detailed?.screenGaze, detailed.screenGaze)
+  }
+
+  /// The same samples with head-free screen gaze where the model put the
+  /// eyes, on `field`, 40 cm from the screen.
+  private func screenGaze(on samples: [OcularSample], model: EyeModel) throws -> [OcularSample] {
+    let display = try XCTUnwrap(Self.display)
+    return samples.map { sample in
+      var sample = sample
+      let x = (sample.leftGazeX + sample.rightGazeX) / 2 / model.scaleX + 0.5
+      let y = (sample.leftGazeY + sample.rightGazeY) / 2 / model.scaleY + 0.5
+      sample.setScreenGaze(gaze(atFieldX: x, fieldY: y, display: display))
+      return sample
+    }
+  }
+
+  private func gaze(atFieldX x: Double, fieldY y: Double, display: DisplayGeometry) -> ScreenGaze {
+    let px = Self.field.x + x * Self.field.width
+    let py = Self.field.y + y * Self.field.height
+    let point = ScreenGazePoint(
+      x: px, y: py, validity: ScreenGazeGeometry.classify(x: px, y: py, display: display), distanceMetres: 0.4)
+    return ScreenGaze(left: point, right: point, combined: point)
+  }
+
+  private func summarize(_ samples: [OcularSample]) -> GazeCaptureSummary {
+    OcularSignalAnalyzer().summarize(
+      samples: samples, observedFrameCount: samples.count, liveQuality: usableQuality(count: samples.count))
+  }
+
+  /// Through the research JSON export and back.
+  private func researchExportRoundTrip(_ summary: GazeCaptureSummary) throws -> GazeCaptureSummary? {
     let startedAt = Date(timeIntervalSince1970: 1_700_000_000)
     let envelope = ResearchSessionEnvelope(
       participantID: .init(rawValue: "participant_test"),
@@ -340,7 +490,7 @@ final class OcularDetailedMetricsTests: XCTestCase {
     )
     let payload = ResearchSessionExportPayload(exportedAt: Date(timeIntervalSince1970: 120), sessions: [envelope])
     let decoded = try JSONDecoder().decode(ResearchSessionExportPayload.self, from: JSONEncoder().encode(payload))
-    XCTAssertEqual(decoded.sessions.first?.ocularSummary?.detailed, summary.detailed)
+    return decoded.sessions.first?.ocularSummary
   }
 
   // MARK: - Randomized invariants

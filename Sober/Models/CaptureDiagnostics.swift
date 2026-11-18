@@ -138,6 +138,11 @@ struct CaptureTelemetry: Codable, Equatable, Sendable {
   var multipleFaceFraction: Double
   var image: CaptureImageStats?
   var verdict: CaptureVerdict?
+  /// False when this iPhone's display was not in
+  /// `DisplayGeometry.pixelsPerInchByNativeHeight`, so screen-gaze
+  /// millimetres used the fallback density. Nil for captures recorded before
+  /// screen gaze existed, or when no display could be read.
+  var displayIsKnownModel: Bool? = nil
 
   var detectionRate: Double {
     framesObserved > 0 ? Double(framesWithFace) / Double(framesObserved) : 0
@@ -158,6 +163,8 @@ struct CaptureTelemetryRecorder: Sendable {
   private var latencies: [Double] = []
   private var imageSum: CaptureImageStats?
   private var imageCount = 0
+  /// Set by the service when the capture starts.
+  var displayIsKnownModel: Bool?
 
   private static let keep = 600
 
@@ -216,7 +223,8 @@ struct CaptureTelemetryRecorder: Sendable {
       p95LatencyMilliseconds: Self.percentile(latencies, 0.95),
       multipleFaceFraction: framesWithFace > 0 ? Double(multipleFaceFrames) / Double(framesWithFace) : 0,
       image: averageImage,
-      verdict: verdict
+      verdict: verdict,
+      displayIsKnownModel: displayIsKnownModel
     )
   }
 

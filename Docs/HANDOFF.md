@@ -46,6 +46,8 @@ Use a Face ID iPhone, with the internal build for the model items.
 | 1.8 | Directional words, `DirectionalGuidance` (built, **off**) | Set `isEnabled = true` in a local build, move your head to your right: it must say "Move left". Then up/down. | If backwards, flip the sign in `mirroredOffset`, record why, and update `CaptureDiagnosticsTests` |
 | 1.9 | Image brightness/sharpness thresholds, `CaptureImageStats` | Note the verdict line on camera setup in a dim room, facing a window, and with a smudged lens | Tune `darkMeanLuma`, `clippedLimit`, `blurLimit`. They only ever mark a capture *degraded* |
 | 1.10 | Capture benchmark, Research screen (internal build) | After a few eye tasks it shows detection rate, tracking losses, recovery time and processing delay | Those are the first real vision numbers; quote nothing before it shows them |
+| 1.11 | Screen-gaze up/down direction, `ScreenGazeGeometry.screenDownInCamera` (internal build) | Run the full eye task with your head still. On the Research screen, "Gaze on screen" should be most samples and "Up and down follows dot (screen / head-relative)" should have a **positive** first number, as should side to side. Then, with a debugger or a temporary log on `OcularSample.screenGazeY`, look at the top edge of the screen and then the bottom edge: the value should rise toward the bottom (near 0 at the top, near the screen height in points at the bottom). | If it falls toward the bottom, or the up-and-down number is negative and most samples are off screen, flip `screenDownInCamera` to `(-1, 0, 0)`, record what you saw here, and re-run. A negative side-to-side number with a correct up/down one means the camera z-side inference is wrong: record it, don't patch the sign |
+| 1.12 | Screen-gaze offset and scale, `DisplayGeometry` | Look at the centre of the screen, then each corner, and note `screenGazeX/Y` against the true point. Note the "Viewing distance (median)" row against a tape measure. | A constant offset is expected before calibration (2.6) and comes from the camera-position guess. A wrong *scale* means the pixel-density table is wrong for that model; check `displayIsKnownModel` in the session's telemetry |
 
 ## 2. Not built (open work, in priority order)
 
@@ -98,6 +100,47 @@ Use a Face ID iPhone, with the internal build for the model items.
   saccades under about 1 deg are below what 60 Hz can resolve. Bump
   `OcularDetailedMetrics.currentVersion` when any threshold changes. Don't
   score any of it until real sessions show which measures are stable.
+- **2.5b Head-free gaze on the screen.** *Recorded, not scored (built
+  2026-11-17).* The scored gaze is eye-in-head only, so following the dot
+  partly with the head reads as poor pursuit. Each eye's ray is now also taken
+  into the camera's frame (camera⁻¹ × face × eye) and met with the screen
+  plane (`ScreenGazeGeometry`, beside `FaceGeometry`), using the display's
+  physical size (`DisplayGeometry`, read on the main actor when the capture
+  starts). `OcularSample` carries the per-eye and combined point in screen
+  points, a validity (on screen / off screen / no intersection) and the
+  viewing distance; these stay in the in-memory buffer like the rest of the
+  sample. Stored per capture: `OcularDetailedMetrics.screenGaze` (fractions,
+  median distance, and how well screen gaze and eye-in-head gaze each follow
+  the dot) and `CaptureTelemetry.displayIsKnownModel`. Both are in the
+  research export; the first is on the internal Research screen. No new face
+  data is read. `smoothnessRisk`, `ScreeningEngine`, baselines, the validity
+  labels and every existing detailed measure are unchanged, so
+  `currentVersion` stays 1. Tests: `ScreenGazeGeometryTests`
+  (`testATurningHeadWithEyesOnTheDotKeepsScreenGazeOnTheDot`,
+  `testEyesMovingUnderAStillHeadFollowTheOldEyeInHeadReading`,
+  `testTheOffScreenMarginIsFifteenMillimetres`,
+  `testRaysThatCannotMeetTheScreenHaveNoPoint`,
+  `testAnUnusableCameraOrFacePoseGivesNoGaze`,
+  `testAnEyeOnTheScreenPlaneHasNoPoint`,
+  `testRandomPosesNeverProduceANonFinitePoint`, the display and telemetry
+  tests) and `OcularDetailedMetricsTests`
+  (`testScreenGazeIsRecordedWithoutChangingAnyExistingMeasure`,
+  `testHeadFreeGazeStillFollowsWhenTheHeadHelps`,
+  `testScreenGazeFractionsLeaveOutClosedEyes`,
+  `testScreenGazePersistsAndOlderRecordsDecodeWithout`). **Needs a Face ID
+  iPhone:** 1.11 and 1.12. **Still guesses:**
+  - `ScreenGazeGeometry.screenDownInCamera` = camera +x. From Apple's ARCamera
+    documentation, never seen on a device (1.11).
+  - `ScreenGazeGeometry.offScreenMarginMillimetres` = 15 mm (about 2° at
+    40 cm). How far outside the display still counts as on screen.
+  - `DisplayGeometry.cameraOffsetFromTopCentreMillimetres` = (0, 0): the
+    front camera is assumed to sit at the top centre of the display. Real
+    cameras are up to about 7 mm off; calibration (2.6) should absorb it.
+  - `DisplayGeometry.pixelsPerInchByNativeHeight` and the 460 ppi fallback.
+    Published densities, not measured; a model missing from the table is
+    recorded as `displayIsKnownModel == false`.
+  - The screen plane is taken to be the camera's z = 0 plane, with ARKit's eye
+    transforms taken as true eye position and gaze direction.
 - **2.6 Eye calibration.** `CameraCalibrationView` only checks framing and
   light. There's no follow-the-target calibration, no per-person profile, and
   no calibration quality bar.

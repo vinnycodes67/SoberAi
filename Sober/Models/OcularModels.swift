@@ -201,6 +201,36 @@ struct OcularSample: Equatable, Sendable {
   /// telemetry must not be converted into an "eyes open" observation.
   let blinkLeft: Double?
   let blinkRight: Double?
+
+  // MARK: Screen gaze (`ScreenGazeGeometry`)
+
+  /// Where the gaze rays met the screen, in portrait screen points (origin at
+  /// the display's top-left, x right, y down). Unlike the eye-in-head fields
+  /// above, these do not move when the head turns and the eyes stay on the
+  /// dot. All nil when the frame had no camera pose or the display was not
+  /// known. Off-screen points are kept; `screenGazeValidity` says where the
+  /// combined point landed. In memory only, like every other field here.
+  var screenGazeX: Double? = nil
+  var screenGazeY: Double? = nil
+  var leftScreenGazeX: Double? = nil
+  var leftScreenGazeY: Double? = nil
+  var rightScreenGazeX: Double? = nil
+  var rightScreenGazeY: Double? = nil
+  /// Of the combined point. Nil when screen gaze was not computed at all.
+  var screenGazeValidity: ScreenGazeValidity? = nil
+  /// Mean distance of the two eyes from the screen plane, metres.
+  var screenViewingDistanceMetres: Double? = nil
+
+  mutating func setScreenGaze(_ gaze: ScreenGaze) {
+    screenGazeX = gaze.combined.x
+    screenGazeY = gaze.combined.y
+    leftScreenGazeX = gaze.left.x
+    leftScreenGazeY = gaze.left.y
+    rightScreenGazeX = gaze.right.x
+    rightScreenGazeY = gaze.right.y
+    screenGazeValidity = gaze.combined.validity
+    screenViewingDistanceMetres = gaze.combined.distanceMetres
+  }
 }
 
 struct OcularSignalFeatures: Codable, Equatable, Sendable {

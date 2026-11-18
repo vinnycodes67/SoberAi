@@ -159,7 +159,8 @@ struct OcularDetailedAnalyzer: Sendable {
       gazeTransitionsPerMinute: transitionRate,
       binocular: binocularMetrics(samples: protocolSamples, labels: labels),
       blinkCount: blinkCount,
-      blinkRatePerMinute: blinkRatePerMinute.flatMap(Self.finite)
+      blinkRatePerMinute: blinkRatePerMinute.flatMap(Self.finite),
+      screenGaze: screenGazeMetrics(samples: protocolSamples, labels: labels)
     )
   }
 
@@ -705,6 +706,56 @@ struct OcularDetailedAnalyzer: Sendable {
     return OcularBinocularMetrics(
       leftRightCorrelation: correlations.isEmpty ? nil : Self.finite(Self.mean(correlations)),
       disagreementRMSDegrees: Self.finite(sqrt(max(spread, 0) / n) * Self.degreesPerGazeUnit)
+    )
+  }
+
+  // MARK: - Screen gaze (recorded only)
+
+  /// Where the head-free gaze landed, and how well it and the eye-in-head
+  /// gaze each followed the dot on the same samples. Reads no label but
+  /// `missing` and `eyesClosed`, and changes nothing else in the record.
+  private func screenGazeMetrics(
+    samples: [OcularSample], labels: [OcularSampleValidity]
+  ) -> OcularScreenGazeMetrics? {
+    let counted = zip(samples, labels)
+      .filter { $0.0.screenGazeValidity != nil && $0.1 != .missing && $0.1 != .eyesClosed }
+      .map(\.0)
+    guard !counted.isEmpty else { return nil }
+    let n = Double(counted.count)
+    func share(_ validity: ScreenGazeValidity) -> Double {
+      Double(counted.filter { $0.screenGazeValidity == validity }.count) / n
+    }
+
+    func following(_ phase: OcularPhase, horizontal: Bool) -> (screen: Double?, eyeInHead: Double?) {
+      guard let phaseStart = samples.first(where: { $0.phase == phase })?.timestamp else { return (nil, nil) }
+      let start = phaseStart + Self.pursuitSettlingSeconds
+      var targets: [Double] = []
+      var screen: [Double] = []
+      var eyeInHead: [Double] = []
+      for sample in counted where sample.phase == phase && sample.timestamp >= start {
+        guard let x = sample.screenGazeX, let y = sample.screenGazeY else { continue }
+        targets.append(horizontal ? sample.targetX : sample.targetY)
+        screen.append(horizontal ? x : y)
+        eyeInHead.append(
+          horizontal
+            ? (sample.leftGazeX + sample.rightGazeX) / 2 : (sample.leftGazeY + sample.rightGazeY) / 2)
+      }
+      guard targets.count >= Self.minimumPhaseSamples else { return (nil, nil) }
+      return (Self.pearson(targets, screen), Self.pearson(targets, eyeInHead).map(abs))
+    }
+    let horizontal = following(.horizontalPursuit, horizontal: true)
+    let vertical = following(.verticalPursuit, horizontal: false)
+
+    return OcularScreenGazeMetrics(
+      sampleCount: counted.count,
+      onScreenFraction: share(.onScreen),
+      offScreenFraction: share(.offScreen),
+      noIntersectionFraction: share(.noIntersection),
+      medianViewingDistanceMetres: Self.median(counted.compactMap(\.screenViewingDistanceMetres)),
+      horizontalScreenCorrelation: horizontal.screen,
+      verticalScreenCorrelation: vertical.screen,
+      horizontalEyeInHeadCorrelation: horizontal.eyeInHead,
+      verticalEyeInHeadCorrelation: vertical.eyeInHead
     )
   }
 

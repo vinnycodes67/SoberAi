@@ -134,6 +134,10 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// recording, so the capture is not scored, however good it looks after.
   private var captureWasInterrupted = false
   private var telemetry = CaptureTelemetryRecorder()
+  /// Read on the main actor when a capture starts, never from ARKit's
+  /// delegate queue. Nil when no window scene was available: screen gaze is
+  /// then not computed.
+  private var display: DisplayGeometry?
   private var latestImage: CaptureImageStats?
   /// Face centre on the mirrored preview, for directional guidance.
   private var screenOffset: CGPoint?
@@ -169,14 +173,16 @@ final class FaceTrackingService: NSObject, ObservableObject {
     }
   }
 
-  func startCalibration() {
-    beginCapture()
+  /// `display` defaults to the foreground scene's screen, read here on the
+  /// main actor.
+  func startCalibration(display: DisplayGeometry? = nil) {
+    beginCapture(display: display)
   }
 
-  func startOcularProtocol(variant: OcularProtocolVariant = .full) {
+  func startOcularProtocol(variant: OcularProtocolVariant = .full, display: DisplayGeometry? = nil) {
     activeProtocolVariant = variant
     protocolStartedAt = ProcessInfo.processInfo.systemUptime
-    beginCapture(preserveProtocolStart: true)
+    beginCapture(preserveProtocolStart: true, display: display)
   }
 
   func pause() {
@@ -259,7 +265,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
     )
   }
 
-  private func beginCapture(preserveProtocolStart: Bool = false) {
+  private func beginCapture(preserveProtocolStart: Bool = false, display: DisplayGeometry? = nil) {
+    self.display = display ?? DisplayGeometry.current()
     samples.removeAll(keepingCapacity: true)
     sampleCount = 0
     observedFrameCount = 0
@@ -271,6 +278,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
     headPosition = .faceNotDetected
     captureWasInterrupted = false
     telemetry = CaptureTelemetryRecorder()
+    telemetry.displayIsKnownModel = self.display?.isKnownModel
     latestImage = nil
     screenOffset = nil
     wantsSessionRunning = true
@@ -395,7 +403,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
 
     let blinkLeft = face.blendShapes[.eyeBlinkLeft]?.doubleValue
     let blinkRight = face.blendShapes[.eyeBlinkRight]?.doubleValue
-    samples.append(OcularSample(
+    var sample = OcularSample(
       timestamp: timestamp,
       phase: target.phase,
       targetX: target.x,
@@ -409,7 +417,15 @@ final class FaceTrackingService: NSObject, ObservableObject {
       headZ: Double(head.columns.2.z),
       blinkLeft: blinkLeft,
       blinkRight: blinkRight
-    ))
+    )
+    // Head-free gaze on the screen, from the same eye and face transforms
+    // plus the frame's camera pose. Recorded only (HANDOFF 2.5).
+    if let cameraTransform, let display {
+      sample.setScreenGaze(ScreenGazeGeometry.gaze(
+        face: head, leftEye: face.leftEyeTransform, rightEye: face.rightEyeTransform,
+        camera: cameraTransform, display: display))
+    }
+    samples.append(sample)
     if samples.count > maximumSamples {
       // Calibration has no time limit. Trimming samples without trimming the
       // frame count and start time made dropout climb past 30% and frame rate

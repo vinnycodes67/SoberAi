@@ -189,6 +189,10 @@ struct ResearchModeView: View {
           benchmarkRow(
             "Closed / head moved / low confidence",
             "\(percent(metrics.validity.eyesClosed)) / \(percent(metrics.validity.headMoved)) / \(percent(metrics.validity.lowConfidence))")
+          if let screen = metrics.screenGaze {
+            benchmarkRow("Gaze on screen", percent(screen.onScreenFraction))
+            benchmarkRow("Viewing distance (median)", centimetres(screen.medianViewingDistanceMetres))
+          }
           benchmarkRow("Fixation coverage", percent(metrics.coverage.fixation))
           benchmarkRow("Fixation spread (RMS)", degrees(metrics.fixation?.dispersionRMSDegrees))
           benchmarkRow("Longest steady fixation", milliseconds(metrics.fixation?.longestStableMilliseconds))
@@ -196,6 +200,16 @@ struct ResearchModeView: View {
           if metrics.coverage.horizontalPursuit != nil {
             pursuitRows("Side to side", metrics.coverage.horizontalPursuit, metrics.horizontalPursuit)
             pursuitRows("Up and down", metrics.coverage.verticalPursuit, metrics.verticalPursuit)
+            if let screen = metrics.screenGaze {
+              // Correlation with the dot, head-free screen gaze first. A
+              // negative screen value means a screen axis is backwards.
+              benchmarkRow(
+                "Side to side follows dot (screen / head-relative)",
+                "\(ratio(screen.horizontalScreenCorrelation)) / \(ratio(screen.horizontalEyeInHeadCorrelation))")
+              benchmarkRow(
+                "Up and down follows dot (screen / head-relative)",
+                "\(ratio(screen.verticalScreenCorrelation)) / \(ratio(screen.verticalEyeInHeadCorrelation))")
+            }
           }
           benchmarkRow("Jump coverage", percent(metrics.coverage.saccades))
           benchmarkRow("Jumps with a response", percent(metrics.saccades?.respondedFraction))
@@ -238,6 +252,10 @@ struct ResearchModeView: View {
 
   private func ratio(_ value: Double?) -> String {
     value.map { String(format: "%.2f", $0) } ?? "Not measured"
+  }
+
+  private func centimetres(_ metres: Double?) -> String {
+    metres.map { "\(Int(($0 * 100).rounded())) cm" } ?? "Not measured"
   }
 
   private func count(_ value: Int?) -> String {

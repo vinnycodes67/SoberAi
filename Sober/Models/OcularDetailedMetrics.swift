@@ -49,6 +49,44 @@ struct OcularDetailedMetrics: Codable, Equatable, Sendable {
   /// Nil when no sample carried blink telemetry.
   var blinkCount: Int?
   var blinkRatePerMinute: Double?
+  /// Head-free gaze on the screen. The one part of this record not built on
+  /// eye-in-head angles; nothing reads it yet. Nil for captures recorded
+  /// before it existed and for samples that never had a camera pose. Adding
+  /// it changed no other field, so `currentVersion` is unchanged.
+  var screenGaze: OcularScreenGazeMetrics? = nil
+}
+
+/// Where the eyes' gaze rays met the screen (`ScreenGazeGeometry`), taken in
+/// the camera's frame rather than relative to the head, so following the dot
+/// partly by turning the head does not read as poor following.
+///
+/// Counted over protocol samples that carried a screen-gaze computation and
+/// whose eyes were open and tracked: samples labelled `missing` or
+/// `eyesClosed` are left out. Samples labelled `headMoved` are kept, because
+/// head movement is exactly what screen gaze is meant to see through.
+struct OcularScreenGazeMetrics: Codable, Equatable, Sendable {
+  var sampleCount: Int
+  /// Combined gaze landed on the display or within
+  /// `ScreenGazeGeometry.offScreenMarginMillimetres` of it. The three
+  /// fractions sum to 1.
+  var onScreenFraction: Double
+  /// Met the screen plane off the display.
+  var offScreenFraction: Double
+  /// No usable intersection with the screen plane.
+  var noIntersectionFraction: Double
+  var medianViewingDistanceMetres: Double?
+  /// Pearson correlation of screen-gaze x with the dot's x during side-to-side
+  /// pursuit, after the settling time. Signed: positive means gaze moved the
+  /// way the dot did on screen. Negative means a screen axis is backwards
+  /// (HANDOFF 1.11). Nil when that phase did not run or had too few samples.
+  var horizontalScreenCorrelation: Double?
+  /// Screen-gaze y against the dot's y during up-and-down pursuit.
+  var verticalScreenCorrelation: Double?
+  /// |r| of the eye-in-head gaze the scored path reads, against the dot, on
+  /// the same samples. For comparison only: when the head helps follow the
+  /// dot, this falls while the screen correlation should not.
+  var horizontalEyeInHeadCorrelation: Double?
+  var verticalEyeInHeadCorrelation: Double?
 }
 
 /// Fraction of protocol samples (calibration excluded) given each label. They
