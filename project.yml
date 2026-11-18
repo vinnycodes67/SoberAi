@@ -46,6 +46,10 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
+        # Portrait only. No screen is laid out for landscape, and the eye task
+        # places gaze and targets in the phone's portrait frame.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
         # Bundled typefaces for DesignKit. Satoshi ships under the Fontshare
         # Free Font Licence, which permits commercial use in apps; the EULA is
         # in Sober/Resources/Fonts.
@@ -107,6 +111,9 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIUserInterfaceStyle: Dark
+        # Portrait only, as the public target.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
         UIAppFonts:
           - Satoshi-Regular.otf
           - Satoshi-Medium.otf
