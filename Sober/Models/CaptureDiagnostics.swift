@@ -95,7 +95,12 @@ struct CaptureAssessment: Equatable, Sendable {
   /// What to do about it. Nil when the capture is clear.
   let guidance: String?
 
-  static func assess(_ quality: CaptureQualitySnapshot, image: CaptureImageStats?) -> CaptureAssessment {
+  /// `calibration` is the follow-the-dot calibration run before an eye task,
+  /// when there was one. Failing it never makes a capture invalid.
+  static func assess(
+    _ quality: CaptureQualitySnapshot, image: CaptureImageStats?,
+    calibration: OcularCalibrationMetrics? = nil
+  ) -> CaptureAssessment {
     guard quality.isUsable else {
       return CaptureAssessment(verdict: .invalid, guidance: quality.primaryGuidance)
     }
@@ -109,6 +114,9 @@ struct CaptureAssessment: Equatable, Sendable {
       if image.isBlurry {
         return CaptureAssessment(verdict: .degraded, guidance: "The image is soft. Hold the phone steady and wipe the camera.")
       }
+    }
+    if let calibration, !calibration.passed {
+      return CaptureAssessment(verdict: .degraded, guidance: OcularCalibrationMetrics.degradedGuidance)
     }
     if quality.frameRate < 30 {
       return CaptureAssessment(verdict: .degraded, guidance: "The camera is running slowly. Hold still.")

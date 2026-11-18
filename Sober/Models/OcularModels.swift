@@ -394,3 +394,65 @@ enum OcularProtocolSchedule {
     }
   }
 }
+
+/// Follow-the-dot calibration, run as its own step immediately before the
+/// protocol above, which it does not change. The dot visits each point for
+/// `pointDuration`; only the last `scoredDuration` of each is used, after the
+/// eyes have arrived. Its samples are fitted and discarded before the
+/// protocol's buffer starts (`OcularCalibrationFitter`).
+///
+/// The durations are engineering choices, not measured on people.
+enum OcularCalibrationSchedule {
+  /// The four corners the protocol's jumps use, read from the protocol itself
+  /// so the two cannot drift apart, then the centre: the eyes end where the
+  /// protocol's fixation begins.
+  static let points: [(x: Double, y: Double)] = {
+    let jumpsStart = OcularProtocolSchedule.totalDuration - OcularProtocolSchedule.saccadeDuration
+    let corners = (0..<4).map { index -> (x: Double, y: Double) in
+      let target = OcularProtocolSchedule.target(at: jumpsStart + Double(index) + 0.5)
+      return (target.x, target.y)
+    }
+    return corners + [(x: 0.5, y: 0.5)]
+  }()
+
+  static let pointDuration = 1.0
+  static let scoredDuration = 0.6
+  /// With full motion the dot glides to each point for this long, well inside
+  /// the unscored part. With Reduced Motion it does not glide at all.
+  static let glideDuration = 0.25
+
+  static var totalDuration: TimeInterval { Double(points.count) * pointDuration }
+
+  /// Which point is showing. Nil before the start and from the end on.
+  static func pointIndex(at elapsed: TimeInterval) -> Int? {
+    guard elapsed.isFinite, elapsed >= 0, elapsed < totalDuration else { return nil }
+    return min(Int(elapsed / pointDuration), points.count - 1)
+  }
+
+  /// True in the last `scoredDuration` of a point.
+  static func isScored(at elapsed: TimeInterval) -> Bool {
+    guard let index = pointIndex(at: elapsed) else { return false }
+    return elapsed - Double(index) * pointDuration >= pointDuration - scoredDuration
+  }
+
+  /// The point the person is asked to look at, which is where the dot rests.
+  static func target(at elapsed: TimeInterval) -> OcularTarget {
+    let clamped = elapsed.isFinite ? min(max(elapsed, 0), totalDuration) : 0
+    let point = points[min(Int(clamped / pointDuration), points.count - 1)]
+    return OcularTarget(phase: .calibration, x: point.x, y: point.y)
+  }
+
+  /// Where to draw the dot. It starts from the centre, where the idle signal
+  /// sits before the task begins.
+  static func dotPosition(at elapsed: TimeInterval, reduceMotion: Bool) -> (x: Double, y: Double) {
+    let clamped = elapsed.isFinite ? min(max(elapsed, 0), totalDuration) : 0
+    let index = min(Int(clamped / pointDuration), points.count - 1)
+    let destination = points[index]
+    let sincePointStart = clamped - Double(index) * pointDuration
+    guard !reduceMotion, sincePointStart < glideDuration else { return destination }
+    let origin = index > 0 ? points[index - 1] : (x: 0.5, y: 0.5)
+    let progress = sincePointStart / glideDuration
+    let eased = progress * progress * (3 - 2 * progress)
+    return (origin.x + (destination.x - origin.x) * eased, origin.y + (destination.y - origin.y) * eased)
+  }
+}

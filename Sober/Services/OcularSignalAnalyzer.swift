@@ -5,11 +5,13 @@ struct OcularSignalAnalyzer: Sendable {
     samples: [OcularSample],
     observedFrameCount: Int,
     liveQuality: CaptureQualitySnapshot,
-    variant: OcularProtocolVariant = .full
+    variant: OcularProtocolVariant = .full,
+    calibration: OcularCalibration? = nil
   ) -> GazeCaptureSummary {
     // Recorded on every capture, usable or not, and never scored. Each phase
-    // inside carries its own coverage (HANDOFF 2.5).
-    let detailed = detailedMetrics(samples: samples, variant: variant)
+    // inside carries its own coverage (HANDOFF 2.5). The calibration reaches
+    // only these recorded measures, never the score below.
+    let detailed = detailedMetrics(samples: samples, variant: variant, calibration: calibration)
 
     guard samples.count >= 20,
       let first = samples.first,
@@ -141,14 +143,17 @@ struct OcularSignalAnalyzer: Sendable {
     )
   }
 
-  private func detailedMetrics(samples: [OcularSample], variant: OcularProtocolVariant) -> OcularDetailedMetrics? {
+  private func detailedMetrics(
+    samples: [OcularSample], variant: OcularProtocolVariant, calibration: OcularCalibration?
+  ) -> OcularDetailedMetrics? {
     let blinks = Self.countBlinkEvents(samples)
     let duration = (samples.last?.timestamp ?? 0) - (samples.first?.timestamp ?? 0)
     return OcularDetailedAnalyzer().analyze(
       samples: samples,
       variant: variant,
       blinkCount: blinks,
-      blinkRatePerMinute: duration > 0 ? blinks.map { (Double($0) / duration) * 60 } : nil
+      blinkRatePerMinute: duration > 0 ? blinks.map { (Double($0) / duration) * 60 } : nil,
+      calibration: calibration
     )
   }
 

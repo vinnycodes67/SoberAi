@@ -48,6 +48,9 @@ Use a Face ID iPhone, with the internal build for the model items.
 | 1.10 | Capture benchmark, Research screen (internal build) | After a few eye tasks it shows detection rate, tracking losses, recovery time and processing delay | Those are the first real vision numbers; quote nothing before it shows them |
 | 1.11 | Screen-gaze up/down direction, `ScreenGazeGeometry.screenDownInCamera` (internal build) | Run the full eye task with your head still. On the Research screen, "Gaze on screen" should be most samples and "Up and down follows dot (screen / head-relative)" should have a **positive** first number, as should side to side. Then, with a debugger or a temporary log on `OcularSample.screenGazeY`, look at the top edge of the screen and then the bottom edge: the value should rise toward the bottom (near 0 at the top, near the screen height in points at the bottom). | If it falls toward the bottom, or the up-and-down number is negative and most samples are off screen, flip `screenDownInCamera` to `(-1, 0, 0)`, record what you saw here, and re-run. A negative side-to-side number with a correct up/down one means the camera z-side inference is wrong: record it, don't patch the sign |
 | 1.12 | Screen-gaze offset and scale, `DisplayGeometry` | Look at the centre of the screen, then each corner, and note `screenGazeX/Y` against the true point. Note the "Viewing distance (median)" row against a tape measure. | A constant offset is expected before calibration (2.6) and comes from the camera-position guess. A wrong *scale* means the pixel-density table is wrong for that model; check `displayIsKnownModel` in the session's telemetry |
+| 1.13 | Calibration quality bar, `OcularCalibrationFitter.maximumResidualDegrees` = 1.0° (internal build) | Run the eye task five times, following each of the five calibration dots carefully. On the Research screen note "Calibration points used", "Calibration residual (RMS)" and "Calibration met its quality bar" each time. Then run once staring at the centre throughout (must **not** meet the bar and must show the grey line "Keep your head still and follow the dot with your eyes."), and once skipping one corner (should read 4 of 5 and still meet the bar). | If careful runs do not meet the bar, record the residuals before changing anything: someone who never follows scores about 2.7° at 40 cm and about 1.8° at 60 cm, so a bar much above 1° cannot tell the two apart. If real residuals sit near 1°, the pattern is too small for this bar and that is the finding |
+| 1.14 | Calibration timing, `OcularCalibrationSchedule` (1.0 s a point, last 0.6 s scored) | On careful runs "Calibration points used" should be 5 of 5. Watch the first dot: the camera starts when you press Begin, so its unscored 0.4 s also has to cover the camera finding your face. | If the first point is regularly lost, the camera start is eating it: lengthen the lead-in rather than the scored window, and re-state the task length (see 2.6) |
+| 1.15 | Calibration to protocol hand-over, `OcularTaskView.start` | After the fifth dot the protocol starts with a restarted capture, exactly as it did before calibration existed. Check the preview does not visibly freeze for long, that the centre dot is steady by the time you look at it, and that the 3 s recovery screen does not appear on a good run. | Record how long the face takes to come back. Keeping the session running across the hand-over would remove the gap, but it changes how the first frames of the scored protocol are captured, so decide it with real numbers |
 
 ## 2. Not built (open work, in priority order)
 
@@ -115,7 +118,7 @@ Use a Face ID iPhone, with the internal build for the model items.
   research export; the first is on the internal Research screen. No new face
   data is read. `smoothnessRisk`, `ScreeningEngine`, baselines, the validity
   labels and every existing detailed measure are unchanged, so
-  `currentVersion` stays 1. Tests: `ScreenGazeGeometryTests`
+  this change left `currentVersion` at 1 (2.6 raises it to 2). Tests: `ScreenGazeGeometryTests`
   (`testATurningHeadWithEyesOnTheDotKeepsScreenGazeOnTheDot`,
   `testEyesMovingUnderAStillHeadFollowTheOldEyeInHeadReading`,
   `testTheOffScreenMarginIsFifteenMillimetres`,
@@ -141,9 +144,60 @@ Use a Face ID iPhone, with the internal build for the model items.
     recorded as `displayIsKnownModel == false`.
   - The screen plane is taken to be the camera's z = 0 plane, with ARKit's eye
     transforms taken as true eye position and gaze direction.
-- **2.6 Eye calibration.** `CameraCalibrationView` only checks framing and
-  light. There's no follow-the-target calibration, no per-person profile, and
-  no calibration quality bar.
+- **2.6 Eye calibration.** *Built 2026-11-17, recorded and shown but not
+  scored. **Do not merge until the task-length text below is approved.***
+  Pressing Begin now runs a 5-second follow-the-dot calibration first
+  (`OcularCalibrationSchedule`): the four corners the protocol's jumps use,
+  then the centre, 1.0 s each, only the last 0.6 s of each scored. With
+  Reduced Motion the dot does not glide between points. It is its own step:
+  `FaceTrackingService.finishEyeCalibration` fits it and discards its samples
+  before `startOcularProtocol` starts the unchanged 25 s (11 s) protocol with
+  a fresh buffer. `OcularCalibrationFitter` drops glances away, fits an
+  affine map from raw screen gaze (2.5b) to the dot by least squares, and
+  drops one whole point when the other four agree it was missed. Stored per
+  capture in `OcularDetailedMetrics.calibration`: points used, RMS residual
+  in degrees at the measured viewing distance, viewing distance, rejected
+  share, and whether it met the bar (also on the Research screen and in the
+  export). Not meeting the bar (residual above 1.0°, or fewer than 4 points)
+  marks the capture *degraded*, never invalid, with one grey line: "Keep your
+  head still and follow the dot with your eyes." Pursuit gain (2.5) now takes
+  its gaze-to-screen scale from a calibration that met the bar, and from the
+  saccade phase only otherwise; `gainScaleSource` records which, and
+  `OcularDetailedMetrics.currentVersion` is **2**. `smoothnessRisk`,
+  `isUsable`, `ScreeningEngine` and baselines are unchanged
+  (`testCalibrationNeverReachesTheScore`). There is still no per-person
+  profile kept between sessions: calibration is per capture. Tests:
+  `OcularCalibrationTests` (schedule, fit, noise, not following, glances, a
+  missed point, blinks, missing inputs, the degraded verdict),
+  `EyeCalibrationHandoverTests`
+  (`testCalibrationSamplesAreGoneBeforeTheProtocolBufferStarts`,
+  `testAbandoningOrRestartingDropsTheCalibration`) and
+  `OcularDetailedMetricsTests`
+  (`testPursuitGainTakesItsScaleFromAPassedCalibration`,
+  `testAFailedCalibrationFallsBackToTheJumpPhase`,
+  `testCalibrationQualityPersistsAndVersionOneRecordsDecode`). **Needs a Face
+  ID iPhone:** 1.13, 1.14, 1.15.
+
+  **Text that must change before this merges** (the eye task becomes 30 s,
+  16 s with Reduced Motion; none of it has been changed yet):
+  - `OcularTaskView`: "Begin 25-second eye task" → "Begin 30-second eye task".
+  - `Docs/APP_REVIEW_TRUEDEPTH_REPLY.md` (two places) and
+    `SupportSite/privacy.html`: "11- to 25-second eye task" → "16- to
+    30-second eye task".
+  - `README.md`: "a 25-second … ocular protocol, with a separate 11-second
+    Reduced Motion variant" needs the 5-second calibration added.
+
+  **Still guesses:**
+  - `OcularCalibrationFitter.maximumResidualDegrees` = 1.0° (1.13). The
+    calibration dots sit only about 3° from the centre at 40 cm and 2° at
+    60 cm, which is the same order as the bar. The stored residual lets the
+    bar be re-chosen from real captures without re-recording.
+  - `minimumPoints` = 4, `minimumSamplesPerPoint` = 12, `sampleOutlierMADs`
+    = 3 with a 1 mm floor, `pointOutlierFactor` = 3.
+  - `OcularCalibrationSchedule`: 1.0 s a point, 0.6 s scored, 0.25 s glide,
+    corners first and centre last (1.14).
+  - The stimulus field is taken to stay where it was when Begin was pressed.
+    Scrolling the screen during the task moves the dots and is not detected.
 - **2.7 Outlier sessions.** Ineligible sessions are excluded, but there's no
   statistical outlier rule and no allowance for people improving with
   practice over their first sessions.

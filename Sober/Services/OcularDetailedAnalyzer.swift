@@ -81,7 +81,8 @@ struct OcularDetailedAnalyzer: Sendable {
     samples: [OcularSample],
     variant: OcularProtocolVariant,
     blinkCount: Int?,
-    blinkRatePerMinute: Double?
+    blinkRatePerMinute: Double?,
+    calibration: OcularCalibration? = nil
   ) -> OcularDetailedMetrics? {
     guard variant != .noCamera else { return nil }
     var protocolSamples = samples.filter { $0.phase != .calibration && $0.timestamp.isFinite }
@@ -123,21 +124,33 @@ struct OcularDetailedAnalyzer: Sendable {
     let saccadeResult = enough(.saccades).map {
       saccadeMetrics(track: track, samples: protocolSamples, coverage: $0)
     }
-    let calibration = saccadeResult?.calibrationPoints ?? []
+    let saccadePoints = saccadeResult?.calibrationPoints ?? []
+    // Pursuit gain's scale: follow-the-dot calibration when it passed its
+    // quality bar, the saccade phase's settling points otherwise.
+    let calibrated = calibration?.metrics.passed == true ? calibration?.eyeInHeadPoints : nil
+    func scale(horizontal: Bool) -> (value: Double, source: OcularGainScaleSource)? {
+      if let calibrated, let value = Self.slope(calibrated, horizontal: horizontal) {
+        return (value, .calibration)
+      }
+      if let value = Self.calibrationSlope(saccadePoints, horizontal: horizontal, track: track) {
+        return (value, .saccadePhase)
+      }
+      return nil
+    }
     var horizontal: OcularPursuitMetrics?
     var vertical: OcularPursuitMetrics?
     if phases.contains(.horizontalPursuit) {
       horizontal = enough(.horizontalPursuit).map {
         pursuitMetrics(
           phase: .horizontalPursuit, horizontal: true, track: track, samples: protocolSamples,
-          scale: Self.calibrationSlope(calibration, horizontal: true, track: track), coverage: $0)
+          scale: scale(horizontal: true), coverage: $0)
       }
     }
     if phases.contains(.verticalPursuit) {
       vertical = enough(.verticalPursuit).map {
         pursuitMetrics(
           phase: .verticalPursuit, horizontal: false, track: track, samples: protocolSamples,
-          scale: Self.calibrationSlope(calibration, horizontal: false, track: track), coverage: $0)
+          scale: scale(horizontal: false), coverage: $0)
       }
     }
 
@@ -160,7 +173,8 @@ struct OcularDetailedAnalyzer: Sendable {
       binocular: binocularMetrics(samples: protocolSamples, labels: labels),
       blinkCount: blinkCount,
       blinkRatePerMinute: blinkRatePerMinute.flatMap(Self.finite),
-      screenGaze: screenGazeMetrics(samples: protocolSamples, labels: labels)
+      screenGaze: screenGazeMetrics(samples: protocolSamples, labels: labels),
+      calibration: calibration?.metrics
     )
   }
 
@@ -423,7 +437,7 @@ struct OcularDetailedAnalyzer: Sendable {
     horizontal: Bool,
     track: Track,
     samples: [OcularSample],
-    scale: Double?,
+    scale: (value: Double, source: OcularGainScaleSource)?,
     coverage: Double
   ) -> OcularPursuitMetrics {
     let phaseSamples = samples.filter { $0.phase == phase }
@@ -495,7 +509,7 @@ struct OcularDetailedAnalyzer: Sendable {
     }
 
     // Gain: eye velocity in screen units over target velocity at the lag,
-    // saccade intervals removed. Needs the saccade-phase scale.
+    // saccade intervals removed. Needs a gaze-to-screen scale.
     var gain: Double?
     if let scale {
       let shift = lag ?? 0
@@ -514,7 +528,7 @@ struct OcularDetailedAnalyzer: Sendable {
           let after = Self.interpolate(targetTimes, targetValues, at: mid + h, cursor: &upper)
         else { continue }
         let targetVelocity = (after - before) / (2 * h)
-        let eyeVelocity = (horizontal ? track.intervalVX[k] : track.intervalVY[k]) / scale
+        let eyeVelocity = (horizontal ? track.intervalVX[k] : track.intervalVY[k]) / scale.value
         numerator += eyeVelocity * targetVelocity
         energy += targetVelocity * targetVelocity
         used += 1
@@ -527,6 +541,7 @@ struct OcularDetailedAnalyzer: Sendable {
     return OcularPursuitMetrics(
       coverage: coverage,
       gain: gain,
+      gainScaleSource: gain == nil ? nil : scale?.source,
       lagMilliseconds: lag.flatMap { Self.finite($0 * 1_000) },
       catchUpSaccadeCount: catchUps
     )
@@ -534,7 +549,7 @@ struct OcularDetailedAnalyzer: Sendable {
 
   // MARK: - Saccades
 
-  struct CalibrationPoint {
+  struct CalibrationPoint: Equatable, Sendable {
     let targetX: Double
     let targetY: Double
     let x: Double
@@ -653,6 +668,18 @@ struct OcularDetailedAnalyzer: Sendable {
       targets.append(0.5)
       gaze.append(value)
     }
+    return slope(targets: targets, gaze: gaze)
+  }
+
+  /// The same scale from follow-the-dot calibration's points alone
+  /// (`OcularCalibrationFitter`), under the same conditions.
+  static func slope(_ points: [CalibrationPoint], horizontal: Bool) -> Double? {
+    slope(
+      targets: points.map { horizontal ? $0.targetX : $0.targetY },
+      gaze: points.map { horizontal ? $0.x : $0.y })
+  }
+
+  static func slope(targets: [Double], gaze: [Double]) -> Double? {
     guard targets.count >= 3, (targets.max() ?? 0) - (targets.min() ?? 0) >= 0.3,
       let r = pearson(targets, gaze), abs(r) >= 0.7
     else { return nil }

@@ -8,7 +8,13 @@ struct OcularTaskView: View {
   var onEndCheck: (() -> Void)?
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  /// Set while the follow-the-dot calibration runs, before the protocol.
+  @State private var calibrationStartedAt: Date?
+  /// Set when the protocol itself starts, after calibration.
   @State private var startedAt: Date?
+  /// The stimulus field on the screen, in points. Calibration needs to know
+  /// where on the display each dot was drawn.
+  @State private var fieldFrame: CGRect = .zero
   @State private var protocolTask: Task<Void, Never>?
   @State private var recoveryTask: Task<Void, Never>?
   @State private var finished = false
@@ -59,15 +65,24 @@ struct OcularTaskView: View {
 
           targetGuides(in: proxy.size)
 
-          if let startedAt {
+          if let calibrationStartedAt {
+            // Five points before the protocol. With Reduced Motion the dot
+            // does not glide between them.
+            TimelineView(.animation(minimumInterval: 1 / 30)) { timeline in
+              let elapsed = timeline.date.timeIntervalSince(calibrationStartedAt)
+              let position = OcularCalibrationSchedule.dotPosition(at: elapsed, reduceMotion: reduceMotion)
+              stimulusDot(diameter: 26)
+                .position(
+                  x: proxy.size.width * position.x,
+                  y: proxy.size.height * position.y
+                )
+                .accessibilityLabel("Look at the dot")
+            }
+          } else if let startedAt {
             TimelineView(.animation(minimumInterval: 1 / 30)) { timeline in
               let elapsed = timeline.date.timeIntervalSince(startedAt)
               let target = OcularProtocolSchedule.target(at: elapsed, variant: activeVariant)
-              Circle()
-                .fill(StimulusPalette.targetPrimary)
-                .frame(width: target.phase == .saccades ? 22 : 26, height: target.phase == .saccades ? 22 : 26)
-                .overlay { Circle().stroke(.white.opacity(0.6), lineWidth: 2) }
-                .shadow(color: StimulusPalette.targetPrimary.opacity(0.58), radius: 18)
+              stimulusDot(diameter: target.phase == .saccades ? 22 : 26)
                 .position(
                   x: proxy.size.width * target.x,
                   y: proxy.size.height * target.y
@@ -112,8 +127,18 @@ struct OcularTaskView: View {
         }
       }
       .frame(height: 330)
+      .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { fieldFrame = $0 }
 
       protocolProgress
+
+      if service.eyeCalibration?.metrics.passed == false {
+        // The capture still counts, so this is not a warning: one quiet line
+        // with the thing that would make it clearer (DESIGN.md, 2026-10-08).
+        Label(OcularCalibrationMetrics.degradedGuidance, systemImage: "info.circle")
+          .font(DSFont.footnote)
+          .foregroundStyle(DSPalette.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
 
       if reduceMotion {
         SoberCard {
@@ -130,7 +155,7 @@ struct OcularTaskView: View {
           start()
         }
         .buttonStyle(PrimaryActionButtonStyle())
-        .disabled(startedAt != nil || !canCapture)
+        .disabled(hasStarted || !canCapture)
 
         if !canCapture {
           Button("Continue with inconclusive capture") {
@@ -144,16 +169,16 @@ struct OcularTaskView: View {
         Button("Skip eye task") {
           // Skipping mid-task marks the view finished, so onDisappear will not
           // pause the camera; stop it here or it runs on behind the result.
-          if startedAt != nil { service.pause() }
+          if hasStarted { service.pause() }
           finish(with: service.unusableSummary(issue: .interrupted))
         }
         .buttonStyle(SecondaryActionButtonStyle(tint: Palette.warning))
       } else {
-        Button(startedAt == nil ? "Begin 25-second eye task" : "Keep following…") {
+        Button(hasStarted ? "Keep following…" : "Begin 25-second eye task") {
           start()
         }
         .buttonStyle(PrimaryActionButtonStyle())
-        .disabled(startedAt != nil || !canCapture)
+        .disabled(hasStarted || !canCapture)
 
         // Without a usable camera the 25-second protocol can only produce an
         // empty capture, so offer the inconclusive exit instead of the wait.
@@ -170,8 +195,19 @@ struct OcularTaskView: View {
     .onDisappear {
       protocolTask?.cancel()
       recoveryTask?.cancel()
-      if startedAt != nil, !finished { service.pause() }
+      if hasStarted, !finished { service.pause() }
     }
+  }
+
+  /// Calibration or the protocol is under way.
+  private var hasStarted: Bool { calibrationStartedAt != nil || startedAt != nil }
+
+  private func stimulusDot(diameter: CGFloat) -> some View {
+    Circle()
+      .fill(StimulusPalette.targetPrimary)
+      .frame(width: diameter, height: diameter)
+      .overlay { Circle().stroke(.white.opacity(0.6), lineWidth: 2) }
+      .shadow(color: StimulusPalette.targetPrimary.opacity(0.58), radius: 18)
   }
 
   @ViewBuilder
@@ -232,12 +268,24 @@ struct OcularTaskView: View {
   }
 
   private func start() {
-    guard startedAt == nil, canCapture else { return }
-    startedAt = Date()
-    service.startOcularProtocol(variant: activeVariant)
+    guard !hasStarted, canCapture else { return }
+    let variant = activeVariant
+    calibrationStartedAt = Date()
+    service.startEyeCalibration(field: fieldFrame.isEmpty ? nil : fieldFrame)
     if !service.quality.isUsable { scheduleCaptureRecovery() }
     protocolTask = Task {
-      try? await Task.sleep(for: .seconds(OcularProtocolSchedule.totalDuration(for: activeVariant)))
+      // Calibration first, as its own step. It is fitted and its samples are
+      // discarded before the protocol starts, and the protocol then runs
+      // exactly as it did before calibration existed.
+      try? await Task.sleep(for: .seconds(OcularCalibrationSchedule.totalDuration))
+      guard !Task.isCancelled else { return }
+      service.finishEyeCalibration()
+      calibrationStartedAt = nil
+      startedAt = Date()
+      service.startOcularProtocol(variant: variant)
+      if !service.quality.isUsable { scheduleCaptureRecovery() }
+
+      try? await Task.sleep(for: .seconds(OcularProtocolSchedule.totalDuration(for: variant)))
       guard !Task.isCancelled else { return }
       finish(with: service.stopOcularProtocol())
     }
@@ -255,10 +303,10 @@ struct OcularTaskView: View {
   /// sample count may stop changing entirely; waiting for another sample would
   /// therefore leave recovery stuck forever.
   private func scheduleCaptureRecovery() {
-    guard startedAt != nil, !finished, !needsRecovery, recoveryTask == nil else { return }
+    guard hasStarted, !finished, !needsRecovery, recoveryTask == nil else { return }
     recoveryTask = Task {
       try? await Task.sleep(for: .seconds(CaptureRecoveryPolicy.sustainedLossSeconds))
-      guard !Task.isCancelled, startedAt != nil, !finished, !service.quality.isUsable else {
+      guard !Task.isCancelled, hasStarted, !finished, !service.quality.isUsable else {
         return
       }
       protocolTask?.cancel()

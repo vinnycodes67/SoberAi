@@ -30,7 +30,11 @@ enum OcularSampleValidity: String, Codable, CaseIterable, Sendable {
 /// is nil rather than zero, so an absent measurement can never read as a
 /// perfect or terrible one.
 struct OcularDetailedMetrics: Codable, Equatable, Sendable {
-  static let currentVersion = 1
+  /// 2: pursuit gain takes its gaze-to-screen scale from follow-the-dot
+  /// calibration when that passed its quality bar, and from the saccade phase
+  /// only otherwise (`OcularPursuitMetrics.gainScaleSource` says which).
+  /// Version 1 always used the saccade phase.
+  static let currentVersion = 2
 
   /// Bumped whenever a definition or threshold changes, so values recorded
   /// under different rules are never pooled.
@@ -52,8 +56,39 @@ struct OcularDetailedMetrics: Codable, Equatable, Sendable {
   /// Head-free gaze on the screen. The one part of this record not built on
   /// eye-in-head angles; nothing reads it yet. Nil for captures recorded
   /// before it existed and for samples that never had a camera pose. Adding
-  /// it changed no other field, so `currentVersion` is unchanged.
+  /// it changed no other field.
   var screenGaze: OcularScreenGazeMetrics? = nil
+  /// Quality of the follow-the-dot calibration run before this capture. Nil
+  /// for captures recorded before calibration existed or started without one.
+  var calibration: OcularCalibrationMetrics? = nil
+}
+
+/// How well the follow-the-dot calibration fitted (`OcularCalibrationFitter`).
+/// Derived numbers only: the calibration's samples are discarded once fitted.
+struct OcularCalibrationMetrics: Codable, Equatable, Sendable {
+  /// Shown, in quiet grey, when calibration did not pass. The capture still
+  /// counts; it is marked degraded.
+  static let degradedGuidance = "Keep your head still and follow the dot with your eyes."
+
+  var pointsScheduled: Int
+  /// Points with enough steady samples that were kept in the fit.
+  var pointsUsed: Int
+  /// RMS distance between calibrated gaze and the dot over the scored
+  /// samples, in degrees of visual angle at the measured viewing distance.
+  /// Nil when too few points were usable to fit.
+  var residualRMSDegrees: Double?
+  var viewingDistanceMetres: Double?
+  /// Share of scored samples dropped as outliers before fitting.
+  var rejectedSampleFraction: Double?
+  /// At least `OcularCalibrationFitter.minimumPoints` points used and the
+  /// residual at or under `OcularCalibrationFitter.maximumResidualDegrees`.
+  var passed: Bool
+}
+
+/// Where pursuit gain's gaze-to-screen scale came from.
+enum OcularGainScaleSource: String, Codable, Sendable {
+  case calibration
+  case saccadePhase
 }
 
 /// Where the eyes' gaze rays met the screen (`ScreenGazeGeometry`), taken in
@@ -126,9 +161,13 @@ struct OcularFixationMetrics: Codable, Equatable, Sendable {
 
 struct OcularPursuitMetrics: Codable, Equatable, Sendable {
   var coverage: Double
-  /// Eye velocity over target velocity with saccades removed. Nil when the
-  /// saccade phase could not supply the gaze-to-screen scale it needs.
+  /// Eye velocity over target velocity with saccades removed. Nil when
+  /// neither calibration nor the saccade phase could supply the
+  /// gaze-to-screen scale it needs.
   var gain: Double?
+  /// Which scale `gain` used. Nil when gain is nil, and for version 1
+  /// records, which always used the saccade phase.
+  var gainScaleSource: OcularGainScaleSource? = nil
   /// Delay that best aligns gaze with the target, by cross-correlation.
   /// Positive means the eyes trail the target.
   var lagMilliseconds: Double?

@@ -462,9 +462,12 @@ final class OcularDetailedMetricsTests: XCTestCase {
     return ScreenGaze(left: point, right: point, combined: point)
   }
 
-  private func summarize(_ samples: [OcularSample]) -> GazeCaptureSummary {
+  private func summarize(
+    _ samples: [OcularSample], calibration: OcularCalibration? = nil
+  ) -> GazeCaptureSummary {
     OcularSignalAnalyzer().summarize(
-      samples: samples, observedFrameCount: samples.count, liveQuality: usableQuality(count: samples.count))
+      samples: samples, observedFrameCount: samples.count, liveQuality: usableQuality(count: samples.count),
+      calibration: calibration)
   }
 
   /// Through the research JSON export and back.
@@ -491,6 +494,106 @@ final class OcularDetailedMetricsTests: XCTestCase {
     let payload = ResearchSessionExportPayload(exportedAt: Date(timeIntervalSince1970: 120), sessions: [envelope])
     let decoded = try JSONDecoder().decode(ResearchSessionExportPayload.self, from: JSONEncoder().encode(payload))
     return decoded.sessions.first?.ocularSummary
+  }
+
+  // MARK: - Calibration scale (HANDOFF 2.6)
+
+  func testPursuitGainTakesItsScaleFromAPassedCalibration() throws {
+    let model = EyeModel()
+    // The jump phase cut off: no scale from it, so no gain without calibration.
+    let cut = model.samples().filter { $0.timestamp < 17 }
+    XCTAssertNil(analyze(cut)?.horizontalPursuit?.gain)
+
+    let calibrated = try XCTUnwrap(analyze(cut, calibration: calibration(model)))
+    for pursuit in [calibrated.horizontalPursuit, calibrated.verticalPursuit] {
+      let pursuit = try XCTUnwrap(pursuit)
+      XCTAssertEqual(try XCTUnwrap(pursuit.gain), 1, accuracy: 0.05)
+      XCTAssertEqual(pursuit.gainScaleSource, .calibration)
+    }
+    XCTAssertEqual(calibrated.calibration, calibration(model).metrics)
+
+    // Calibration comes first when the jump phase could supply a scale too:
+    // one that says the eyes travel twice as far per screen unit halves gain.
+    let doubled = try XCTUnwrap(analyze(model.samples(), calibration: calibration(model, scale: 2)))
+    XCTAssertEqual(try XCTUnwrap(doubled.horizontalPursuit?.gain), 0.5, accuracy: 0.05)
+    XCTAssertEqual(doubled.horizontalPursuit?.gainScaleSource, .calibration)
+    XCTAssertEqual(doubled.verticalPursuit?.gainScaleSource, .calibration)
+  }
+
+  func testAFailedCalibrationFallsBackToTheJumpPhase() throws {
+    let model = EyeModel()
+    let failed = calibration(model, scale: 2, passed: false)
+    let metrics = try XCTUnwrap(analyze(model.samples(), calibration: failed))
+    XCTAssertEqual(try XCTUnwrap(metrics.horizontalPursuit?.gain), 1, accuracy: 0.05)
+    XCTAssertEqual(metrics.horizontalPursuit?.gainScaleSource, .saccadePhase)
+    // Its quality is recorded all the same.
+    XCTAssertEqual(metrics.calibration?.passed, false)
+
+    // With neither scale there is no gain, and so no source.
+    let cut = model.samples().filter { $0.timestamp < 17 }
+    let neither = try XCTUnwrap(analyze(cut, calibration: failed))
+    XCTAssertNil(neither.horizontalPursuit?.gain)
+    XCTAssertNil(neither.horizontalPursuit?.gainScaleSource)
+    XCTAssertNotNil(neither.horizontalPursuit?.lagMilliseconds)
+  }
+
+  func testCalibrationNeverReachesTheScore() {
+    let model = EyeModel()
+    let samples = model.samples()
+    let without = summarize(samples)
+    XCTAssertTrue(without.quality.isUsable)
+    for calibration in [calibration(model), calibration(model, scale: 2), calibration(model, passed: false)] {
+      let with = summarize(samples, calibration: calibration)
+      XCTAssertEqual(with.smoothnessRisk, without.smoothnessRisk)
+      XCTAssertEqual(with.qualityScore, without.qualityScore)
+      XCTAssertEqual(with.features, without.features)
+      XCTAssertEqual(with.quality, without.quality)
+    }
+  }
+
+  func testCalibrationQualityPersistsAndVersionOneRecordsDecode() throws {
+    XCTAssertEqual(OcularDetailedMetrics.currentVersion, 2)
+    let model = EyeModel()
+    let summary = summarize(model.samples(), calibration: calibration(model))
+    let detailed = try XCTUnwrap(summary.detailed)
+    XCTAssertEqual(detailed.version, 2)
+    XCTAssertNotNil(detailed.calibration)
+    let data = try JSONEncoder().encode(detailed)
+    XCTAssertEqual(try JSONDecoder().decode(OcularDetailedMetrics.self, from: data), detailed)
+    XCTAssertEqual(try researchExportRoundTrip(summary)?.detailed, detailed)
+
+    // A version 1 record: no calibration, no scale source.
+    var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    legacy["version"] = 1
+    legacy.removeValue(forKey: "calibration")
+    for key in ["horizontalPursuit", "verticalPursuit"] {
+      var pursuit = try XCTUnwrap(legacy[key] as? [String: Any])
+      XCTAssertNotNil(pursuit.removeValue(forKey: "gainScaleSource"))
+      legacy[key] = pursuit
+    }
+    let old = try JSONDecoder().decode(
+      OcularDetailedMetrics.self, from: JSONSerialization.data(withJSONObject: legacy))
+    XCTAssertEqual(old.version, 1)
+    XCTAssertNil(old.calibration)
+    XCTAssertNil(old.horizontalPursuit?.gainScaleSource)
+    XCTAssertEqual(old.horizontalPursuit?.gain, detailed.horizontalPursuit?.gain)
+    XCTAssertEqual(old.saccades, detailed.saccades)
+  }
+
+  /// A calibration whose eye-in-head points sit where the model's eyes would
+  /// settle, times `scale`.
+  private func calibration(_ model: EyeModel, scale: Double = 1, passed: Bool = true) -> OcularCalibration {
+    OcularCalibration(
+      metrics: OcularCalibrationMetrics(
+        pointsScheduled: 5, pointsUsed: 5, residualRMSDegrees: passed ? 0.3 : 1.8,
+        viewingDistanceMetres: 0.4, rejectedSampleFraction: 0, passed: passed),
+      map: nil,
+      eyeInHeadPoints: OcularCalibrationSchedule.points.map {
+        OcularDetailedAnalyzer.CalibrationPoint(
+          targetX: $0.x, targetY: $0.y,
+          x: scale * model.scaleX * ($0.x - 0.5), y: scale * model.scaleY * ($0.y - 0.5))
+      },
+      field: nil)
   }
 
   // MARK: - Randomized invariants
@@ -578,10 +681,13 @@ final class OcularDetailedMetricsTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private func analyze(_ samples: [OcularSample], variant: OcularProtocolVariant = .full) -> OcularDetailedMetrics? {
+  private func analyze(
+    _ samples: [OcularSample], variant: OcularProtocolVariant = .full, calibration: OcularCalibration? = nil
+  ) -> OcularDetailedMetrics? {
     OcularDetailedAnalyzer().analyze(
       samples: samples, variant: variant,
-      blinkCount: OcularSignalAnalyzer.countBlinkEvents(samples), blinkRatePerMinute: nil)
+      blinkCount: OcularSignalAnalyzer.countBlinkEvents(samples), blinkRatePerMinute: nil,
+      calibration: calibration)
   }
 
   private func detailed(_ model: EyeModel) throws -> OcularDetailedMetrics {

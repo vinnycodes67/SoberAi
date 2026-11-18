@@ -122,6 +122,15 @@ final class FaceTrackingService: NSObject, ObservableObject {
   private let maximumSamples = 1_800
   private var observedFrameCount = 0
   private var protocolStartedAt: TimeInterval?
+  /// Set while the follow-the-dot calibration that precedes the protocol is
+  /// running. On the same clock as ARKit's frame timestamps.
+  private(set) var eyeCalibrationStartedAt: TimeInterval?
+  /// The stimulus field in screen points, from the view that draws the dot.
+  private var eyeCalibrationField: CGRect?
+  /// The calibration fitted for the protocol about to run or running. In
+  /// memory only: its quality numbers are stored with the capture, and it is
+  /// dropped when the capture ends or is abandoned.
+  @Published private(set) var eyeCalibration: OcularCalibration?
   private var captureStartedAt: TimeInterval?
   private var recentHeadPositions: [SIMD3<Float>] = []
   private var qualityHistory = CaptureQualityHistory()
@@ -176,11 +185,42 @@ final class FaceTrackingService: NSObject, ObservableObject {
   /// `display` defaults to the foreground scene's screen, read here on the
   /// main actor.
   func startCalibration(display: DisplayGeometry? = nil) {
+    eyeCalibrationStartedAt = nil
+    eyeCalibration = nil
     beginCapture(display: display)
   }
 
+  /// Starts the follow-the-dot calibration that runs immediately before the
+  /// protocol (`OcularCalibrationSchedule`). `field` is the stimulus field in
+  /// screen points. Call `finishEyeCalibration()` when its time is up, then
+  /// `startOcularProtocol`.
+  func startEyeCalibration(field: CGRect?, display: DisplayGeometry? = nil) {
+    eyeCalibration = nil
+    eyeCalibrationField = field
+    eyeCalibrationStartedAt = ProcessInfo.processInfo.systemUptime
+    beginCapture(display: display)
+  }
+
+  /// Fits the calibration and discards its samples, so none of them is in the
+  /// buffer when the protocol starts. Nil when no calibration was running.
+  @discardableResult
+  func finishEyeCalibration() -> OcularCalibration? {
+    guard let startedAt = eyeCalibrationStartedAt else { return nil }
+    let calibration = OcularCalibrationFitter.fit(
+      samples: samples, startedAt: startedAt, field: eyeCalibrationField, display: display)
+    eyeCalibrationStartedAt = nil
+    discardSamples()
+    sampleCount = 0
+    eyeCalibration = calibration
+    return calibration
+  }
+
+  /// The protocol itself starts exactly as it did before calibration existed:
+  /// a fresh buffer, a fresh quality history and a restarted session. A
+  /// calibration fitted just before is kept for this capture.
   func startOcularProtocol(variant: OcularProtocolVariant = .full, display: DisplayGeometry? = nil) {
     activeProtocolVariant = variant
+    eyeCalibrationStartedAt = nil
     protocolStartedAt = ProcessInfo.processInfo.systemUptime
     beginCapture(preserveProtocolStart: true, display: display)
   }
@@ -189,6 +229,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
     wantsSessionRunning = false
     session.pause()
     discardSamples()
+    eyeCalibrationStartedAt = nil
+    eyeCalibration = nil
     if status == .tracking { status = .idle }
   }
 
@@ -222,14 +264,17 @@ final class FaceTrackingService: NSObject, ObservableObject {
       samples: samples,
       observedFrameCount: observedFrameCount,
       liveQuality: finalQuality,
-      variant: activeProtocolVariant
+      variant: activeProtocolVariant,
+      calibration: eyeCalibration
     )
     discardSamples()
     quality = summary.quality
     status = summary.quality.isUsable
       ? .tracking
       : .limited(summary.quality.primaryGuidance)
-    assessment = CaptureAssessment.assess(summary.quality, image: telemetry.averageImage)
+    assessment = CaptureAssessment.assess(
+      summary.quality, image: telemetry.averageImage, calibration: eyeCalibration?.metrics)
+    eyeCalibration = nil
     return summary.with(telemetry: telemetry.summary(verdict: assessment.verdict))
   }
 
@@ -390,6 +435,8 @@ final class FaceTrackingService: NSObject, ObservableObject {
     let target: OcularTarget
     if let protocolStartedAt {
       target = OcularProtocolSchedule.target(at: timestamp - protocolStartedAt, variant: activeProtocolVariant)
+    } else if let eyeCalibrationStartedAt {
+      target = OcularCalibrationSchedule.target(at: timestamp - eyeCalibrationStartedAt)
     } else {
       target = OcularTarget(phase: .calibration, x: 0.5, y: 0.5)
     }
@@ -425,17 +472,7 @@ final class FaceTrackingService: NSObject, ObservableObject {
         face: head, leftEye: face.leftEyeTransform, rightEye: face.rightEyeTransform,
         camera: cameraTransform, display: display))
     }
-    samples.append(sample)
-    if samples.count > maximumSamples {
-      // Calibration has no time limit. Trimming samples without trimming the
-      // frame count and start time made dropout climb past 30% and frame rate
-      // decay after ~40 s, so a calibration left open could never pass again.
-      let trimmed = samples.count - maximumSamples
-      samples.removeFirst(trimmed)
-      observedFrameCount = max(observedFrameCount - trimmed, samples.count)
-      captureStartedAt = samples.first?.timestamp
-    }
-    sampleCount = samples.count
+    appendSample(sample)
 
     let duration = max(timestamp - (captureStartedAt ?? timestamp), 0.1)
     let frameRate = samples.count > 1 ? Double(samples.count - 1) / duration : 0
@@ -490,8 +527,25 @@ final class FaceTrackingService: NSObject, ObservableObject {
       otherFacesInView: otherFacesInView
     )
     invalidateLiveCaptureIfInterrupted()
-    assessment = CaptureAssessment.assess(quality, image: latestImage)
+    assessment = CaptureAssessment.assess(quality, image: latestImage, calibration: eyeCalibration?.metrics)
     status = quality.isUsable ? .tracking : .limited(liveGuidance)
+  }
+
+  /// Adds one sample to the bounded buffer. `ingest` is the only caller in the
+  /// app; it is not private so tests can feed samples, because the simulator
+  /// has no TrueDepth camera to produce them.
+  func appendSample(_ sample: OcularSample) {
+    samples.append(sample)
+    if samples.count > maximumSamples {
+      // Calibration has no time limit. Trimming samples without trimming the
+      // frame count and start time made dropout climb past 30% and frame rate
+      // decay after ~40 s, so a calibration left open could never pass again.
+      let trimmed = samples.count - maximumSamples
+      samples.removeFirst(trimmed)
+      observedFrameCount = max(observedFrameCount - trimmed, samples.count)
+      captureStartedAt = samples.first?.timestamp
+    }
+    sampleCount = samples.count
   }
 
   /// What to tell the person while the capture is not yet usable.

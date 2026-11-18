@@ -193,6 +193,12 @@ struct ResearchModeView: View {
             benchmarkRow("Gaze on screen", percent(screen.onScreenFraction))
             benchmarkRow("Viewing distance (median)", centimetres(screen.medianViewingDistanceMetres))
           }
+          if let calibration = metrics.calibration {
+            benchmarkRow(
+              "Calibration points used", "\(calibration.pointsUsed) of \(calibration.pointsScheduled)")
+            benchmarkRow("Calibration residual (RMS)", degrees(calibration.residualRMSDegrees))
+            benchmarkRow("Calibration met its quality bar", calibration.passed ? "Yes" : "No")
+          }
           benchmarkRow("Fixation coverage", percent(metrics.coverage.fixation))
           benchmarkRow("Fixation spread (RMS)", degrees(metrics.fixation?.dispersionRMSDegrees))
           benchmarkRow("Longest steady fixation", milliseconds(metrics.fixation?.longestStableMilliseconds))
@@ -231,6 +237,7 @@ struct ResearchModeView: View {
   private func pursuitRows(_ name: String, _ coverage: Double?, _ pursuit: OcularPursuitMetrics?) -> some View {
     benchmarkRow("\(name) coverage", percent(coverage))
     benchmarkRow("\(name) gain", ratio(pursuit?.gain))
+    benchmarkRow("\(name) gain scale from", scaleSource(pursuit?.gainScaleSource))
     benchmarkRow("\(name) lag", milliseconds(pursuit?.lagMilliseconds))
     benchmarkRow("\(name) catch-up saccades", count(pursuit?.catchUpSaccadeCount))
   }
@@ -252,6 +259,14 @@ struct ResearchModeView: View {
 
   private func ratio(_ value: Double?) -> String {
     value.map { String(format: "%.2f", $0) } ?? "Not measured"
+  }
+
+  private func scaleSource(_ source: OcularGainScaleSource?) -> String {
+    switch source {
+    case .calibration: "Calibration"
+    case .saccadePhase: "Jump phase"
+    case nil: "Not measured"
+    }
   }
 
   private func centimetres(_ metres: Double?) -> String {
